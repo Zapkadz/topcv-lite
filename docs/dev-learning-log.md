@@ -1,0 +1,94 @@
+# Dev Learning Log
+
+## 2026-05-28 - Phase 1 / Nhóm 1: Chặn apply trùng
+
+### Mục tiêu
+- Đảm bảo một ứng viên không thể có 2 đơn cho cùng một công việc, kể cả khi có request đồng thời.
+
+### Những gì đã thay đổi
+- Cập nhật `topcv_lite.sql`:
+  - Thêm unique key `uniq_job_candidate (job_id, candidate_id)` trong bảng `applications`.
+- Cập nhật `apply.php`:
+  - Bổ sung `catch (PDOException $e)` để bắt lỗi duplicate key ở DB.
+  - Nếu trùng đơn thì hiển thị thông báo thân thiện: "Bạn đã ứng tuyển công việc này rồi!".
+  - Các lỗi DB khác hiển thị thông báo an toàn: "Lỗi hệ thống, vui lòng thử lại.".
+
+### Vì sao làm vậy
+- Chặn ở UI hoặc check trước insert chỉ đủ cho luồng bình thường.
+- Chặn ở DB bằng `UNIQUE` mới là lớp bảo vệ cuối cùng chống race condition.
+
+### Bài học rút ra
+- Rule quan trọng của hệ thống phải có ràng buộc ở database, không chỉ ở code giao diện/backend.
+- Cặp thao tác `SELECT rồi INSERT` luôn có rủi ro race nếu thiếu constraint.
+
+### Lưu ý triển khai
+- Khi áp dụng constraint trên DB đang chạy thật, cần kiểm tra dữ liệu trùng trước để migration không fail.
+
+## 2026-05-28 - Phase 1 / Nhóm 4: Sửa runtime hồ sơ ứng viên (`$profile`)
+
+### Mục tiêu
+- Ngăn lỗi biến chưa khởi tạo khi mở trang `candidate/profile.php`.
+
+### Những gì đã thay đổi
+- Cập nhật `candidate/profile.php`:
+  - Thêm query lấy dữ liệu hồ sơ hiện tại từ bảng `candidates` theo `user_id`.
+  - Khởi tạo fallback an toàn khi user chưa có bản ghi (`title`, `cv_path`, `bio` rỗng).
+
+### Vì sao làm vậy
+- Form đang đọc `$profile['title']`, `$profile['cv_path']`, `$profile['bio']` nhưng trước đó chưa có đoạn gán `$profile`.
+- Trong runtime thật, điều này có thể gây warning/notice và làm trang hiển thị không ổn định.
+
+### Bài học rút ra
+- Với trang edit profile, luôn cần 2 nhánh dữ liệu rõ ràng:
+  1) đã có bản ghi -> load dữ liệu cũ,
+  2) chưa có bản ghi -> dùng giá trị mặc định an toàn.
+
+### Lưu ý triển khai
+- Đây là fix phạm vi hẹp, không thay đổi nghiệp vụ insert/update hiện tại.
+
+## 2026-05-28 - Phase 1 / Nhóm 2A: CSRF cho apply + profile
+
+### Mục tiêu
+- Bịt lỗ hổng CSRF ở 2 luồng ưu tiên cao: gửi hồ sơ ứng tuyển và cập nhật hồ sơ ứng viên.
+
+### Những gì đã thay đổi
+- Tạo mới `includes/csrf.php`:
+  - `csrf_token($form_key)` để tạo token theo từng form.
+  - `csrf_validate($form_key, $token)` để kiểm tra token an toàn bằng `hash_equals`.
+- Cập nhật `job-detail.php`:
+  - Nhúng hidden input `csrf_token` vào form apply.
+- Cập nhật `apply.php`:
+  - Thêm validate CSRF trước khi xử lý nghiệp vụ apply.
+  - Nếu token sai/thiếu -> chặn request và báo "Phiên làm việc không hợp lệ, vui lòng thử lại."
+- Cập nhật `candidate/profile.php`:
+  - Nhúng hidden input `csrf_token` vào form cập nhật hồ sơ.
+  - Validate CSRF ở đầu nhánh POST trước khi cập nhật dữ liệu.
+
+### Vì sao làm vậy
+- POST request không có CSRF token có thể bị giả mạo từ website khác khi user đang đăng nhập.
+- Token theo form giúp server xác nhận request thật sự xuất phát từ form của hệ thống.
+
+### Bài học rút ra
+- Bảo mật form POST nên được chuẩn hóa bằng helper chung để tránh mỗi file tự làm một kiểu.
+- Validate phải chạy ở đầu luồng xử lý POST, trước khi đụng nghiệp vụ hoặc DB.
+
+### Lưu ý triển khai
+- Đây là giai đoạn 2A (phạm vi hẹp). Các form POST còn lại sẽ được phủ CSRF ở các nhóm kế tiếp.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- Apply job bình thường: ✅ pass
+- Cập nhật profile bình thường: ✅ pass
+- Submit thiếu/sai CSRF token bị chặn: ✅ pass
+- **Trạng thái nhóm: HOÀN TẤT**
+
+## 2026-05-29 - Incident: Bảng `applications` corruption (error 1932) — ĐÃ XỬ LÝ
+
+### Vấn đề
+- Sau khi chạy `ALTER TABLE` thêm UNIQUE (Nhóm 1), bảng `applications` trên DB live bị lỗi 1932 (metadata còn, engine mất).
+
+### Cách xử lý
+- `DROP TABLE` + `CREATE TABLE` lại bảng `applications` (có UNIQUE + FK như schema mới).
+
+### Bài học rút ra
+- Migration trên DB đang chạy nên dùng file migration riêng, backup trước, verify sau ALTER.
+- Không chỉ sửa file `topcv_lite.sql` dump mà quên apply an toàn lên DB live.

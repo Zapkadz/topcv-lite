@@ -13,3 +13,6 @@ Thumbs.db
 .DS_Store
 .idea/
 .vscode/
+
+# Tạm thời khi tách commit (không commit)
+_git_staging_backup/
