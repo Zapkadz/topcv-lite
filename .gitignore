@@ -1,0 +1,15 @@
+# Uploads người dùng (giữ thư mục, bỏ file nhị phân)
+uploads/cv/*.pdf
+uploads/logos/*.png
+uploads/logos/*.jpg
+uploads/logos/*.jpeg
+
+# Báo cáo HTML export local
+Bao_Cao_Phan_Tich_TopCV_Lite.html
+Bao_Cao_Phan_Tich_TopCV_Lite_files/
+
+# OS / IDE
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/

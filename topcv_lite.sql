@@ -1,0 +1,338 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Máy chủ: 127.0.0.1
+-- Thời gian đã tạo: Th1 01, 2026 lúc 03:00 PM
+-- Phiên bản máy phục vụ: 10.4.32-MariaDB
+-- Phiên bản PHP: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Cơ sở dữ liệu: `topcv_lite`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `applications`
+--
+
+CREATE TABLE `applications` (
+  `id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `candidate_id` int(11) NOT NULL,
+  `cv_snapshot` varchar(255) NOT NULL,
+  `cover_letter` text DEFAULT NULL,
+  `status` enum('pending','viewed','interview','rejected') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `applications`
+--
+
+INSERT INTO `applications` (`id`, `job_id`, `candidate_id`, `cv_snapshot`, `cover_letter`, `status`, `created_at`) VALUES
+(2, 1, 1, 'uploads/cv/cv_apply_1_1_1767265051.pdf', 'tôi muốn ứng tuyển', 'viewed', '2026-01-01 10:57:31'),
+(3, 3, 1, 'uploads/cv/cv_apply_1_3_1767266370.pdf', 'a', 'pending', '2026-01-01 11:19:30');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `candidates`
+--
+
+CREATE TABLE `candidates` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `cv_path` varchar(255) DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `candidates`
+--
+
+INSERT INTO `candidates` (`id`, `user_id`, `title`, `cv_path`, `bio`, `updated_at`) VALUES
+(1, 2, 'IT DEV', 'uploads/cv/cv_base_2_1767263631.pdf', 'học it xuất sắc', '2026-01-01 10:33:51');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `categories`
+--
+
+CREATE TABLE `categories` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `categories`
+--
+
+INSERT INTO `categories` (`id`, `name`) VALUES
+(1, 'IT Phần mềm'),
+(2, 'Marketing'),
+(3, 'Kế toán'),
+(4, 'Bán hàng'),
+(5, 'Nhân sự');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `companies`
+--
+
+CREATE TABLE `companies` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `logo` varchar(255) DEFAULT NULL,
+  `website` varchar(255) DEFAULT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `companies`
+--
+
+INSERT INTO `companies` (`id`, `user_id`, `name`, `logo`, `website`, `address`, `description`, `created_at`) VALUES
+(1, 3, 'Công Ty FPT ', 'uploads/logos/company_3_1767264779.png', NULL, 'Số 1 Phạm Văn Bạch', 'Công ty hàng đầu về IT', '2026-01-01 10:44:35');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `jobs`
+--
+
+CREATE TABLE `jobs` (
+  `id` int(11) NOT NULL,
+  `company_id` int(11) NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `location_id` int(11) DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `salary_range` varchar(50) DEFAULT NULL,
+  `description` text NOT NULL,
+  `requirements` text DEFAULT NULL,
+  `benefits` text DEFAULT NULL,
+  `deadline` date DEFAULT NULL,
+  `status` enum('pending','approved','rejected','hidden') DEFAULT 'pending',
+  `view_count` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `admin_note` text DEFAULT NULL,
+  `quantity` int(11) DEFAULT 1,
+  `job_type` varchar(50) DEFAULT 'Toàn thời gian',
+  `job_level` varchar(50) DEFAULT 'Nhân viên',
+  `experience` varchar(50) DEFAULT 'Không yêu cầu',
+  `gender` varchar(20) DEFAULT 'Không yêu cầu'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `jobs`
+--
+
+INSERT INTO `jobs` (`id`, `company_id`, `category_id`, `location_id`, `title`, `salary_range`, `description`, `requirements`, `benefits`, `deadline`, `status`, `view_count`, `created_at`, `updated_at`, `admin_note`, `quantity`, `job_type`, `job_level`, `experience`, `gender`) VALUES
+(1, 1, 1, 1, 'Tuyển dụng intern IT DEV Front-end', '3 - 10tr', 'Học hỏi - nghe theo sắp xếp công việc của quản lý', 'Đã tốt nghiệp', 'Ăn trưa \r\nThưởng lễ', '2026-01-15', 'approved', 11, '2026-01-01 10:47:46', NULL, NULL, 1, 'Toàn thời gian', 'Nhân viên', 'Không yêu cầu', 'Không yêu cầu'),
+(2, 1, 1, 1, 'test', '10 - 20', 'a', 'a', 'a', '2026-02-04', 'rejected', 0, '2026-01-01 10:49:49', NULL, 'như l', 1, 'Toàn thời gian', 'Nhân viên', 'Không yêu cầu', 'Không yêu cầu'),
+(3, 1, 1, 1, 'Fresher DEV Back-end', 'Thỏa Thuận', 'Làm các job được giao', '3 năm kinh nghiệm', 'Đủ phúc lợi', '2026-01-08', 'approved', 8, '2026-01-01 11:18:06', '2026-01-01 11:38:22', NULL, 5, 'Toàn thời gian', 'Nhân viên', 'Không yêu cầu', 'Không yêu cầu');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `locations`
+--
+
+CREATE TABLE `locations` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `locations`
+--
+
+INSERT INTO `locations` (`id`, `name`) VALUES
+(1, 'Hà Nội'),
+(2, 'Hồ Chí Minh'),
+(3, 'Đà Nẵng'),
+(4, 'Cần Thơ'),
+(5, 'Toàn Quốc');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `fullname` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `role` enum('candidate','employer','admin') NOT NULL DEFAULT 'candidate',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `status` tinyint(4) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `users`
+--
+
+INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `created_at`, `status`) VALUES
+(1, 'Super Admin', 'admin@topcv.local', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'admin', '2026-01-01 10:05:27', 1),
+(2, 'Văn Minh Thành', 'thanh@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'candidate', '2026-01-01 10:26:49', 1),
+(3, 'Trần Thị Huyền', 'tranhuyen@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'employer', '2026-01-01 10:27:18', 1),
+(4, 'trần trí huy', 'huytran@gmail.com', '$2y$10$YolsAh7720319j5VYbc3y.AdYkIye94rg9fg5gPwuAuPLOjla2QSC', NULL, 'employer', '2026-01-01 13:54:03', 1);
+
+--
+-- Chỉ mục cho các bảng đã đổ
+--
+
+--
+-- Chỉ mục cho bảng `applications`
+--
+ALTER TABLE `applications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `job_id` (`job_id`),
+  ADD KEY `candidate_id` (`candidate_id`),
+  ADD UNIQUE KEY `uniq_job_candidate` (`job_id`,`candidate_id`);
+
+--
+-- Chỉ mục cho bảng `candidates`
+--
+ALTER TABLE `candidates`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Chỉ mục cho bảng `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `companies`
+--
+ALTER TABLE `companies`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Chỉ mục cho bảng `jobs`
+--
+ALTER TABLE `jobs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `company_id` (`company_id`),
+  ADD KEY `category_id` (`category_id`),
+  ADD KEY `location_id` (`location_id`);
+
+--
+-- Chỉ mục cho bảng `locations`
+--
+ALTER TABLE `locations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- AUTO_INCREMENT cho các bảng đã đổ
+--
+
+--
+-- AUTO_INCREMENT cho bảng `applications`
+--
+ALTER TABLE `applications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT cho bảng `candidates`
+--
+ALTER TABLE `candidates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT cho bảng `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT cho bảng `companies`
+--
+ALTER TABLE `companies`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT cho bảng `jobs`
+--
+ALTER TABLE `jobs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT cho bảng `locations`
+--
+ALTER TABLE `locations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT cho bảng `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Các ràng buộc cho các bảng đã đổ
+--
+
+--
+-- Các ràng buộc cho bảng `applications`
+--
+ALTER TABLE `applications`
+  ADD CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `candidates`
+--
+ALTER TABLE `candidates`
+  ADD CONSTRAINT `candidates_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `companies`
+--
+ALTER TABLE `companies`
+  ADD CONSTRAINT `companies_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `jobs`
+--
+ALTER TABLE `jobs`
+  ADD CONSTRAINT `jobs_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `jobs_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`),
+  ADD CONSTRAINT `jobs_ibfk_3` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

@@ -1,0 +1,45 @@
+/* File: css/style.css */
+body {
+    background: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-card h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #00b14f; /* Màu xanh đặc trưng kiểu TopCV */
+    font-weight: bold;
+}
+
+.form-control {
+    height: 45px;
+    border-radius: 5px;
+}
+
+.btn-primary {
+    background-color: #00b14f;
+    border: none;
+    height: 45px;
+    font-weight: bold;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #009643;
+}
