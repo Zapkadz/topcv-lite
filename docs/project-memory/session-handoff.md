@@ -7,7 +7,7 @@
 ## TL;DR — Làm gì ngay?
 
 1. **Nhóm 2A đã PASS** — CSRF apply + profile hoàn tất.
-3. **Git:** ✅ 4 commit Phase 1; ✅ chuẩn bị GitHub (README, `db.local`, nhánh `main`, `docs/github-workflow.md`). **Chưa push** — cần tạo repo GitHub + `git remote` + `git push`.
+3. **Git:** ✅ Push `main` → [github.com/Zapkadz/topcv-lite](https://github.com/Zapkadz/topcv-lite) (remote `origin`).
 4. **Bước tiếp theo:** (1) Push `main` lên GitHub theo `docs/github-workflow.md` **hoặc** (2) confirm Nhóm 2B trên branch `feature/...`.
 5. **Tuân thủ quy trình:** mini-plan → confirm → sửa → test → log → project-memory → **Git checkpoint**.
 6. **Không chuyển Nhóm 2B** nếu user chưa duyệt mini-plan (checkpoint đã xong).
