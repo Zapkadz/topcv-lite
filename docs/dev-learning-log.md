@@ -158,3 +158,26 @@
 - Logo hợp lệ + chặn invalid: ✅ pass
 - Regression CSRF: ✅ pass
 - **Trạng thái nhóm: HOÀN TẤT — Phase 1 Critical Fixes đóng**
+
+## 2026-05-29 - Phase 1.1: Deadline, expiry, locations
+
+### Mục tiêu
+- Chặn employer đặt hạn nộp trong quá khứ.
+- Đồng bộ logic hết hạn (public apply, admin badge, employer manage).
+- Cập nhật 36 địa điểm (Nghị quyết 34 đơn vị + Remote + Khác) + admin CRUD.
+
+### Những gì đã thay đổi
+- `includes/job_rules.php` — `job_validate_deadline()`, `job_is_expired()`, `job_is_open_for_apply()`, `job_admin_status_badge_html()`.
+- Employer: validate + `min="<?= job_today_date() ?>"` trên `job-create.php`, `job-edit.php`.
+- Public: `job-detail.php` (banner + nút disabled), `apply.php` (check server).
+- Admin: `jobs.php` badge **Hết hạn**; `locations.php` CRUD + CSRF `admin_location_form`.
+- `employer/manage-jobs.php` dùng `job_is_expired()` (sửa bug so sánh `time()` vs midnight).
+- Seed: `docs/migrations/run-phase-1-1-locations.php` (UTF-8, Windows-safe); `topcv_lite.sql` 36 dòng.
+
+### Bài học rút ra
+- So sánh hết hạn nên dùng **ngày** (`Y-m-d`), không `strtotime` + `time()` — dễ coi hết hạn sớm trong ngày deadline.
+- Trên Windows, pipe file `.sql` tiếng Việt dễ hỏi encoding → chạy migration bằng PHP/PDO hoặc mysql với `--default-character-set=utf8mb4`.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- Deadline, expiry, locations, location picker, HTML mô tả (admin + job-edit CKEditor): ✅ pass
+- **Trạng thái: HOÀN TẤT — Phase 1.1 đóng**

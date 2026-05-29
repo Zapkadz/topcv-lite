@@ -150,6 +150,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <a href="categories.php" class="nav-link <?= $current_page == 'categories.php' ? 'active' : '' ?>">
                 <i class="fas fa-folder-open"></i> Danh mục ngành
             </a>
+            <a href="locations.php" class="nav-link <?= $current_page == 'locations.php' ? 'active' : '' ?>">
+                <i class="fas fa-map-marker-alt"></i> Địa điểm
+            </a>
             <a href="users.php" class="nav-link <?= $current_page == 'users.php' ? 'active' : '' ?>">
                 <i class="fas fa-users"></i> Người dùng
             </a>
