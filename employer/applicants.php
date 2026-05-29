@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP (Chạy trước khi xuất HTML) ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -19,6 +20,12 @@ $company_id = $company['id'];
 
 // 2. XỬ LÝ POST: Đổi trạng thái hồ sơ
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['app_id'])) {
+    if (!csrf_validate('employer_applicant_status_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: applicants.php');
+        exit();
+    }
     $status = $_POST['status'];
     $app_id = $_POST['app_id'];
 
@@ -151,6 +158,7 @@ $apps = $stmt->fetchAll();
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" class="modal-content shadow-lg border-0">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_applicant_status_form')) ?>">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">Cập nhật trạng thái ứng viên</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

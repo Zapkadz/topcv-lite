@@ -1,8 +1,15 @@
 <?php
+require_once __DIR__ . '/../includes/csrf.php';
 include 'includes/header.php';
 
 // --- XỬ LÝ POST (Duyệt hoặc Từ chối) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('admin_job_moderate_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: jobs.php');
+        exit();
+    }
     $job_id = $_POST['job_id'];
     $action = $_POST['action'];
 
@@ -149,6 +156,7 @@ $pending_jobs = array_filter($all_jobs, function ($j) {
 </div>
 
 <form id="approveForm" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('admin_job_moderate_form')) ?>">
     <input type="hidden" name="action" value="approve">
     <input type="hidden" name="job_id" id="approve_job_id">
 </form>
@@ -156,6 +164,7 @@ $pending_jobs = array_filter($all_jobs, function ($j) {
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('admin_job_moderate_form')) ?>">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">Từ chối tin tuyển dụng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

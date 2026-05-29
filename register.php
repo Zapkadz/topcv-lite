@@ -1,11 +1,15 @@
 <?php
 session_start();
 include 'config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('register_form', $_POST['csrf_token'] ?? '')) {
+        $error = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+    } else {
     $fullname = trim($_POST['fullname']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -49,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = "Có lỗi xảy ra, vui lòng thử lại!";
             }
         }
+    }
     }
 }
 ?>
@@ -106,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php endif; ?>
 
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('register_form')) ?>">
                 <label class="form-label fw-bold mb-2">Bạn là ai?</label>
                 <div class="role-selector">
                     <div class="role-option">

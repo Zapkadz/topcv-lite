@@ -1,7 +1,14 @@
 <?php
+require_once __DIR__ . '/../includes/csrf.php';
 include 'includes/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('admin_category_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: categories.php');
+        exit();
+    }
     if (isset($_POST['action']) && $_POST['action'] == 'add') {
         $name = $_POST['name'];
         $stmt = $conn->prepare("INSERT INTO categories (name) VALUES (?)");
@@ -67,6 +74,7 @@ $cats = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll();
 <div class="modal fade" id="addModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('admin_category_form')) ?>">
             <div class="modal-header"><h5 class="modal-title">Thêm danh mục</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <input type="hidden" name="action" value="add">
@@ -84,6 +92,7 @@ $cats = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll();
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('admin_category_form')) ?>">
             <div class="modal-header"><h5 class="modal-title">Sửa danh mục</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <input type="hidden" name="action" value="edit">

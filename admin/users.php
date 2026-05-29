@@ -1,8 +1,15 @@
 <?php
+require_once __DIR__ . '/../includes/csrf.php';
 include 'includes/header.php';
 
 // --- XỬ LÝ DUYỆT NTD ---
 if (isset($_POST['action']) && $_POST['action'] == 'approve_employer') {
+    if (!csrf_validate('admin_approve_employer_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: users.php');
+        exit();
+    }
     $user_id = $_POST['user_id'];
     // Cập nhật status = 1 (Kích hoạt)
     $stmt = $conn->prepare("UPDATE users SET status = 1 WHERE id = ?");
@@ -44,6 +51,7 @@ $users_active  = $conn->query("SELECT * FROM users WHERE NOT (role='employer' AN
                     <td><?= date('d/m/Y H:i', strtotime($u['created_at'])) ?></td>
                     <td>
                         <form method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('admin_approve_employer_form')) ?>">
                             <input type="hidden" name="action" value="approve_employer">
                             <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                             <button type="button" onclick="confirmApprove(this)" class="btn btn-success btn-sm fw-bold">

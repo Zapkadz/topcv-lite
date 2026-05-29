@@ -2,12 +2,19 @@
 // --- PHẦN 1: XỬ LÝ LOGIC (Đặt trên cùng) ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
 include 'auth_check.php'; // Kiểm tra quyền
 
 $user_id = $_SESSION['user_id'];
 
 // XỬ LÝ FORM KHI NGƯỜI DÙNG BẤM LƯU
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('employer_company_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: company.php');
+        exit();
+    }
     $name = $_POST['name'];
     $address = $_POST['address'];
     $description = $_POST['description'];
@@ -82,6 +89,7 @@ $company = $stmt->fetch();
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_company_form')) ?>">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Tên công ty</label>
                             <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($company['name'] ?? '') ?>" required>
