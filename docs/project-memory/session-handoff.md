@@ -6,11 +6,11 @@
 
 ## TL;DR — Làm gì ngay?
 
-1. **Phase 1 + 1.1 code xong** — chờ user test Phase 1.1.
-2. **Migration locations (nếu chưa):** `php docs/migrations/run-phase-1-1-locations.php`
-3. **Git:** User tự commit branch `feature/phase-1-1-job-logic` (AI không commit trừ khi được yêu cầu).
-4. User test xong → **「1.1 pass」** → mới bắt **Phase 2**.
-5. **Quy trình:** mini-plan → confirm → sửa → test → log → project-memory.
+1. **Phase 1 + 1.1** ✅ — user đã commit.
+2. **Docs chuẩn hóa pre-Phase 2** ✅ — `coding-conventions.md`, `pre-phase-2-structure-audit.md`, `architecture-standardization-plan.md`, `phase-2-mini-plan.md`.
+3. **Git docs (tuỳ chọn):** 1 commit docs trước khi code Phase 2.
+4. **Phase 2:** confirm `「xác nhận 2A」` → status model (xem `phase-2-mini-plan.md`).
+5. **Quy trình:** mini-plan → confirm → code → test → log → Git checkpoint.
 
 ---
 
