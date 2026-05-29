@@ -57,4 +57,4 @@ phase <số>: <nội dung chính>
 | Ngày | Scope | Test | Commit | Ghi chú |
 |------|-------|------|--------|---------|
 | 2026-05-29 | Nhóm 1+4+2A + docs audit | ✅ Pass | ✅ `94dda96` `f712836` `c3fd3b0` + docs commit | Init git, 4 commit tách (option B) |
-| 2026-05-29 | Chuẩn bị GitHub pro | — | ⏳ chore commit | README, db.local pattern, `main`, workflow doc |
+| 2026-05-29 | Chuẩn bị GitHub pro | — | ✅ `8ec806f` | README, db.local, `main`, PR template, php-lint CI |
