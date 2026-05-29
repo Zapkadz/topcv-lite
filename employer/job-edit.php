@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -41,6 +42,12 @@ $genders = ['Không yêu cầu', 'Nam', 'Nữ'];
 
 // 4. XỬ LÝ LƯU DỮ LIỆU (UPDATE)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('employer_job_edit_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header('Location: job-edit.php?id=' . $job_id . '&ref_page=' . $ref_page);
+        exit();
+    }
     // Lấy dữ liệu từ Form
     $title = trim($_POST['title']);
     $category_id = $_POST['category_id'];
@@ -112,6 +119,7 @@ include '../includes/header.php';
                     <?php endif; ?>
 
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_job_edit_form')) ?>">
                         <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">1. Thông tin chung</h6>
                         <div class="row">
                             <div class="col-md-12 mb-3">

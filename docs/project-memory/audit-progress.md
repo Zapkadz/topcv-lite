@@ -134,7 +134,9 @@
 - **Files:** `includes/csrf.php`, `job-detail.php`, `apply.php`, `candidate/profile.php`
 - **Test:** User confirmed pass 2026-05-29
 
-### Nhóm 2B — CSRF còn lại ⏳
+### Nhóm 2B — CSRF còn lại ✅
+- login, register, employer (company, job-create, job-edit, applicants), admin (users, jobs, categories)
+- Test pass 2026-05-29
 - Chưa bắt đầu — mini-plan trong `current-task.md`, chờ user confirm
 
 ### Nhóm 3 — Upload hardening ❌
@@ -156,8 +158,8 @@
 
 1. ~~Fix DB blocker~~ ✅
 2. ~~Complete test Nhóm 2A~~ ✅
-3. **User duyệt mini-plan Nhóm 2B** → implement CSRF form còn lại
-4. Test Nhóm 2B
+3. ~~Nhóm 2B~~ ✅
+4. **Mini-plan + Nhóm 3** upload hardening
 5. Mini-plan + implement Nhóm 3 (upload)
 5. **Đóng Phase 1** → chuyển Phase 2 Business Logic theo master roadmap
 6. **Không nhảy sang fix code** các finding audit khác nếu chưa qua mini-plan + user confirm

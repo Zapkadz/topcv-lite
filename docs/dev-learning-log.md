@@ -92,3 +92,43 @@
 ### Bài học rút ra
 - Migration trên DB đang chạy nên dùng file migration riêng, backup trước, verify sau ALTER.
 - Không chỉ sửa file `topcv_lite.sql` dump mà quên apply an toàn lên DB live.
+
+## 2026-05-29 - Phase 1 / Nhóm 2B: CSRF cho auth, employer, admin
+
+### Mục tiêu
+- Phủ CSRF cho toàn bộ form POST còn lại (login, register, employer, admin).
+
+### Những gì đã thay đổi
+- Tái sử dụng `includes/csrf.php` (helper từ Nhóm 2A).
+- **Auth:** `login.php` (`login_form`), `register.php` (`register_form`).
+- **Employer:** `company.php`, `job-create.php`, `job-edit.php`, `applicants.php` — mỗi form một `form_key` riêng.
+- **Admin:** `users.php` (duyệt NTD), `jobs.php` (duyệt/từ chối tin), `categories.php` (thêm/sửa danh mục).
+- Mỗi handler POST: `csrf_validate()` ở đầu; fail → thông báo "Phiên làm việc không hợp lệ..." + redirect.
+
+### `form_key` đã dùng
+| File | form_key |
+|------|----------|
+| login.php | `login_form` |
+| register.php | `register_form` |
+| employer/company.php | `employer_company_form` |
+| employer/job-create.php | `employer_job_create_form` |
+| employer/job-edit.php | `employer_job_edit_form` |
+| employer/applicants.php | `employer_applicant_status_form` |
+| admin/users.php | `admin_approve_employer_form` |
+| admin/jobs.php | `admin_job_moderate_form` |
+| admin/categories.php | `admin_category_form` |
+
+### Không nằm phạm vi 2B
+- `employer/manage-jobs.php` — xóa job bằng GET (sẽ xử lý POST+CSRF ở phase sau).
+- `admin/jobs.php`, `admin/categories.php` — xóa bằng GET.
+
+### Branch
+- `feature/phase-1-2b-csrf` → merge vào `main` qua PR.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- Auth (login/register): ✅ pass
+- Employer (company, job-create/edit, applicants): ✅ pass
+- Admin (users, jobs, categories): ✅ pass
+- CSRF sai/thiếu bị chặn: ✅ pass
+- Regression 2A (apply + profile): ✅ pass
+- **Trạng thái nhóm: HOÀN TẤT**

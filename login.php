@@ -1,6 +1,7 @@
 <?php
 // File: login.php
 include 'config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
 
 // Nếu đã đăng nhập rồi thì tự chuyển hướng
 if (isset($_SESSION['user_id'])) {
@@ -16,6 +17,9 @@ $error = '';
 
 // Xử lý khi nhấn nút Đăng nhập
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('login_form', $_POST['csrf_token'] ?? '')) {
+        $error = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+    } else {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
@@ -40,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     } else {
         $error = "Email hoặc mật khẩu không chính xác!";
+    }
     }
 }
 ?>
@@ -75,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 ?>
             <?php endif; ?>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('login_form')) ?>">
                 <div class="mb-3">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" placeholder="admin@topcv.local" required>

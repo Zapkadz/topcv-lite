@@ -41,6 +41,8 @@
 |------|----------|
 | `includes/csrf.php` | Helper CSRF: `csrf_token($form_key)`, `csrf_validate($form_key, $token)` dùng session + `hash_equals` |
 
+**Nhóm 2B:** CSRF trên `login.php`, `register.php`, `employer/company.php`, `job-create.php`, `job-edit.php`, `applicants.php`, `admin/users.php`, `jobs.php`, `categories.php` — ✅ test pass 2026-05-29.
+
 ---
 
 ## 4. Các file tài liệu đã tạo
@@ -114,7 +116,7 @@
 
 | Ưu tiên | Vấn đề | Ghi chú |
 |---------|--------|---------|
-| P1 | CSRF cho các form còn lại (Nhóm 2B) | ⏳ Chờ duyệt mini-plan trong `current-task.md` |
+| P1 | CSRF cho các form còn lại (Nhóm 2B) | ✅ Done (2026-05-29) |
 | P1 | Upload hardening (Nhóm 3) | MIME, size limit |
 | P1 | Schema drift companies (phone/email/scale) | Chưa làm |
 | P2 | Các phase 2–5 trong master roadmap | Chưa bắt đầu implement |
