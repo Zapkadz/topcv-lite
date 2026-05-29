@@ -3,6 +3,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/job_rules.php';
+require_once __DIR__ . '/../includes/location_picker.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -19,7 +21,7 @@ if (!$company) {
 
 // 2. Định nghĩa các mảng dữ liệu (Select box)
 $cats = $conn->query("SELECT * FROM categories")->fetchAll();
-$locs = $conn->query("SELECT * FROM locations")->fetchAll();
+$locs = $conn->query('SELECT * FROM locations ORDER BY name ASC')->fetchAll();
 
 $job_types = ['Toàn thời gian', 'Bán thời gian', 'Thực tập', 'Freelance', 'Remote'];
 $job_levels = ['Nhân viên', 'Thực tập sinh', 'Trưởng nhóm', 'Quản lý', 'Giám đốc'];
@@ -40,7 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $salary_range = trim($_POST['salary_range']);
     $quantity = intval($_POST['quantity']);
     $deadline = $_POST['deadline'];
-    
+    $deadlineCheck = job_validate_deadline($deadline);
+    if (!$deadlineCheck['ok']) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = $deadlineCheck['message'];
+        header('Location: job-create.php');
+        exit();
+    }
+
     // Các trường chọn
     $job_type = $_POST['job_type'];
     $job_level = $_POST['job_level'];
@@ -131,13 +140,7 @@ include '../includes/header.php';
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Địa điểm làm việc <span class="text-danger">*</span></label>
-                        <select name="location_id" class="form-select" required>
-                            <option value="">-- Chọn khu vực --</option>
-                            <?php foreach($locs as $l): ?>
-                                <option value="<?= $l['id'] ?>"><?= $l['name'] ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <?php location_picker_render($locs); ?>
                     </div>
                 </div>
 
@@ -148,7 +151,11 @@ include '../includes/header.php';
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Hạn nộp hồ sơ <span class="text-danger">*</span></label>
-                        <input type="date" name="deadline" class="form-control" required>
+                        <input type="date" name="deadline" class="form-control" min="<?= job_today_date() ?>" required
+                               title="<?= htmlspecialchars(job_deadline_past_message()) ?>"
+                               oninvalid="this.setCustomValidity('<?= htmlspecialchars(job_deadline_past_message(), ENT_QUOTES) ?>')"
+                               oninput="this.setCustomValidity('')">
+                        <div class="form-text text-muted">Phải là hôm nay hoặc một ngày sau — không nhập ngày trong quá khứ.</div>
                     </div>
                 </div>
 

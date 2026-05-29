@@ -4,6 +4,7 @@ session_start();
 include 'config/db.php';
 require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/upload_validate.php';
+require_once __DIR__ . '/includes/job_rules.php';
 
 // 1. Kiểm tra đăng nhập
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SESSION['user_id'])) {
@@ -33,6 +34,16 @@ if ($job_id <= 0 || !csrf_validate('apply_job_form', $_POST['csrf_token'] ?? '')
 }
 
 try {
+    $stmt_job = $conn->prepare('SELECT id, status, deadline FROM jobs WHERE id = ? LIMIT 1');
+    $stmt_job->execute([$job_id]);
+    $job_row = $stmt_job->fetch();
+    if (!$job_row || !job_is_open_for_apply($job_row)) {
+        $_SESSION['swal_icon'] = 'warning';
+        $_SESSION['swal_title'] = 'Tin tuyển dụng đã hết hạn hoặc không còn nhận hồ sơ.';
+        header("Location: job-detail.php?id=$job_id");
+        exit();
+    }
+
     // --- [BƯỚC QUAN TRỌNG: TÌM CANDIDATE ID] ---
     // Kiểm tra xem User này đã có hồ sơ Ứng viên trong bảng candidates chưa
     $stmt_cand = $conn->prepare("SELECT id, cv_path FROM candidates WHERE user_id = ?");

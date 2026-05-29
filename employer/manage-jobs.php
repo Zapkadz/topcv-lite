@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP (Xử lý dữ liệu) ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
+require_once __DIR__ . '/../includes/job_rules.php';
 include 'auth_check.php'; // Check login
 
 $user_id = $_SESSION['user_id'];
@@ -111,8 +112,8 @@ include '../includes/header.php';
                             <?php foreach ($jobs as $job): ?>
                                 <?php 
                                     // Xử lý logic hiển thị trạng thái
-                                    $deadline = strtotime($job['deadline']);
-                                    $is_expired = time() > $deadline;
+                                    $is_expired = job_is_expired($job['deadline']);
+                                    $deadline_ts = strtotime($job['deadline']);
                                     
                                     // URL sửa tin: Kèm theo ID và trang hiện tại (để back lại đúng chỗ)
                                     $edit_url = "job-edit.php?id=" . $job['id'] . "&ref_page=" . $page;
@@ -127,7 +128,7 @@ include '../includes/header.php';
                                         <small class="text-muted">
                                             <i class="far fa-clock"></i> Đăng: <?= date('d/m/Y', strtotime($job['created_at'])) ?>
                                             &bull; 
-                                            <i class="far fa-calendar-times"></i> Hết hạn: <span class="<?= $is_expired ? 'text-danger fw-bold' : '' ?>"><?= date('d/m/Y', $deadline) ?></span>
+                                            <i class="far fa-calendar-times"></i> Hết hạn: <span class="<?= $is_expired ? 'text-danger fw-bold' : '' ?>"><?= date('d/m/Y', $deadline_ts) ?></span>
                                         </small>
                                         
                                         <?php if($job['status'] == 'rejected' && !empty($job['admin_note'])): ?>

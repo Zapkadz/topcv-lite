@@ -167,11 +167,42 @@ CREATE TABLE `locations` (
 --
 
 INSERT INTO `locations` (`id`, `name`) VALUES
-(1, 'Hà Nội'),
-(2, 'Hồ Chí Minh'),
-(3, 'Đà Nẵng'),
-(4, 'Cần Thơ'),
-(5, 'Toàn Quốc');
+(1, 'TP. Hà Nội'),
+(2, 'TP. Hồ Chí Minh'),
+(3, 'TP. Đà Nẵng'),
+(4, 'TP. Cần Thơ'),
+(5, 'Remote'),
+(6, 'Tuyên Quang'),
+(7, 'Cao Bằng'),
+(8, 'Lào Cai'),
+(9, 'Lai Châu'),
+(10, 'Điện Biên'),
+(11, 'Sơn La'),
+(12, 'Lạng Sơn'),
+(13, 'Thái Nguyên'),
+(14, 'Phú Thọ'),
+(15, 'Bắc Ninh'),
+(16, 'Quảng Ninh'),
+(17, 'Hưng Yên'),
+(18, 'Ninh Bình'),
+(19, 'Thanh Hóa'),
+(20, 'Nghệ An'),
+(21, 'Hà Tĩnh'),
+(22, 'Quảng Trị'),
+(23, 'Quảng Ngãi'),
+(24, 'Gia Lai'),
+(25, 'Đắk Lắk'),
+(26, 'Khánh Hòa'),
+(27, 'Lâm Đồng'),
+(28, 'Đồng Nai'),
+(29, 'Tây Ninh'),
+(30, 'Đồng Tháp'),
+(31, 'Vĩnh Long'),
+(32, 'Cà Mau'),
+(33, 'An Giang'),
+(34, 'TP. Huế'),
+(35, 'TP. Hải Phòng'),
+(36, 'Khác');
 
 -- --------------------------------------------------------
 

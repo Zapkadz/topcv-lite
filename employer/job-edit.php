@@ -3,6 +3,9 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/job_rules.php';
+require_once __DIR__ . '/../includes/location_picker.php';
+require_once __DIR__ . '/../includes/html_content.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -31,7 +34,7 @@ if (!$job) {
 
 // 3. Chuẩn bị dữ liệu cho các Select Box
 $cats = $conn->query("SELECT * FROM categories")->fetchAll();
-$locs = $conn->query("SELECT * FROM locations")->fetchAll();
+$locs = $conn->query('SELECT * FROM locations ORDER BY name ASC')->fetchAll();
 
 // Các mảng dữ liệu cố định
 $job_types = ['Toàn thời gian', 'Bán thời gian', 'Thực tập', 'Freelance', 'Hợp đồng'];
@@ -62,6 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $gender = $_POST['gender'];
     $salary_range = trim($_POST['salary_range']);
     $deadline = $_POST['deadline'];
+    $deadlineCheck = job_validate_deadline($deadline);
+    if (!$deadlineCheck['ok']) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = $deadlineCheck['message'];
+        header('Location: job-edit.php?id=' . $job_id . '&ref_page=' . $ref_page);
+        exit();
+    }
     $description = $_POST['description'];
     $requirements = $_POST['requirements'];
     $benefits = $_POST['benefits'];
@@ -139,13 +149,7 @@ include '../includes/header.php';
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Khu vực làm việc <span class="text-danger">*</span></label>
-                                <select name="location_id" class="form-select" required>
-                                    <option value="">-- Chọn khu vực --</option>
-                                    <?php foreach($locs as $l): ?>
-                                        <option value="<?= $l['id'] ?>" <?= $l['id'] == $job['location_id'] ? 'selected' : '' ?>><?= $l['name'] ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <?php location_picker_render($locs, (int) $job['location_id'], 'location_id', 'Khu vực làm việc'); ?>
                             </div>
                         </div>
 
@@ -156,7 +160,11 @@ include '../includes/header.php';
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Hạn nộp hồ sơ <span class="text-danger">*</span></label>
-                                <input type="date" name="deadline" class="form-control" value="<?= date('Y-m-d', strtotime($job['deadline'])) ?>" required>
+                                <input type="date" name="deadline" class="form-control" min="<?= job_today_date() ?>" value="<?= date('Y-m-d', strtotime($job['deadline'])) ?>" required
+                                       title="<?= htmlspecialchars(job_deadline_past_message()) ?>"
+                                       oninvalid="this.setCustomValidity('<?= htmlspecialchars(job_deadline_past_message(), ENT_QUOTES) ?>')"
+                                       oninput="this.setCustomValidity('')">
+                                <div class="form-text text-muted">Phải là hôm nay hoặc một ngày sau — không nhập ngày trong quá khứ.</div>
                             </div>
                         </div>
 
@@ -212,17 +220,17 @@ include '../includes/header.php';
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Mô tả công việc <span class="text-danger">*</span></label>
-                            <textarea name="description" class="form-control" rows="5" required placeholder="Mô tả chi tiết các đầu việc..."><?= htmlspecialchars($job['description']) ?></textarea>
+                            <textarea name="description" id="description" class="form-control" required><?= textarea_editor_content($job['description'] ?? '') ?></textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Yêu cầu ứng viên</label>
-                            <textarea name="requirements" class="form-control" rows="4" placeholder="Kỹ năng chuyên môn, kỹ năng mềm..."><?= htmlspecialchars($job['requirements']) ?></textarea>
+                            <textarea name="requirements" id="requirements" class="form-control"><?= textarea_editor_content($job['requirements'] ?? '') ?></textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Quyền lợi được hưởng</label>
-                            <textarea name="benefits" class="form-control" rows="4" placeholder="Chế độ bảo hiểm, du lịch, thưởng..."><?= htmlspecialchars($job['benefits']) ?></textarea>
+                            <textarea name="benefits" id="benefits" class="form-control"><?= textarea_editor_content($job['benefits'] ?? '') ?></textarea>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
@@ -237,5 +245,17 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+<script>
+    const commonConfig = {
+        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'blockQuote', 'undo', 'redo'],
+        placeholder: 'Nhập nội dung chi tiết tại đây...'
+    };
+
+    ClassicEditor.create(document.querySelector('#description'), commonConfig).catch(console.error);
+    ClassicEditor.create(document.querySelector('#requirements'), commonConfig).catch(console.error);
+    ClassicEditor.create(document.querySelector('#benefits'), commonConfig).catch(console.error);
+</script>
 
 <?php include '../includes/footer.php'; ?>

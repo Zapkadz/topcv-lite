@@ -3,6 +3,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'config/db.php'; 
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/job_rules.php';
+require_once __DIR__ . '/includes/html_content.php';
 include 'includes/header.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -30,6 +32,9 @@ $sql = "SELECT j.*, c.name as company_name, c.logo, c.address as company_address
 $stmt = $conn->prepare($sql);
 $stmt->execute([$job_id]);
 $job = $stmt->fetch();
+
+$job_expired = $job ? job_is_expired($job['deadline']) : false;
+$job_open_for_apply = $job ? job_is_open_for_apply($job) : false;
 
 if (!$job) {
     echo "<div class='container py-5 text-center'>
@@ -80,6 +85,12 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
             </ol>
         </nav>
         
+        <?php if ($job_expired): ?>
+        <div class="alert alert-warning mt-3 mb-0 py-2 small">
+            <i class="fas fa-exclamation-triangle me-1"></i> Tin tuyển dụng đã hết hạn nộp hồ sơ (hạn: <?= date('d/m/Y', strtotime($job['deadline'])) ?>).
+        </div>
+        <?php endif; ?>
+
         <div class="row align-items-center mt-3">
             <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
                 <img src="<?= !empty($job['logo']) ? $job['logo'] : 'uploads/default-logo.png' ?>" 
@@ -99,6 +110,10 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
                     <button class="btn btn-secondary w-100 disabled">Dành cho ứng viên</button>
                 <?php elseif ($has_applied): ?>
                     <button class="btn btn-success w-100 disabled"><i class="fas fa-check-circle"></i> Đã ứng tuyển</button>
+                <?php elseif ($job_expired): ?>
+                    <button class="btn btn-secondary w-100 disabled">Tin đã hết hạn nộp hồ sơ</button>
+                <?php elseif ($job['status'] !== 'approved'): ?>
+                    <button class="btn btn-secondary w-100 disabled">Tin chưa được duyệt</button>
                 <?php elseif (!isset($_SESSION['user_id'])): ?>
                     <a href="login.php" class="btn btn-primary w-100 px-4 fw-bold">Đăng nhập để ứng tuyển</a>
                 <?php else: ?>
@@ -131,18 +146,18 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
                     </div>
 
                     <div class="content-label">Mô tả công việc</div>
-                    <div class="text-secondary text-justify">
-                        <?= nl2br(htmlspecialchars($job['description'])) ?>
+                    <div class="text-secondary text-justify job-html-content">
+                        <?= html_display($job['description'] ?? '') ?>
                     </div>
 
                     <div class="content-label">Yêu cầu ứng viên</div>
-                    <div class="text-secondary text-justify">
-                        <?= nl2br(htmlspecialchars($job['requirements'])) ?>
+                    <div class="text-secondary text-justify job-html-content">
+                        <?= html_display($job['requirements'] ?? '') ?>
                     </div>
 
                     <div class="content-label">Quyền lợi được hưởng</div>
-                    <div class="text-secondary text-justify">
-                        <?= nl2br(htmlspecialchars($job['benefits'])) ?>
+                    <div class="text-secondary text-justify job-html-content">
+                        <?= html_display($job['benefits'] ?? '') ?>
                     </div>
 
                     <div class="content-label">Địa điểm làm việc</div>
@@ -222,7 +237,7 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
     </div>
 </div>
 
-<?php if ($user_role == 'candidate' && !$has_applied): ?>
+<?php if ($user_role == 'candidate' && !$has_applied && $job_open_for_apply): ?>
 <div class="modal fade" id="applyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="apply.php" method="POST" enctype="multipart/form-data" class="modal-content">

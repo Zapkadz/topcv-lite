@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/job_rules.php';
+require_once __DIR__ . '/../includes/html_content.php';
 include 'includes/header.php';
 
 // --- XỬ LÝ POST (Duyệt hoặc Từ chối) ---
@@ -103,7 +105,7 @@ $pending_jobs = array_filter($all_jobs, function ($j) {
                         </div>
                         <div class="mt-3 bg-light p-3 rounded">
                             <strong>Mô tả:</strong> <br>
-                            <?= nl2br(htmlspecialchars(substr($job['description'], 0, 300))) ?>...
+                            <?= nl2br(htmlspecialchars(html_to_plain($job['description'] ?? '', 300))) ?>
                         </div>
                     </div>
                 </div>
@@ -131,14 +133,7 @@ $pending_jobs = array_filter($all_jobs, function ($j) {
                         <td><strong><?= htmlspecialchars($job['title']) ?></strong></td>
                         <td><?= htmlspecialchars($job['company_name']) ?></td>
                         <td><?= date('d/m/Y', strtotime($job['created_at'])) ?></td>
-                        <td>
-                            <?php
-                            if ($job['status'] == 'approved') echo '<span class="badge bg-success">Đang hiện</span>';
-                            elseif ($job['status'] == 'pending') echo '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
-                            elseif ($job['status'] == 'rejected') echo '<span class="badge bg-danger">Đã từ chối</span>';
-                            elseif ($job['status'] == 'hidden') echo '<span class="badge bg-secondary">Đã ẩn</span>';
-                            ?>
-                        </td>
+                        <td><?= job_admin_status_badge_html($job) ?></td>
                         <td class="text-danger small fst-italic"><?= htmlspecialchars($job['admin_note'] ?? '') ?></td>
                         <td>
                             <button onclick="viewJobDetail(<?= $job['id'] ?>)" class="btn btn-sm btn-info text-white me-1">
@@ -301,10 +296,15 @@ $pending_jobs = array_filter($all_jobs, function ($j) {
                     safeSet('m-deadline', new Date(data.deadline).toLocaleDateString('vi-VN'));
                 }
 
-                // Gán các phần nội dung dài (HTML từ CKEditor)
-                safeSet('m-description', data.description, true);
-                safeSet('m-requirements', data.requirements, true);
-                safeSet('m-benefits', data.benefits, true);
+                // Gán các phần nội dung dài (HTML từ CKEditor — render, không escape)
+                const renderHtml = (html) => {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html || '';
+                    return tmp.innerHTML || 'Chưa cập nhật';
+                };
+                safeSet('m-description', renderHtml(data.description), true);
+                safeSet('m-requirements', renderHtml(data.requirements), true);
+                safeSet('m-benefits', renderHtml(data.benefits), true);
 
                 // Xử lý logo
                 const imgEl = document.getElementById('m-logo');

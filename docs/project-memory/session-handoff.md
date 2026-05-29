@@ -6,41 +6,37 @@
 
 ## TL;DR — Làm gì ngay?
 
-1. **Nhóm 2A đã PASS** — CSRF apply + profile hoàn tất.
-3. **Git:** ✅ Push `main` → [github.com/Zapkadz/topcv-lite](https://github.com/Zapkadz/topcv-lite) (remote `origin`).
-4. **Phase 1 đã xong.** Bước tiếp: chọn scope **Phase 2** từ master roadmap.
-5. **Tuân thủ quy trình:** mini-plan → confirm → sửa → test → log → project-memory → **Git checkpoint**.
-6. **Không chuyển Nhóm 2B** nếu user chưa duyệt mini-plan (checkpoint đã xong).
+1. **Phase 1 + 1.1 code xong** — chờ user test Phase 1.1.
+2. **Migration locations (nếu chưa):** `php docs/migrations/run-phase-1-1-locations.php`
+3. **Git:** User tự commit branch `feature/phase-1-1-job-logic` (AI không commit trừ khi được yêu cầu).
+4. User test xong → **「1.1 pass」** → mới bắt **Phase 2**.
+5. **Quy trình:** mini-plan → confirm → sửa → test → log → project-memory.
 
 ---
 
-## Phase 1 progress
+## Phase progress
 
-| Nhóm | Status |
-|------|--------|
-| 1 UNIQUE apply | ✅ |
-| 4 profile `$profile` | ✅ |
-| 2A CSRF apply+profile | ✅ |
-| 2B CSRF còn lại | ✅ |
-| 3 Upload hardening | ✅ |
+| Phase | Status |
+|-------|--------|
+| 1 Critical (1,4,2A,2B,3) | ✅ |
+| 1.1 Job logic (deadline, expiry, locations) | ✅ code — ⏳ user test |
+| 2 | Chưa |
 
 ---
 
 ## Prompt gợi ý (chat mới)
 
 ```
-Đọc docs/project-memory/session-handoff.md.
-Nhóm 2A đã pass. Tiếp tục Phase 1 — gửi/confirm mini-plan Nhóm 2B CSRF.
-Tuân thủ: mini-plan → confirm → sửa → test → log. Tiếng Việt.
+Đọc docs/project-memory/session-handoff.md và current-task.md.
+Phase 1.1 đã code — user test / fix nếu fail. Sau 「1.1 pass」 → Phase 2.
+Tiếng Việt. User tự git commit.
 ```
 
 ---
 
 ## File map
 
-- `current-task.md` — mini-plan Nhóm 2B chi tiết
-- `current-state.md` — snapshot dự án
-- `audit-progress.md` — tiến độ audit + implement
-- `known-blockers.md` — không còn active blocker
-- `git-checkpoint-workflow.md` — quy trình commit sau mỗi phase/nhóm
-- `docs/github-workflow.md` — branch, PR, push GitHub
+- `current-task.md` — trạng thái + lệnh git gợi ý
+- `docs/phase-1-1-plan.md` — checklist test 1.1
+- `includes/job_rules.php` — deadline + expiry helpers
+- `docs/migrations/run-phase-1-1-locations.php` — seed locations UTF-8
