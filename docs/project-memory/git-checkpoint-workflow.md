@@ -46,7 +46,9 @@ phase <số>: <nội dung chính>
 
 - ~~Tính đến 2026-05-29: thư mục **chưa có** `.git`~~ — đã `git init` 2026-05-29; 4 commit option B (nhóm 1, 4, 2A, docs).
 - Không commit file nhạy cảm: `.env`, credential, dump DB có password thật.
-- `uploads/cv/*.pdf` — cân nhắc `.gitignore` nếu là file test local.
+- `uploads/cv/*`, `uploads/logos/*` — đã gitignore; giữ thư mục bằng `.gitkeep`.
+- `config/db.local.php` — override local, không commit; mẫu: `config/db.example.php`.
+- Quy trình GitHub (branch, PR, push): `docs/github-workflow.md`.
 
 ---
 
@@ -55,3 +57,4 @@ phase <số>: <nội dung chính>
 | Ngày | Scope | Test | Commit | Ghi chú |
 |------|-------|------|--------|---------|
 | 2026-05-29 | Nhóm 1+4+2A + docs audit | ✅ Pass | ✅ `94dda96` `f712836` `c3fd3b0` + docs commit | Init git, 4 commit tách (option B) |
+| 2026-05-29 | Chuẩn bị GitHub pro | — | ⏳ chore commit | README, db.local pattern, `main`, workflow doc |

@@ -1,0 +1,25 @@
+name: PHP Lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: none
+
+      - name: Syntax check PHP files
+        run: |
+          find . -name '*.php' \
+            ! -path './_git_staging_backup/*' \
+            -print0 | xargs -0 -n1 php -l

@@ -7,8 +7,8 @@
 ## TL;DR — Làm gì ngay?
 
 1. **Nhóm 2A đã PASS** — CSRF apply + profile hoàn tất.
-3. **Git checkpoint:** ✅ Init git + 4 commit option B (2026-05-29). Xem `git log --oneline`.
-4. **Bước tiếp theo:** User duyệt mini-plan Nhóm 2B → implement CSRF form còn lại.
+3. **Git:** ✅ 4 commit Phase 1; ✅ chuẩn bị GitHub (README, `db.local`, nhánh `main`, `docs/github-workflow.md`). **Chưa push** — cần tạo repo GitHub + `git remote` + `git push`.
+4. **Bước tiếp theo:** (1) Push `main` lên GitHub theo `docs/github-workflow.md` **hoặc** (2) confirm Nhóm 2B trên branch `feature/...`.
 5. **Tuân thủ quy trình:** mini-plan → confirm → sửa → test → log → project-memory → **Git checkpoint**.
 6. **Không chuyển Nhóm 2B** nếu user chưa duyệt mini-plan (checkpoint đã xong).
 
@@ -43,3 +43,4 @@ Tuân thủ: mini-plan → confirm → sửa → test → log. Tiếng Việt.
 - `audit-progress.md` — tiến độ audit + implement
 - `known-blockers.md` — không còn active blocker
 - `git-checkpoint-workflow.md` — quy trình commit sau mỗi phase/nhóm
+- `docs/github-workflow.md` — branch, PR, push GitHub
