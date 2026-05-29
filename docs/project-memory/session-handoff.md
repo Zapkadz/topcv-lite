@@ -8,7 +8,7 @@
 
 1. **Nhóm 2A đã PASS** — CSRF apply + profile hoàn tất.
 3. **Git:** ✅ Push `main` → [github.com/Zapkadz/topcv-lite](https://github.com/Zapkadz/topcv-lite) (remote `origin`).
-4. **Bước tiếp theo:** Duyệt mini-plan **Nhóm 3** (upload hardening) → confirm → implement.
+4. **Phase 1 đã xong.** Bước tiếp: chọn scope **Phase 2** từ master roadmap.
 5. **Tuân thủ quy trình:** mini-plan → confirm → sửa → test → log → project-memory → **Git checkpoint**.
 6. **Không chuyển Nhóm 2B** nếu user chưa duyệt mini-plan (checkpoint đã xong).
 
@@ -22,7 +22,7 @@
 | 4 profile `$profile` | ✅ |
 | 2A CSRF apply+profile | ✅ |
 | 2B CSRF còn lại | ✅ |
-| 3 Upload hardening | ⏳ chờ mini-plan |
+| 3 Upload hardening | ✅ |
 
 ---
 

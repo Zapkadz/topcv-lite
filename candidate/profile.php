@@ -3,6 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php'; // Cần include db trước để dùng biến $conn
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/upload_validate.php';
 
 // Bảo mật: Chỉ candidate mới được vào
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'candidate') {
@@ -34,17 +35,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // Xử lý Upload CV
     $cv_path = null;
-    if (isset($_FILES['cv_file']) && $_FILES['cv_file']['error'] == 0) {
-        $allowed = ['pdf', 'doc', 'docx'];
-        $ext = strtolower(pathinfo($_FILES['cv_file']['name'], PATHINFO_EXTENSION));
-        
-        if (in_array($ext, $allowed)) {
-            $new_name = "cv_base_" . $user_id . "_" . time() . "." . $ext;
-            $dest = "../uploads/cv/" . $new_name;
-            if (move_uploaded_file($_FILES['cv_file']['tmp_name'], $dest)) {
-                $cv_path = "uploads/cv/" . $new_name;
-            }
+    if (isset($_FILES['cv_file']) && $_FILES['cv_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $cvCheck = upload_validate($_FILES['cv_file'], 'cv');
+        if (!$cvCheck['ok']) {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = $cvCheck['message'];
+            header('Location: profile.php');
+            exit();
         }
+
+        $upload_dir = '../uploads/cv/';
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
+        $ext = $cvCheck['extension'];
+        $new_name = 'cv_base_' . $user_id . '_' . time() . '.' . $ext;
+        $dest = $upload_dir . $new_name;
+        if (!move_uploaded_file($_FILES['cv_file']['tmp_name'], $dest)) {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Lỗi không thể lưu file CV lên server.';
+            header('Location: profile.php');
+            exit();
+        }
+        $cv_path = 'uploads/cv/' . $new_name;
     }
 
     // Kiểm tra xem đã có bản ghi trong bảng candidates chưa

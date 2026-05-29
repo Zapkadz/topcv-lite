@@ -3,6 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/upload_validate.php';
 include 'auth_check.php'; // Kiểm tra quyền
 
 $user_id = $_SESSION['user_id'];
@@ -21,20 +22,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // Xử lý Logo
     $logo_path = null;
-    if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-        $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-        $new_name = "company_" . $user_id . "_" . time() . "." . $ext;
-        
-        // Tự động tạo thư mục nếu chưa có (Tránh lỗi move_uploaded_file)
-        $upload_dir = "../uploads/logos/";
+    if (isset($_FILES['logo']) && $_FILES['logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $logoCheck = upload_validate($_FILES['logo'], 'image');
+        if (!$logoCheck['ok']) {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = $logoCheck['message'];
+            header('Location: company.php');
+            exit();
+        }
+
+        $upload_dir = '../uploads/logos/';
         if (!file_exists($upload_dir)) {
             mkdir($upload_dir, 0777, true);
         }
-        
+
+        $ext = $logoCheck['extension'];
+        $new_name = 'company_' . $user_id . '_' . time() . '.' . $ext;
         $dest = $upload_dir . $new_name;
-        if (move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
-            $logo_path = "uploads/logos/" . $new_name;
+        if (!move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Lỗi không thể lưu logo lên server.';
+            header('Location: company.php');
+            exit();
         }
+        $logo_path = 'uploads/logos/' . $new_name;
     }
 
     // Kiểm tra xem user đã có công ty chưa để Insert hoặc Update
