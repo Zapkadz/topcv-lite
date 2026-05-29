@@ -60,4 +60,4 @@ phase <số>: <nội dung chính>
 | 2026-05-29 | Chuẩn bị GitHub pro | — | ✅ `8ec806f` | README, db.local, `main`, PR template, php-lint CI |
 | 2026-05-29 | Push GitHub | — | ✅ `origin/main` | https://github.com/Zapkadz/topcv-lite |
 | 2026-05-29 | Nhóm 2B CSRF | ✅ Pass | ✅ `61d8442` | PR → `main` |
-| 2026-05-29 | Nhóm 3 upload | ✅ Pass | ⏳ commit push | branch `feature/phase-1-3-upload` |
+| 2026-05-29 | Nhóm 3 upload | ✅ Pass | ✅ `0deca19` | Phase 1 đóng — PR `feature/phase-1-3-upload` |
