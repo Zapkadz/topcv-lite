@@ -132,3 +132,29 @@
 - CSRF sai/thiếu bị chặn: ✅ pass
 - Regression 2A (apply + profile): ✅ pass
 - **Trạng thái nhóm: HOÀN TẤT**
+
+## 2026-05-29 - Phase 1 / Nhóm 3: Upload hardening (CV + logo)
+
+### Mục tiêu
+- Kiểm extension + MIME thật (`finfo`) + giới hạn dung lượng cho upload CV và logo.
+
+### Những gì đã thay đổi
+- Tạo `includes/upload_validate.php` — `upload_validate($file, $kind)` với `$kind` = `cv` | `image`.
+- **CV** (`apply.php`, `candidate/profile.php`): pdf/doc/docx, MIME whitelist, tối đa **5MB**.
+- **Logo** (`employer/company.php`): jpg/jpeg/png/webp, tối đa **2MB**.
+- Profile/company: lỗi upload hiển thị SweetAlert (không im lặng); logo/CV invalid → **không lưu** form lần đó.
+- `apply.php`: giữ flow copy CV online (snapshot); chỉ harden nhánh upload file mới.
+
+### Bài học rút ra
+- Chỉ check đuôi file không đủ — phải đọc MIME từ nội dung file bằng `finfo_file()`.
+- Nên gom rule upload vào một helper để đồng bộ giới hạn và thông báo lỗi.
+
+### Branch
+- `feature/phase-1-3-upload` → merge `main` qua PR.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- CV hợp lệ (profile, apply upload, apply online): ✅ pass
+- Chặn file giả đuôi / quá size / MIME sai: ✅ pass
+- Logo hợp lệ + chặn invalid: ✅ pass
+- Regression CSRF: ✅ pass
+- **Trạng thái nhóm: HOÀN TẤT — Phase 1 Critical Fixes đóng**

@@ -15,7 +15,7 @@
 | **Giai đoạn 4** | AI logic review → `ai-system-review.md`, `ai-improvement-roadmap.md` | ✅ Hoàn thành |
 | **Giai đoạn 5** | Production readiness → `production-readiness-report.md` | ✅ Hoàn thành |
 | **Giai đoạn 6** | Master roadmap → `master-refactor-roadmap.md` | ✅ Hoàn thành |
-| **Implement Phase 1** | Critical fixes thực tế | 🔄 Đang làm (3/5 nhóm có tiến độ) |
+| **Implement Phase 1** | Critical fixes thực tế | ✅ Hoàn tất (2026-05-29) |
 
 **Kết luận audit:** Dự án phù hợp MVP/demo, **chưa production-ready**. AI modules **chưa tồn tại trong code**.
 
@@ -106,7 +106,7 @@
 
 | Phase | Mục tiêu | Trạng thái |
 |-------|----------|------------|
-| Phase 1 Critical Fixes | Security + data integrity + runtime bugs | 🔄 In progress |
+| Phase 1 Critical Fixes | Security + data integrity + runtime bugs | ✅ Done |
 | Phase 2 Business Logic | Status model, soft delete, saved jobs, noti | ❌ Not started |
 | Phase 3 Performance & Scale | Index, cache, queue, search engine | ❌ |
 | Phase 4 AI Improvements | Parsing, matching, recommendation | ❌ |
@@ -139,8 +139,9 @@
 - Test pass 2026-05-29
 - Chưa bắt đầu — mini-plan trong `current-task.md`, chờ user confirm
 
-### Nhóm 3 — Upload hardening ❌
-- Chưa bắt đầu
+### Nhóm 3 — Upload hardening ✅
+- `includes/upload_validate.php` + apply/profile/company
+- Test pass 2026-05-29
 
 ---
 
@@ -159,9 +160,8 @@
 1. ~~Fix DB blocker~~ ✅
 2. ~~Complete test Nhóm 2A~~ ✅
 3. ~~Nhóm 2B~~ ✅
-4. **Mini-plan + Nhóm 3** upload hardening
-5. Mini-plan + implement Nhóm 3 (upload)
-5. **Đóng Phase 1** → chuyển Phase 2 Business Logic theo master roadmap
+4. ~~Phase 1~~ ✅
+5. **Phase 2** — chọn scope từ `master-refactor-roadmap.md` → mini-plan → implement
 6. **Không nhảy sang fix code** các finding audit khác nếu chưa qua mini-plan + user confirm
 
 ---

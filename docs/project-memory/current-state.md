@@ -40,6 +40,7 @@
 | File | Mục đích |
 |------|----------|
 | `includes/csrf.php` | Helper CSRF: `csrf_token($form_key)`, `csrf_validate($form_key, $token)` dùng session + `hash_equals` |
+| `includes/upload_validate.php` | Helper upload: `upload_validate($file, 'cv'|'image')` — extension, MIME, size |
 
 **Nhóm 2B:** CSRF trên `login.php`, `register.php`, `employer/company.php`, `job-create.php`, `job-edit.php`, `applicants.php`, `admin/users.php`, `jobs.php`, `categories.php` — ✅ test pass 2026-05-29.
 
@@ -89,7 +90,7 @@
 
 ### High
 - `$profile` chưa khởi tạo ở `candidate/profile.php` *(đã fix)*
-- Upload chỉ check extension, không check MIME/size
+- ~~Upload chỉ check extension~~ — Nhóm 3: MIME + size qua `upload_validate.php` ✅
 - Auth check không đồng nhất giữa các route
 - Không có AI thật dù product positioning có AI
 
@@ -117,7 +118,7 @@
 | Ưu tiên | Vấn đề | Ghi chú |
 |---------|--------|---------|
 | P1 | CSRF cho các form còn lại (Nhóm 2B) | ✅ Done (2026-05-29) |
-| P1 | Upload hardening (Nhóm 3) | MIME, size limit |
+| P1 | Upload hardening (Nhóm 3) | ✅ Done (2026-05-29) |
 | P1 | Schema drift companies (phone/email/scale) | Chưa làm |
 | P2 | Các phase 2–5 trong master roadmap | Chưa bắt đầu implement |
 
@@ -134,7 +135,7 @@
 ## 9. Các test chưa thực hiện
 
 - Nhóm 2B CSRF (login, register, employer/*, admin/*).
-- Nhóm 3 upload hardening.
+- ~~Nhóm 3 upload hardening~~ ✅ — Phase 1 đóng.
 
 ---
 

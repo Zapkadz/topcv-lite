@@ -3,6 +3,7 @@
 session_start();
 include 'config/db.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/upload_validate.php';
 
 // 1. Kiểm tra đăng nhập
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SESSION['user_id'])) {
@@ -62,30 +63,24 @@ try {
 
     // 3. Xử lý file CV
     if ($cv_type == 'upload') {
-        // Trường hợp upload file mới
-        if (isset($_FILES['new_cv']) && $_FILES['new_cv']['error'] == 0) {
-            // Tạo thư mục nếu chưa có
-            $target_dir = "uploads/cv/";
-            if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-
-            $ext = strtolower(pathinfo($_FILES['new_cv']['name'], PATHINFO_EXTENSION));
-            $allowed = ['pdf', 'doc', 'docx'];
-            
-            if (!in_array($ext, $allowed)) {
-                throw new Exception("Chỉ chấp nhận file PDF, DOC, DOCX");
-            }
-
-            $new_name = "cv_apply_" . $candidate_id . "_" . $job_id . "_" . time() . "." . $ext;
-            $dest = $target_dir . $new_name; 
-            
-            if(move_uploaded_file($_FILES['new_cv']['tmp_name'], $dest)) {
-                $final_cv_path = $dest;
-            } else {
-                throw new Exception("Lỗi không thể lưu file CV lên server.");
-            }
-        } else {
-            throw new Exception("Vui lòng chọn file CV để tải lên.");
+        $cvCheck = upload_validate($_FILES['new_cv'] ?? [], 'cv');
+        if (!$cvCheck['ok']) {
+            throw new Exception($cvCheck['message']);
         }
+
+        $target_dir = 'uploads/cv/';
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+
+        $ext = $cvCheck['extension'];
+        $new_name = 'cv_apply_' . $candidate_id . '_' . $job_id . '_' . time() . '.' . $ext;
+        $dest = $target_dir . $new_name;
+
+        if (!move_uploaded_file($_FILES['new_cv']['tmp_name'], $dest)) {
+            throw new Exception('Lỗi không thể lưu file CV lên server.');
+        }
+        $final_cv_path = $dest;
     } else {
         // Trường hợp dùng CV Online
         if ($original_cv && file_exists($original_cv)) {
