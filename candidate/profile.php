@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC KIỂM TRA & XỬ LÝ (Chạy trước khi xuất HTML) ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php'; // Cần include db trước để dùng biến $conn
+require_once __DIR__ . '/../includes/csrf.php';
 
 // Bảo mật: Chỉ candidate mới được vào
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'candidate') {
@@ -21,6 +22,13 @@ if (!$profile) {
 
 // Xử lý CẬP NHẬT HỒ SƠ
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!csrf_validate('candidate_profile_form', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+        header("Location: profile.php");
+        exit();
+    }
+
     $title = $_POST['title'];
     $bio = $_POST['bio'];
     
@@ -83,6 +91,7 @@ include '../includes/header.php';
                 </div>
                 <div class="card-body p-5">
                     <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('candidate_profile_form')) ?>">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Vị trí mong muốn / Chức danh</label>
                             <input type="text" name="title" class="form-control" placeholder="VD: Senior PHP Developer" value="<?= htmlspecialchars($profile['title'] ?? '') ?>">

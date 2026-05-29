@@ -2,6 +2,7 @@
 // File: apply.php
 session_start();
 include 'config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
 
 // 1. Kiểm tra đăng nhập
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SESSION['user_id'])) {
@@ -18,10 +19,17 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'employer') {
 }
 
 $user_id = $_SESSION['user_id'];
-$job_id = $_POST['job_id'];
+$job_id = isset($_POST['job_id']) ? (int)$_POST['job_id'] : 0;
 $cv_type = $_POST['cv_type']; // 'online' hoặc 'upload'
 $cover_letter = $_POST['cover_letter'];
 $final_cv_path = '';
+
+if ($job_id <= 0 || !csrf_validate('apply_job_form', $_POST['csrf_token'] ?? '')) {
+    $_SESSION['swal_icon'] = 'error';
+    $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
+    header("Location: index.php");
+    exit();
+}
 
 try {
     // --- [BƯỚC QUAN TRỌNG: TÌM CANDIDATE ID] ---

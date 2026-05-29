@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'config/db.php'; 
+require_once __DIR__ . '/includes/csrf.php';
 include 'includes/header.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -231,6 +232,7 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
             </div>
             <div class="modal-body">
                 <input type="hidden" name="job_id" value="<?= $job['id'] ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('apply_job_form')) ?>">
                 
                 <p class="small text-muted mb-3">Vui lòng kiểm tra kỹ thông tin trước khi ứng tuyển.</p>
 
