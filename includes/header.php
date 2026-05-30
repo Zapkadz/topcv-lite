@@ -5,8 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Kết nối DB
-include __DIR__ . '/../config/db.php'; 
-$base_url = '/topcv_lite/'; 
+include __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/user_status.php';
+require_once __DIR__ . '/repositories/UserRepository.php';
+$base_url = '/topcv_lite/';
+if (!defined('BASE_URL')) {
+    define('BASE_URL', $base_url);
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -59,12 +64,13 @@ $base_url = '/topcv_lite/';
             </ul>
             
             <div class="d-flex align-items-center gap-2">
-                <?php if(isset($_SESSION['user_id'])): ?>
-                    <?php 
-                        // Lấy trạng thái duyệt của User hiện tại
-                        $stmt = $conn->prepare("SELECT status FROM users WHERE id = ?");
-                        $stmt->execute([$_SESSION['user_id']]);
-                        $current_status = $stmt->fetchColumn(); 
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <?php
+                        $headerUser = UserRepository::findById($conn, (int) $_SESSION['user_id']);
+                        $employerPanelOk = $headerUser && user_can_use_employer_panel($headerUser);
+                        $employerPending = $headerUser
+                            && ($headerUser['role'] ?? '') === 'employer'
+                            && ($headerUser['employer_approval_status'] ?? '') === 'pending';
                     ?>
 
                     <div class="dropdown">
@@ -74,20 +80,24 @@ $base_url = '/topcv_lite/';
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end mt-2" style="min-width: 260px;">
                             
-                            <?php if($_SESSION['role'] == 'employer'): ?>
-                                <?php if($current_status == 1): ?>
+                            <?php if ($_SESSION['role'] == 'employer'): ?>
+                                <?php if ($employerPanelOk): ?>
                                     <li><a class="dropdown-item text-primary fw-bold" href="<?= $base_url ?>employer/dashboard.php">
                                         <i class="fas fa-chart-line me-2"></i> Trang Nhà tuyển dụng
                                     </a></li>
                                     <li><a class="dropdown-item" href="<?= $base_url ?>employer/job-create.php">
                                         <i class="fas fa-plus-circle me-2"></i> Đăng tin mới
                                     </a></li>
-                                <?php else: ?>
+                                <?php elseif ($employerPending): ?>
                                     <li><div class="dropdown-item bg-warning bg-opacity-10 text-warning fw-bold">
                                         <i class="fas fa-clock me-2"></i> Đang chờ duyệt...
                                     </div></li>
                                     <li><div class="dropdown-item small text-muted text-wrap fst-italic">
                                         Tài khoản cần Admin duyệt mới được đăng tin.
+                                    </div></li>
+                                <?php else: ?>
+                                    <li><div class="dropdown-item small text-muted text-wrap fst-italic">
+                                        Tài khoản Nhà tuyển dụng chưa được kích hoạt.
                                     </div></li>
                                 <?php endif; ?>
 

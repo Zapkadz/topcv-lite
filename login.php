@@ -1,50 +1,54 @@
 <?php
-// File: login.php
+session_start();
 include 'config/db.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/repositories/UserRepository.php';
+require_once __DIR__ . '/includes/services/UserModerationService.php';
 
-// Nếu đã đăng nhập rồi thì tự chuyển hướng
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] == 'admin') {
-        header("Location: admin/index.php");
+        header('Location: admin/index.php');
     } else {
-        header("Location: index.php");
+        header('Location: index.php');
     }
     exit();
 }
 
 $error = '';
 
-// Xử lý khi nhấn nút Đăng nhập
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!csrf_validate('login_form', $_POST['csrf_token'] ?? '')) {
         $error = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
     } else {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+        $email = trim($_POST['email']);
+        $password = $_POST['password'];
 
-    // 1. Tìm user theo email
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+        $user = UserRepository::findByEmail($conn, $email);
 
-    // 2. Kiểm tra mật khẩu (password_verify so sánh pass nhập vào với mã hash trong DB)
-    if ($user && password_verify($password, $user['password'])) {
-        // Đăng nhập thành công -> Lưu session
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['fullname'] = $user['fullname'];
-        $_SESSION['role'] = $user['role'];
+        if ($user && password_verify($password, $user['password'])) {
+            $access = UserModerationService::validateLoginAccess($user);
+            if (!$access['ok']) {
+                $error = $access['message'];
+            } else {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['fullname'] = $user['fullname'];
+                $_SESSION['role'] = $user['role'];
 
-        // 3. Điều hướng theo quyền
-        if ($user['role'] == 'admin') {
-            header("Location: admin/index.php");
+                $notice = UserModerationService::loginNoticeForUser($user);
+                if ($notice) {
+                    $_SESSION['login_notice'] = $notice;
+                }
+
+                if ($user['role'] == 'admin') {
+                    header('Location: admin/index.php');
+                } else {
+                    header('Location: index.php');
+                }
+                exit();
+            }
         } else {
-            header("Location: index.php"); // Trang chủ cho người thường
+            $error = 'Email hoặc mật khẩu không chính xác!';
         }
-        exit();
-    } else {
-        $error = "Email hoặc mật khẩu không chính xác!";
-    }
     }
 }
 ?>
@@ -67,18 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h3>TOPCV LITE</h3>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger text-center"><?= $error ?></div>
+                <div class="alert alert-danger text-center"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
-            <?php
-            if (session_status() === PHP_SESSION_NONE) session_start(); // Đảm bảo session đã bật
 
-            if (isset($_SESSION['register_success'])): ?>
+            <?php if (isset($_SESSION['register_success'])): ?>
                 <div class="alert alert-success text-center">
-                    <?= $_SESSION['register_success'] ?>
+                    <?= htmlspecialchars($_SESSION['register_success']) ?>
                 </div>
-                <?php unset($_SESSION['register_success']); // Xóa sau khi hiện xong 
-                ?>
+                <?php unset($_SESSION['register_success']); ?>
             <?php endif; ?>
+
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('login_form')) ?>">
                 <div class="mb-3">

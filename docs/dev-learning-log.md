@@ -196,3 +196,21 @@
 ### Kết quả
 - User xác nhận **`「xác nhận docs chuẩn hóa」`** — sẵn sàng Phase 2 (chờ confirm 2A).
 - Git docs: tuỳ chọn 1 commit trước khi code.
+
+## 2026-05-29 - Phase 2 / Nhóm 2A: Status model user/employer
+
+### Mục tiêu
+- Tách `users.status` → `account_status` + `employer_approval_status`.
+- Service layer đầu tiên: `UserRepository`, `UserModerationService`, guard `require_employer.php`.
+
+### Những gì đã thay đổi
+- Migration `docs/migrations/phase-2a-user-status.sql` (+ runner PHP).
+- `register.php`, `login.php`, `admin/users.php` (duyệt + **từ chối** NTD), `employer/auth_check.php`.
+- Badge trạng thái 2 cột trên admin users.
+
+### Bài học rút ra
+- Một cột `status` cho nhiều nghĩa gây khó mở rộng (khóa vs chờ duyệt) — tách cột theo domain sớm.
+- Guard employer tách file `includes/guards/` — page employer chỉ `include auth_check.php`.
+
+### Kết quả test
+- ⏳ Chờ user chạy migration + checklist `docs/phase-2a-plan.md` → 「2A pass」

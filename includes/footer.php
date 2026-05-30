@@ -44,6 +44,15 @@
     });
     <?php unset($_SESSION['swal_icon'], $_SESSION['swal_title']); ?>
     <?php endif; ?>
+
+    <?php if(isset($_SESSION['login_notice'])): ?>
+    Swal.fire({
+        icon: 'info',
+        title: '<?= addslashes($_SESSION['login_notice']) ?>',
+        confirmButtonColor: '#00b14f'
+    });
+    <?php unset($_SESSION['login_notice']); ?>
+    <?php endif; ?>
 </script>
 </body>
 </html>

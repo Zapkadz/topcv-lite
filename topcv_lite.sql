@@ -217,19 +217,20 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `role` enum('candidate','employer','admin') NOT NULL DEFAULT 'candidate',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `status` tinyint(4) DEFAULT 1
+  `account_status` enum('active','suspended','pending_verification') NOT NULL DEFAULT 'active',
+  `employer_approval_status` enum('pending','approved','rejected') DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `users`
 --
 
-INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `created_at`, `status`) VALUES
-(1, 'Super Admin', 'admin@topcv.local', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'admin', '2026-01-01 10:05:27', 1),
-(2, 'Văn Minh Thành', 'thanh@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'candidate', '2026-01-01 10:26:49', 1),
-(3, 'Trần Thị Huyền', 'tranhuyen@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'employer', '2026-01-01 10:27:18', 1),
-(4, 'trần trí huy', 'huytran@gmail.com', '$2y$10$YolsAh7720319j5VYbc3y.AdYkIye94rg9fg5gPwuAuPLOjla2QSC', NULL, 'employer', '2026-01-01 13:54:03', 1);
+INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `account_status`, `employer_approval_status`, `created_at`) VALUES
+(1, 'Super Admin', 'admin@topcv.local', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'admin', 'active', NULL, '2026-01-01 10:05:27'),
+(2, 'Văn Minh Thành', 'thanh@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'candidate', 'active', NULL, '2026-01-01 10:26:49'),
+(3, 'Trần Thị Huyền', 'tranhuyen@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'employer', 'active', 'approved', '2026-01-01 10:27:18'),
+(4, 'trần trí huy', 'huytran@gmail.com', '$2y$10$YolsAh7720319j5VYbc3y.AdYkIye94rg9fg5gPwuAuPLOjla2QSC', NULL, 'employer', 'active', 'approved', '2026-01-01 13:54:03');
 
 --
 -- Chỉ mục cho các bảng đã đổ
