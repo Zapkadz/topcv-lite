@@ -12,17 +12,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: jobs.php');
         exit();
     }
-    $job_id = $_POST['job_id'];
-    $action = $_POST['action'];
+    $job_id = (int) ($_POST['job_id'] ?? 0);
+    $action = $_POST['action'] ?? '';
 
-    if ($action == 'approve') {
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'approved', admin_note = NULL WHERE id = ?");
+    $stmtCheck = $conn->prepare('SELECT id, deleted_at FROM jobs WHERE id = ? LIMIT 1');
+    $stmtCheck->execute([$job_id]);
+    $jobRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+    if (!$jobRow) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Không tìm thấy tin tuyển dụng.';
+    } elseif (job_is_soft_deleted($jobRow)) {
+        $_SESSION['swal_icon'] = 'warning';
+        $_SESSION['swal_title'] = 'Tin đã bị NTD xóa — không duyệt/từ chối được. Chỉ xem ở tab Tất cả tin.';
+    } elseif ($action === 'approve') {
+        $stmt = $conn->prepare("UPDATE jobs SET status = 'approved', admin_note = NULL WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$job_id]);
         $_SESSION['swal_icon'] = 'success';
         $_SESSION['swal_title'] = 'Đã duyệt tin đăng!';
-    } elseif ($action == 'reject') {
-        $note = $_POST['admin_note'];
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'rejected', admin_note = ? WHERE id = ?");
+    } elseif ($action === 'reject') {
+        $note = $_POST['admin_note'] ?? '';
+        $stmt = $conn->prepare("UPDATE jobs SET status = 'rejected', admin_note = ? WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$note, $job_id]);
         $_SESSION['swal_icon'] = 'success';
         $_SESSION['swal_title'] = 'Đã từ chối tin đăng!';
@@ -49,9 +59,9 @@ $sql = "SELECT j.*, c.name as company_name, c.logo
         ORDER BY j.created_at DESC";
 $all_jobs = $conn->query($sql)->fetchAll();
 
-// Tách ra 2 mảng để hiển thị tab
-$pending_jobs = array_filter($all_jobs, function ($j) {
-    return $j['status'] == 'pending';
+// Chờ duyệt: pending và chưa bị NTD xóa mềm (tin đã xóa chỉ xem tab Tất cả)
+$pending_jobs = array_filter($all_jobs, static function ($j) {
+    return ($j['status'] ?? '') === 'pending' && !job_is_soft_deleted($j);
 });
 ?>
 

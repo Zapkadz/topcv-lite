@@ -134,6 +134,7 @@ CREATE TABLE `jobs` (
   `view_count` int(11) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
   `admin_note` text DEFAULT NULL,
   `quantity` int(11) DEFAULT 1,
   `job_type` varchar(50) DEFAULT 'Toàn thời gian',

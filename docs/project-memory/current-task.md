@@ -8,31 +8,16 @@
 
 | Phase | Status |
 |-------|--------|
-| 1 + 1.1 | ✅ |
-| Docs chuẩn hóa | ✅ |
-| **2A Status model** | ✅ **PASS** |
-| **2B Soft delete job** | ⏳ Chờ **`「xác nhận 2B」`** |
-
----
-
-## Git gợi ý (2A)
-
-```powershell
-cd c:\xampp\htdocs\topcv_lite
-git checkout main
-git pull
-git checkout -b feature/phase-2-2a-user-status
-git add .
-git commit -m "phase 2: tách trạng thái tài khoản employer (nhóm 2A)"
-git push -u origin feature/phase-2-2a-user-status
-```
-
-→ PR merge `main`
+| 2A | ✅ pass |
+| 2B Soft delete job | ✅ pass |
+| **2C Moderation log** | Chờ **`「xác nhận 2C」`** |
 
 ---
 
 ## Bước tiếp theo
 
-Reply **`「xác nhận 2B」`** — soft delete + lifecycle job (`docs/phase-2-mini-plan.md`)
+1. User commit 2B (nếu chưa): `phase 2: soft delete và lifecycle job (nhóm 2B)`
+2. PR 2B → `main` (tuỳ workflow)
+3. Khi sẵn sàng: **`「xác nhận 2C」`** — audit log duyệt/từ chối/xóa
 
-**Git:** User tự commit/push.
+**Git branch gợi ý:** `feature/phase-2-2b-job-soft-delete`

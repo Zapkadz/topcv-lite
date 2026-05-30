@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP ---
 session_start();
 include 'config/db.php';
+require_once __DIR__ . '/includes/job_rules.php';
 include 'includes/header.php';
 
 // 1. DATA TỪ DATABASE
@@ -13,9 +14,10 @@ $salary_ranges = ['Dưới 10 triệu', '10 - 15 triệu', '15 - 20 triệu', '2
 $experiences = ['Không yêu cầu', 'Dưới 1 năm', '1 năm', '2 năm', '3 năm', '4 năm', '5 năm', 'Trên 5 năm'];
 
 // 3. THỐNG KÊ
-$sql_count_active = "SELECT COUNT(*) FROM jobs WHERE status = 'approved' AND deadline >= CURDATE()";
+$jobActive = job_sql_not_deleted('jobs');
+$sql_count_active = "SELECT COUNT(*) FROM jobs WHERE status = 'approved' AND deadline >= CURDATE() AND {$jobActive}";
 $count_active = $conn->query($sql_count_active)->fetchColumn();
-$sql_count_new = "SELECT COUNT(*) FROM jobs WHERE DATE(created_at) = CURDATE() AND status = 'approved'";
+$sql_count_new = "SELECT COUNT(*) FROM jobs WHERE DATE(created_at) = CURDATE() AND status = 'approved' AND {$jobActive}";
 $count_new = $conn->query($sql_count_new)->fetchColumn();
 
 // 4. XỬ LÝ TÌM KIẾM & PHÂN TRANG
@@ -25,7 +27,7 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 // Query Builder
-$where = "WHERE j.status = 'approved' AND j.deadline >= CURDATE()";
+$where = 'WHERE j.status = \'approved\' AND j.deadline >= CURDATE() AND ' . job_sql_not_deleted('j');
 $params = [];
 
 // --- SỬA LỖI CÚ PHÁP TẠI ĐÂY (Dùng ngoặc nhọn {} chuẩn) ---

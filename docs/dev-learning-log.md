@@ -216,3 +216,24 @@
 
 ### Kết quả test (user xác nhận 2026-05-29)
 - ✅ **「2A pass」**
+
+## 2026-05-29 - Phase 2 / Nhóm 2B: Soft delete job
+
+### Mục tiêu
+- `jobs.deleted_at` — xóa mềm do NTD; public/apply không thấy tin đã xóa.
+- Layer: `JobRepository`, `JobService` (mẫu sau 2A).
+
+### Những gì đã thay đổi
+- Migration: `migrate-phase-2b.php` (PHP idempotent, tránh lỗi parse comment SQL).
+- `job_rules`: `job_sql_not_deleted()`, `job_is_open_for_apply` + soft delete, `job_admin_status_badge_html`.
+- Employer: `manage-jobs.php` — POST xóa/khôi phục, tab Đã xóa; CSRF `employer_job_delete_form`, `employer_job_restore_form`.
+- Public: `index`, `jobs`, `job-detail`, `apply`, `company-detail`, `employer/dashboard`.
+- Admin: badge **Đã xóa (NTD)**; pending + đã xóa NTD không vào hàng chờ duyệt.
+
+### Bài học rút ra
+- **Hai trục:** `status` (admin) vs `deleted_at` (NTD) — khôi phục chỉ clear `deleted_at`, giữ `status`.
+- Migration: đừng `array_filter` cả statement nếu file SQL có comment đầu dòng (đã lỗi chỉ chạy CREATE INDEX).
+- Admin queue phải lọc `deleted_at` khi `status = pending`, tránh duyệt tin NTD đã bỏ.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2B pass」**
