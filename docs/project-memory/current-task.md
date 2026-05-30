@@ -8,33 +8,27 @@
 
 | Phase | Status |
 |-------|--------|
-| 1 + 1.1 | ✅ PASS — đã commit |
-| Chuẩn hóa docs pre-Phase 2 | ✅ **User xác nhận** — chờ commit docs (tuỳ chọn) |
-| 2 | ⏳ Chờ **`「xác nhận 2A」`** |
+| 1 + 1.1 | ✅ |
+| Docs chuẩn hóa | ✅ |
+| **2A Status model** | ✅ Code xong — **chờ user test + migration** |
 
 ---
 
-## Docs đã chốt (pre-Phase 2)
+## Bước bắt buộc trước test 2A
 
-- `docs/coding-conventions.md` — quy ước code Phase 2+
-- `docs/pre-phase-2-structure-audit.md` — audit cấu trúc + technical debt
-- `docs/architecture-standardization-plan.md` — mini MVC / service layer + gợi ý đồ án
-- `docs/phase-2-mini-plan.md` — mini-plan Phase 2 (2A→2D)
+```bash
+php docs/migrations/run-phase-2a-user-status.php
+```
+
+Checklist: `docs/phase-2a-plan.md`
 
 ---
 
 ## Bước tiếp theo
 
-1. **Git (tuỳ chọn, khuyến nghị):** commit docs (lệnh bên dưới)
-2. Khi sẵn sàng code: reply **`「xác nhận 2A」`** — Nhóm 2A status model
+1. Chạy migration trên DB XAMPP  
+2. Test checklist → **`「2A pass」`**  
+3. Git branch `feature/phase-2-2a-user-status` + commit  
+4. Sau pass → **`「xác nhận 2B」`** (soft delete job)
 
 **Git:** User tự commit/push.
-
-### Lệnh commit docs gợi ý
-
-```powershell
-cd c:\xampp\htdocs\topcv_lite
-git add docs/
-git commit -m "docs: conventions, pre-phase-2 audit, architecture plan, phase 2 mini-plan"
-git push
-```
