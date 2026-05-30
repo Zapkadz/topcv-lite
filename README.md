@@ -57,7 +57,7 @@ Chi tiết: [docs/github-workflow.md](docs/github-workflow.md) và [docs/project
 
 ## Trạng thái dự án
 
-Đang Phase 1 — critical fixes (unique apply, CSRF một phần, hardening upload). Xem `docs/master-refactor-roadmap.md`.
+Phase 1 + 1.1 hoàn tất. Chuẩn hóa docs pre-Phase 2: `docs/coding-conventions.md`, `docs/phase-2-mini-plan.md`. Xem `docs/master-refactor-roadmap.md`.
 
 ## License
 

@@ -181,3 +181,18 @@
 ### Kết quả test (user xác nhận 2026-05-29)
 - Deadline, expiry, locations, location picker, HTML mô tả (admin + job-edit CKEditor): ✅ pass
 - **Trạng thái: HOÀN TẤT — Phase 1.1 đóng**
+
+## 2026-05-29 - Pre-Phase 2: Chuẩn hóa docs (không sửa code)
+
+### Mục tiêu
+- Chuẩn hóa nhẹ trước Phase 2: conventions, audit cấu trúc, kế hoạch mini MVC/service layer, mini-plan Phase 2.
+
+### Tài liệu đã tạo
+- `docs/coding-conventions.md`
+- `docs/pre-phase-2-structure-audit.md`
+- `docs/architecture-standardization-plan.md`
+- `docs/phase-2-mini-plan.md`
+
+### Kết quả
+- User xác nhận **`「xác nhận docs chuẩn hóa」`** — sẵn sàng Phase 2 (chờ confirm 2A).
+- Git docs: tuỳ chọn 1 commit trước khi code.
