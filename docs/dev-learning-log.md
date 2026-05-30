@@ -204,13 +204,15 @@
 - Service layer đầu tiên: `UserRepository`, `UserModerationService`, guard `require_employer.php`.
 
 ### Những gì đã thay đổi
-- Migration `docs/migrations/phase-2a-user-status.sql` (+ runner PHP).
-- `register.php`, `login.php`, `admin/users.php` (duyệt + **từ chối** NTD), `employer/auth_check.php`.
-- Badge trạng thái 2 cột trên admin users.
+- Migration `phase-2a-user-status.sql`, `phase-2a-user-status-repair.sql`, `migrate-phase-2a.php`.
+- Layer: `UserRepository`, `UserModerationService`, `user_status.php`, `schema_users.php`, `require_employer.php`.
+- Pages: `register.php`, `login.php`, `admin/users.php`, `includes/header.php`, `employer/auth_check.php`.
 
 ### Bài học rút ra
-- Một cột `status` cho nhiều nghĩa gây khó mở rộng (khóa vs chờ duyệt) — tách cột theo domain sớm.
-- Guard employer tách file `includes/guards/` — page employer chỉ `include auth_check.php`.
+- Tách cột `status` theo domain sớm — tránh overload một tinyint.
+- File trong `includes/guards/` cần `../../config/db.php`, không phải `../config`.
+- Migration SQL: chạy cả file một lần; nếu đã DROP `status` thì dùng repair script.
+- Sau đổi schema, rà **toàn project** query cột cũ (header.php sót `users.status`).
 
-### Kết quả test
-- ⏳ Chờ user chạy migration + checklist `docs/phase-2a-plan.md` → 「2A pass」
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2A pass」**

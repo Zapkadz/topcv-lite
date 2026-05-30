@@ -10,25 +10,29 @@
 |-------|--------|
 | 1 + 1.1 | ✅ |
 | Docs chuẩn hóa | ✅ |
-| **2A Status model** | ✅ Code xong — **chờ user test + migration** |
+| **2A Status model** | ✅ **PASS** |
+| **2B Soft delete job** | ⏳ Chờ **`「xác nhận 2B」`** |
 
 ---
 
-## Bước bắt buộc trước test 2A
+## Git gợi ý (2A)
 
-```bash
-php docs/migrations/run-phase-2a-user-status.php
+```powershell
+cd c:\xampp\htdocs\topcv_lite
+git checkout main
+git pull
+git checkout -b feature/phase-2-2a-user-status
+git add .
+git commit -m "phase 2: tách trạng thái tài khoản employer (nhóm 2A)"
+git push -u origin feature/phase-2-2a-user-status
 ```
 
-Checklist: `docs/phase-2a-plan.md`
+→ PR merge `main`
 
 ---
 
 ## Bước tiếp theo
 
-1. Chạy migration trên DB XAMPP  
-2. Test checklist → **`「2A pass」`**  
-3. Git branch `feature/phase-2-2a-user-status` + commit  
-4. Sau pass → **`「xác nhận 2B」`** (soft delete job)
+Reply **`「xác nhận 2B」`** — soft delete + lifecycle job (`docs/phase-2-mini-plan.md`)
 
 **Git:** User tự commit/push.
