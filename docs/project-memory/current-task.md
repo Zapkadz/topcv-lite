@@ -6,40 +6,35 @@
 
 ## Trạng thái
 
-**Phase 1 Critical Fixes:** ✅ Hoàn tất
-
-**Phase 1.1 — Logic nghiệp vụ job:** ✅ **PASS** (user xác nhận 2026-05-29)
-
-**Phase 2:** Sẵn sàng bắt đầu — chọn scope từ `docs/master-refactor-roadmap.md`
-
----
-
-## Phase 1.1 — đã implement
-
-| Nhóm | Nội dung | Status |
-|------|----------|--------|
-| 1.1-A | `job_validate_deadline()` + `min` date trên form | ✅ |
-| 1.1-B | `job_is_expired`, chặn apply, badge admin, banner job-detail | ✅ |
-| 1.1-C | `admin/locations.php`, seed 36, `run-phase-1-1-locations.php` | ✅ |
-
-**Helper:** `includes/job_rules.php`
-
-**Docs:** `docs/phase-1-1-plan.md`
+| Phase | Status |
+|-------|--------|
+| 1 + 1.1 | ✅ PASS — đã commit |
+| Chuẩn hóa docs pre-Phase 2 | ✅ **User xác nhận** — chờ commit docs (tuỳ chọn) |
+| 2 | ⏳ Chờ **`「xác nhận 2A」`** |
 
 ---
 
-## Bước tiếp theo (user)
+## Docs đã chốt (pre-Phase 2)
 
-1. Test theo checklist trong `docs/phase-1-1-plan.md`
-2. Reply **「1.1 pass」** hoặc báo lỗi cụ thể
-3. Git (tự commit):
+- `docs/coding-conventions.md` — quy ước code Phase 2+
+- `docs/pre-phase-2-structure-audit.md` — audit cấu trúc + technical debt
+- `docs/architecture-standardization-plan.md` — mini MVC / service layer + gợi ý đồ án
+- `docs/phase-2-mini-plan.md` — mini-plan Phase 2 (2A→2D)
 
-```bash
-git checkout -b feature/phase-1-1-job-logic
-git add includes/job_rules.php employer/job-create.php employer/job-edit.php employer/manage-jobs.php job-detail.php apply.php admin/jobs.php admin/locations.php admin/includes/header.php topcv_lite.sql docs/
-git commit -m "phase 1.1: deadline, expiry, locations seed + admin CRUD"
+---
+
+## Bước tiếp theo
+
+1. **Git (tuỳ chọn, khuyến nghị):** commit docs (lệnh bên dưới)
+2. Khi sẵn sàng code: reply **`「xác nhận 2A」`** — Nhóm 2A status model
+
+**Git:** User tự commit/push.
+
+### Lệnh commit docs gợi ý
+
+```powershell
+cd c:\xampp\htdocs\topcv_lite
+git add docs/
+git commit -m "docs: conventions, pre-phase-2 audit, architecture plan, phase 2 mini-plan"
+git push
 ```
-
-4. Sau pass → chọn scope Phase 2 từ `docs/master-refactor-roadmap.md`
-
-**Git:** User tự commit/push; AI chỉ hướng dẫn lệnh.
