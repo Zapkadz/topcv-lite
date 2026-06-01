@@ -144,3 +144,24 @@ if (!function_exists('cv_render_preview_html')) {
         return (string) ob_get_clean();
     }
 }
+
+if (!function_exists('cv_render_snapshot_from_json')) {
+    function cv_render_snapshot_from_json(?string $json): string
+    {
+        if ($json === null || trim($json) === '') {
+            return '<div class="alert alert-secondary mb-0">Không có dữ liệu CV structured.</div>';
+        }
+
+        $data = json_decode($json, true);
+        if (!is_array($data) || !isset($data['profile'])) {
+            return '<div class="alert alert-warning mb-0">Dữ liệu snapshot CV không hợp lệ.</div>';
+        }
+
+        return cv_render_preview_html([
+            'profile' => $data['profile'],
+            'educations' => $data['educations'] ?? [],
+            'experiences' => $data['experiences'] ?? [],
+            'skills' => $data['skills'] ?? [],
+        ]);
+    }
+}

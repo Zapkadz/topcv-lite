@@ -320,3 +320,18 @@
 
 ### Tiếp theo
 - **`「xác nhận CV-C」`** — apply snapshot + employer xem CV
+
+## 2026-05-29 - Phase CV / Nhóm CV-C: Apply snapshot + employer
+
+### User
+- **`「bắt đầu code CV-C」`** (plan: apply chỉ chọn CV online, không upload tại modal)
+
+### Những gì đã thay đổi
+- `applications.cv_profile_id`, `cv_snapshot_json`; `cv_snapshot` nullable
+- `ApplicationService::applyToJob`, `CvService::snapshotForApply`
+- `apply.php`, `job-detail.php` modal dropdown
+- `employer/applicants.php` modal iframe + `applicant-cv-snapshot.php`
+- `cv_render_snapshot_from_json()`
+
+### Tiếp theo
+- User test → **`「CV-C pass」`**

@@ -31,7 +31,9 @@ CREATE TABLE `applications` (
   `id` int(11) NOT NULL,
   `job_id` int(11) NOT NULL,
   `candidate_id` int(11) NOT NULL,
-  `cv_snapshot` varchar(255) NOT NULL,
+  `cv_profile_id` int(11) DEFAULT NULL,
+  `cv_snapshot` varchar(255) DEFAULT NULL,
+  `cv_snapshot_json` longtext DEFAULT NULL,
   `cover_letter` text DEFAULT NULL,
   `status` enum('pending','viewed','interview','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -332,6 +334,7 @@ ALTER TABLE `applications`
   ADD PRIMARY KEY (`id`),
   ADD KEY `job_id` (`job_id`),
   ADD KEY `candidate_id` (`candidate_id`),
+  ADD KEY `idx_applications_cv_profile` (`cv_profile_id`),
   ADD UNIQUE KEY `uniq_job_candidate` (`job_id`,`candidate_id`);
 
 --
@@ -493,7 +496,8 @@ ALTER TABLE `cv_skills`
 --
 ALTER TABLE `applications`
   ADD CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `applications_cv_profile_fk` FOREIGN KEY (`cv_profile_id`) REFERENCES `cv_profiles` (`id`) ON DELETE SET NULL;
 
 --
 -- Các ràng buộc cho bảng `candidates`

@@ -240,6 +240,38 @@ class CvService
     }
 
     /**
+     * @return array{ok: bool, message: string, cv_profile_id: int|null, snapshot_json: string|null}
+     */
+    public static function snapshotForApply(PDO $conn, int $userId, int $cvProfileId): array
+    {
+        if (!cvs_schema_ready($conn)) {
+            return ['ok' => false, 'message' => 'Schema CV chưa sẵn sàng.', 'cv_profile_id' => null, 'snapshot_json' => null];
+        }
+
+        $loaded = self::getFullForUser($conn, $userId, $cvProfileId);
+        if (!$loaded['ok'] || !$loaded['data']) {
+            return [
+                'ok' => false,
+                'message' => $loaded['message'] ?: 'CV không tồn tại hoặc bạn không có quyền.',
+                'cv_profile_id' => null,
+                'snapshot_json' => null,
+            ];
+        }
+
+        $json = self::buildSnapshotJson($conn, $cvProfileId);
+        if ($json === null) {
+            return ['ok' => false, 'message' => 'Không thể tạo snapshot CV.', 'cv_profile_id' => null, 'snapshot_json' => null];
+        }
+
+        return [
+            'ok' => true,
+            'message' => '',
+            'cv_profile_id' => $cvProfileId,
+            'snapshot_json' => $json,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $profile
      * @return array<string, mixed>
      */
