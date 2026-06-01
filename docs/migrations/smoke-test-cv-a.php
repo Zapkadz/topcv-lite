@@ -38,10 +38,10 @@ $profileBase = [
 
 $children1 = [
     'educations' => [
-        ['school_name' => 'ĐH Test', 'major' => 'IT', 'start_date' => '2020', 'end_date' => '2024'],
+        ['school_name' => 'ĐH Test', 'major' => 'IT', 'start_date' => '2020-09', 'end_date' => '2024-06'],
     ],
     'experiences' => [
-        ['company_name' => 'Cty A', 'position' => 'Intern', 'start_date' => '2024', 'end_date' => '2025'],
+        ['company_name' => 'Cty A', 'position' => 'Intern', 'start_date' => '2024-01', 'end_date' => '2025-03'],
     ],
     'skills' => [
         ['skill_name' => 'PHP', 'description' => 'Cơ bản'],

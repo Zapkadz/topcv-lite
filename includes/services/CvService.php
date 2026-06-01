@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../repositories/CvRepository.php';
 require_once __DIR__ . '/../cv_rules.php';
 require_once __DIR__ . '/../schema_cvs.php';
+require_once __DIR__ . '/../cv_avatar.php';
 
 class CvService
 {
@@ -85,13 +86,14 @@ class CvService
             return ['ok' => false, 'message' => 'Schema CV chưa sẵn sàng.', 'cv_id' => null];
         }
 
-        $validation = cv_validate_profile($profile);
+        $candidateId = self::ensureCandidateId($conn, $userId);
+        $normalizedChildren = self::normalizeChildren($children);
+        $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
+
+        $validation = cv_validate_submission($profile, $normalizedChildren);
         if (!$validation['ok']) {
             return ['ok' => false, 'message' => $validation['message'], 'cv_id' => null];
         }
-
-        $candidateId = self::ensureCandidateId($conn, $userId);
-        $normalizedChildren = self::normalizeChildren($children);
         $fields = self::normalizeProfileFields($profile, $candidateId, $normalizedChildren);
 
         if (CvRepository::countByCandidate($conn, $candidateId) === 0) {
@@ -132,11 +134,6 @@ class CvService
             return ['ok' => false, 'message' => 'Schema CV chưa sẵn sàng.'];
         }
 
-        $validation = cv_validate_profile($profile);
-        if (!$validation['ok']) {
-            return ['ok' => false, 'message' => $validation['message']];
-        }
-
         $candidateId = self::resolveCandidateId($conn, $userId);
         if ($candidateId === null) {
             return ['ok' => false, 'message' => 'Không tìm thấy hồ sơ ứng viên.'];
@@ -148,6 +145,12 @@ class CvService
         }
 
         $normalizedChildren = self::normalizeChildren($children);
+        $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
+
+        $validation = cv_validate_submission($profile, $normalizedChildren);
+        if (!$validation['ok']) {
+            return ['ok' => false, 'message' => $validation['message']];
+        }
         $fields = self::normalizeProfileFields($profile, $candidateId, $normalizedChildren);
         $fields['is_primary'] = (int) ($existing['is_primary'] ?? 0);
 
@@ -190,6 +193,10 @@ class CvService
 
         if (!CvRepository::deleteProfile($conn, $cvId, $candidateId)) {
             return ['ok' => false, 'message' => 'Không thể xóa CV.'];
+        }
+
+        if (!empty($existing['avatar_path'])) {
+            cv_avatar_delete_file((string) $existing['avatar_path']);
         }
 
         if ($wasPrimary) {
@@ -281,7 +288,7 @@ class CvService
             'target_position' => trim((string) ($profile['target_position'] ?? '')),
             'date_of_birth' => $dob !== '' ? $dob : null,
             'gender' => self::nullIfEmpty(trim((string) ($profile['gender'] ?? ''))),
-            'phone' => self::nullIfEmpty(trim((string) ($profile['phone'] ?? ''))),
+            'phone' => self::nullIfEmpty(cv_normalize_phone((string) ($profile['phone'] ?? ''))),
             'email' => self::nullIfEmpty(trim((string) ($profile['email'] ?? ''))),
             'website' => self::nullIfEmpty(trim((string) ($profile['website'] ?? ''))),
             'address' => self::nullIfEmpty(trim((string) ($profile['address'] ?? ''))),

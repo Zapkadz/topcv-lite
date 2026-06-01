@@ -16,7 +16,7 @@
             <div class="col-md-3 mb-4">
                 <h6 class="fw-bold">Hồ sơ & CV</h6>
                 <ul class="list-unstyled small text-muted">
-                    <li><a href="#" class="text-decoration-none text-muted">Quản lý CV</a></li>
+                    <li><a href="<?= defined('BASE_URL') ? BASE_URL : '/topcv_lite/' ?>candidate/cv-manage.php" class="text-decoration-none text-muted">Quản lý CV</a></li>
                     <li><a href="#" class="text-decoration-none text-muted">Hướng dẫn viết CV</a></li>
                 </ul>
             </div>
