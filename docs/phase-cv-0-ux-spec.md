@@ -189,7 +189,7 @@ Modal "Hồ sơ ứng viên"
 | Rule | Thông báo / hành vi |
 |------|---------------------|
 | Tên CV trống | "Vui lòng đặt tên cho CV" |
-| Email/SĐT sai format | Validator `cv_rules.php` |
+| Email/SĐT sai format | `cv_rules.php` — SĐT `^0[0-9]{9}$`; tháng/năm ô số → `YYYY-MM` |
 | Xóa CV mặc định | Confirm; nếu còn CV khác → gợi ý chọn mặc định mới |
 | Chưa có CV khi apply | Radio online disabled + link "Tạo CV online" |
 | Employer xem | Chỉ read-only snapshot, không sửa |

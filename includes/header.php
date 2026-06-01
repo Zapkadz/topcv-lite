@@ -60,6 +60,9 @@ if (!defined('BASE_URL')) {
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>jobs.php">Việc làm</a></li>
                 <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>candidate/profile.php">Hồ sơ & CV</a></li>
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'candidate'): ?>
+                <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>candidate/cv-manage.php">Quản lý CV online</a></li>
+                <?php endif; ?>
                 <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>companies.php">Công ty</a></li>
             </ul>
             
@@ -109,6 +112,9 @@ if (!defined('BASE_URL')) {
                             <?php else: ?>
                                 <li><a class="dropdown-item" href="<?= $base_url ?>candidate/profile.php">
                                     <i class="fas fa-user-edit me-2"></i> Cập nhật hồ sơ
+                                </a></li>
+                                <li><a class="dropdown-item" href="<?= $base_url ?>candidate/cv-manage.php">
+                                    <i class="fas fa-file-alt me-2"></i> Quản lý CV online
                                 </a></li>
                                 <li><a class="dropdown-item" href="<?= $base_url ?>candidate/my-jobs.php">
                                     <i class="fas fa-history me-2"></i> Việc đã nộp

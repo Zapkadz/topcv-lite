@@ -297,3 +297,26 @@
 
 ### Kết quả test (user xác nhận 2026-05-29)
 - ✅ **「CV-A pass」**
+
+## 2026-05-29 - Phase CV / Nhóm CV-B: UI manage + builder
+
+### User
+- ✅ **`「xác nhận CV-B」`**
+
+### Những gì đã thay đổi
+- `candidate/cv-manage.php` — list, đặt mặc định, xóa (SweetAlert confirm)
+- `candidate/cv-builder.php` — form tạo/sửa + sections lặp
+- `assets/js/cv-builder.js` — thêm/xóa dòng
+- `includes/cv_rules.php` — `cv_parse_builder_post`, filter rows
+- `includes/header.php`, `candidate/profile.php`, `includes/footer.php` — điều hướng
+
+### Bổ sung sau (validation, avatar, preview)
+- `cv-preview.php`, `cv_avatar.php`, ảnh đại diện + quy chuẩn upload
+- SĐT `^0[0-9]{9}$`; tháng/năm ô số → `YYYY-MM` (`char(7)`); ngày sinh tối đa 100 tuổi; giới tính bắt buộc
+- Migration: `migrate-phase-cv-b-formats.php`
+
+### Kết quả test
+- ✅ **「CV-B pass」**
+
+### Tiếp theo
+- **`「xác nhận CV-C」`** — apply snapshot + employer xem CV

@@ -22,6 +22,7 @@ if (!function_exists('cvs_schema_migration_hint_html')) {
     function cvs_schema_migration_hint_html(): string
     {
         return '<div class="alert alert-warning">Chưa có bảng CV structured. '
-            . '<a href="/topcv_lite/docs/migrations/migrate-phase-cv-a.php">Chạy migration CV-A</a></div>';
+            . '<a href="/topcv_lite/docs/migrations/migrate-phase-cv-a.php">Chạy migration CV-A</a> '
+            . '(sau đó <a href="/topcv_lite/docs/migrations/migrate-phase-cv-b-formats.php">CV-B formats</a> nếu DB cũ).</div>';
     }
 }

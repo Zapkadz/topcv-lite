@@ -1,7 +1,7 @@
 <?php
 /**
  * Validate upload file — extension + MIME (finfo) + size.
- * $kind: 'cv' | 'image'
+ * $kind: 'cv' | 'image' | 'cv_avatar'
  *
  * @return array{ok: bool, message: string, extension?: string}
  */
@@ -28,6 +28,16 @@ if (!function_exists('upload_validate')) {
                 ],
                 'max_bytes' => 2 * 1024 * 1024,
                 'type_label' => 'JPG, PNG hoặc WEBP',
+            ],
+            'cv_avatar' => [
+                'extensions' => ['jpg', 'jpeg', 'png', 'webp'],
+                'mimes' => [
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                ],
+                'max_bytes' => 2 * 1024 * 1024,
+                'type_label' => 'ảnh JPG, PNG hoặc WEBP',
             ],
         ];
 
