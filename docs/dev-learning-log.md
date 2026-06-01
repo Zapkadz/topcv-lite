@@ -255,3 +255,20 @@
 
 ### Kết quả test (user xác nhận 2026-05-29)
 - ✅ **「2C pass」**
+
+## 2026-05-29 - Phase 2 / Nhóm 2D: Saved jobs
+
+### Mục tiêu
+- Ứng viên lưu/bỏ lưu tin; tab **Đã lưu** trên `my-jobs.php`.
+
+### Những gì đã thay đổi
+- Bảng `saved_jobs`, migration `migrate-phase-2d.php`.
+- `SavedJobRepository`, `SavedJobService`, `job_saved_listing_badge_html`.
+- `job-detail.php` nút Lưu; `candidate/toggle-save-job.php` (POST+CSRF).
+- `candidate/my-jobs.php` tabs Ứng tuyển / Đã lưu.
+
+### Không làm
+- `notifications` (defer).
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2D pass」**

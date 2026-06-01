@@ -236,6 +236,19 @@ INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `ac
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `saved_jobs` (Phase 2D)
+--
+
+CREATE TABLE `saved_jobs` (
+  `id` int(11) NOT NULL,
+  `candidate_id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `moderation_logs` (Phase 2C)
 --
 
@@ -296,6 +309,15 @@ ALTER TABLE `jobs`
 --
 ALTER TABLE `locations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `saved_jobs`
+--
+ALTER TABLE `saved_jobs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_saved_job` (`candidate_id`,`job_id`),
+  ADD KEY `idx_saved_candidate` (`candidate_id`),
+  ADD KEY `idx_saved_job` (`job_id`);
 
 --
 -- Chỉ mục cho bảng `moderation_logs`
@@ -366,6 +388,12 @@ ALTER TABLE `moderation_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT cho bảng `saved_jobs`
+--
+ALTER TABLE `saved_jobs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Các ràng buộc cho các bảng đã đổ
 --
 
@@ -401,6 +429,13 @@ ALTER TABLE `jobs`
 --
 ALTER TABLE `moderation_logs`
   ADD CONSTRAINT `moderation_logs_admin_fk` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `saved_jobs`
+--
+ALTER TABLE `saved_jobs`
+  ADD CONSTRAINT `saved_jobs_candidate_fk` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `saved_jobs_job_fk` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

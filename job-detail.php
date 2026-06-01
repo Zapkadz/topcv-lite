@@ -6,6 +6,8 @@ require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/job_rules.php';
 require_once __DIR__ . '/includes/html_content.php';
 require_once __DIR__ . '/includes/repositories/JobRepository.php';
+require_once __DIR__ . '/includes/schema_saved_jobs.php';
+require_once __DIR__ . '/includes/services/SavedJobService.php';
 include 'includes/header.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -43,6 +45,7 @@ if (!$job) {
 
 // [LOGIC 3] KIỂM TRA TRẠNG THÁI ỨNG TUYỂN
 $has_applied = false;
+$job_is_saved = false;
 $user_role = $_SESSION['role'] ?? 'guest';
 $candidate_id = 0;
 
@@ -52,10 +55,15 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
     $candidate = $stmt_cand->fetch();
     
     if ($candidate) {
-        $candidate_id = $candidate['id'];
+        $candidate_id = (int) $candidate['id'];
         $check = $conn->prepare("SELECT id FROM applications WHERE job_id = ? AND candidate_id = ?");
         $check->execute([$job_id, $candidate_id]);
-        if ($check->rowCount() > 0) $has_applied = true;
+        if ($check->rowCount() > 0) {
+            $has_applied = true;
+        }
+        if (saved_jobs_schema_ready($conn)) {
+            $job_is_saved = SavedJobService::isSaved($conn, $candidate_id, $job_id);
+        }
     }
 }
 ?>
@@ -101,6 +109,16 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
                 </div>
             </div>
             <div class="col-md-auto mt-3 mt-md-0">
+                <?php if ($user_role === 'candidate' && saved_jobs_schema_ready($conn)): ?>
+                    <form method="POST" action="candidate/toggle-save-job.php" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('candidate_save_job_form')) ?>">
+                        <input type="hidden" name="job_id" value="<?= (int) $job_id ?>">
+                        <button type="submit" class="btn btn-outline-warning w-100 fw-bold">
+                            <i class="fas fa-bookmark<?= $job_is_saved ? '' : '-o' ?>"></i>
+                            <?= $job_is_saved ? 'Bỏ lưu tin' : 'Lưu tin' ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
                 <?php if ($user_role == 'employer'): ?>
                     <button class="btn btn-secondary w-100 disabled">Dành cho ứng viên</button>
                 <?php elseif ($has_applied): ?>
