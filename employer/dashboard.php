@@ -1,7 +1,8 @@
 <?php
 // File: employer/dashboard.php
+require_once __DIR__ . '/../includes/job_rules.php';
 include '../includes/header.php';
-include 'auth_check.php'; // File kiểm tra quyền mà chúng ta đã tạo
+include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
 
@@ -29,7 +30,7 @@ $company_id = $company['id'];
 
 // 2. LẤY THỐNG KÊ
 // Đếm số tin đang hiển thị (Approved)
-$sql_jobs = "SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = 'approved'";
+$sql_jobs = 'SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = \'approved\' AND deleted_at IS NULL';
 $stmt_jobs = $conn->prepare($sql_jobs);
 $stmt_jobs->execute([$company_id]);
 $active_jobs = $stmt_jobs->fetchColumn();
@@ -51,7 +52,7 @@ $stmt_new_apps->execute([$company_id]);
 $new_cv = $stmt_new_apps->fetchColumn();
 
 // Tổng lượt xem tin tuyển dụng
-$sql_views = "SELECT SUM(view_count) FROM jobs WHERE company_id = ?";
+$sql_views = 'SELECT SUM(view_count) FROM jobs WHERE company_id = ? AND deleted_at IS NULL';
 $stmt_views = $conn->prepare($sql_views);
 $stmt_views->execute([$company_id]);
 $total_views = $stmt_views->fetchColumn() ?: 0; // Nếu null thì trả về 0

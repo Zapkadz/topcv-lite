@@ -8,27 +8,16 @@
 
 | Phase | Status |
 |-------|--------|
-| 1 + 1.1 | ✅ |
-| Docs chuẩn hóa | ✅ |
-| **2A Status model** | ✅ Code xong — **chờ user test + migration** |
-
----
-
-## Bước bắt buộc trước test 2A
-
-```bash
-php docs/migrations/run-phase-2a-user-status.php
-```
-
-Checklist: `docs/phase-2a-plan.md`
+| 2A | ✅ pass |
+| 2B | ✅ pass |
+| 2C Moderation log | ✅ pass |
+| **2D Saved jobs** | Chờ **`「xác nhận 2D」`** |
+| CV roadmap | Sau 2D |
 
 ---
 
 ## Bước tiếp theo
 
-1. Chạy migration trên DB XAMPP  
-2. Test checklist → **`「2A pass」`**  
-3. Git branch `feature/phase-2-2a-user-status` + commit  
-4. Sau pass → **`「xác nhận 2B」`** (soft delete job)
-
-**Git:** User tự commit/push.
+1. User tự commit 2C (xem hướng dẫn trong chat / bên dưới)
+2. PR 2C → `main` (tuỳ workflow)
+3. **`「xác nhận 2D」`** khi sẵn sàng

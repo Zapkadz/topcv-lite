@@ -2,8 +2,12 @@
 // --- PHẦN 1: LOGIC PHP (Xử lý dữ liệu) ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
-include 'auth_check.php'; // Check login
+require_once __DIR__ . '/../includes/schema_jobs.php';
+require_once __DIR__ . '/../includes/services/JobService.php';
+require_once __DIR__ . '/../includes/repositories/JobRepository.php';
+include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
 
@@ -18,29 +22,31 @@ if (!$company) {
 }
 $company_id = $company['id'];
 
-// 2. Xử lý XÓA TIN
-if (isset($_GET['delete'])) {
-    $job_id = intval($_GET['delete']); // Ép kiểu số để bảo mật
-    
-    // Kiểm tra job này có đúng của công ty này không trước khi xóa
-    $check = $conn->prepare("SELECT id FROM jobs WHERE id = ? AND company_id = ?");
-    $check->execute([$job_id, $company_id]);
-    
-    if ($check->rowCount() > 0) {
-        $del = $conn->prepare("DELETE FROM jobs WHERE id = ?");
-        $del->execute([$job_id]);
-        
-        $_SESSION['swal_icon'] = 'success';
-        $_SESSION['swal_title'] = 'Đã xóa tin tuyển dụng thành công!';
+// 2. POST: xóa mềm / khôi phục
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $jobIdPost = (int) ($_POST['job_id'] ?? 0);
+    $viewPost = ($_POST['view'] ?? 'active') === 'deleted' ? 'deleted' : 'active';
+
+    if ($action === 'soft_delete' && csrf_validate('employer_job_delete_form', $_POST['csrf_token'] ?? '')) {
+        $result = JobService::softDeleteForCompany($conn, $jobIdPost, $company_id);
+        $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
+        $_SESSION['swal_title'] = $result['message'];
+    } elseif ($action === 'restore' && csrf_validate('employer_job_restore_form', $_POST['csrf_token'] ?? '')) {
+        $result = JobService::restoreForCompany($conn, $jobIdPost, $company_id);
+        $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
+        $_SESSION['swal_title'] = $result['message'];
     } else {
         $_SESSION['swal_icon'] = 'error';
-        $_SESSION['swal_title'] = 'Không thể xóa tin này!';
+        $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ.';
     }
-    
-    // Redirect để tránh resubmit form và xóa tham số delete trên URL
-    header("Location: manage-jobs.php");
+
+    header('Location: manage-jobs.php?view=' . $viewPost . '&page=' . (int) ($_POST['page'] ?? 1));
     exit();
 }
+
+$view = (isset($_GET['view']) && $_GET['view'] === 'deleted') ? 'deleted' : 'active';
+$showDeleted = ($view === 'deleted');
 
 // 3. CẤU HÌNH PHÂN TRANG (PAGINATION)
 $limit = 10; // Số tin mỗi trang
@@ -53,10 +59,7 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 // 4. ĐẾM TỔNG SỐ TIN (Để tính tổng số trang)
-$sql_count = "SELECT COUNT(*) FROM jobs WHERE company_id = ?";
-$stmt_count = $conn->prepare($sql_count);
-$stmt_count->execute([$company_id]);
-$total_records = $stmt_count->fetchColumn();
+$total_records = JobRepository::countByCompany($conn, $company_id, $showDeleted);
 
 // Tính tổng số trang (dùng ceil để làm tròn lên)
 $total_pages = ceil($total_records / $limit);
@@ -68,24 +71,35 @@ if ($total_pages > 0 && $page > $total_pages) {
 }
 
 // 5. LẤY DANH SÁCH TIN (QUERY CHÍNH)
-$sql = "SELECT * FROM jobs 
-        WHERE company_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT $limit OFFSET $offset";
-$stmt = $conn->prepare($sql);
-$stmt->execute([$company_id]);
-$jobs = $stmt->fetchAll();
+$jobs = JobRepository::listByCompany($conn, $company_id, $showDeleted, $limit, $offset);
 
 // --- PHẦN 2: GIAO DIỆN HTML ---
 include '../includes/header.php';
+
+if (!jobs_schema_has_soft_delete($conn)) {
+    echo '<div class="container py-5"><div class="alert alert-danger">Chưa có cột <code>deleted_at</code>. Chạy migration: '
+        . '<a href="/topcv_lite/docs/migrations/migrate-phase-2b.php">migrate-phase-2b.php</a></div></div>';
+    include '../includes/footer.php';
+    exit;
+}
 ?>
 
 <div class="container py-5">
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link <?= !$showDeleted ? 'active' : '' ?>" href="manage-jobs.php?view=active">Đang quản lý</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $showDeleted ? 'active' : '' ?>" href="manage-jobs.php?view=deleted">Đã xóa</a>
+        </li>
+    </ul>
+
     <div class="row mb-4 align-items-end">
         <div class="col-md-8">
             <h3 class="fw-bold text-primary"><i class="fas fa-briefcase"></i> Quản lý tin tuyển dụng</h3>
             <p class="text-muted mb-0">
-                Hiển thị <strong><?= count($jobs) ?></strong> trên tổng số <strong><?= $total_records ?></strong> tin.
+                Hiển thị <strong><?= count($jobs) ?></strong> trên tổng số <strong><?= $total_records ?></strong> tin
+                (<?= $showDeleted ? 'đã xóa' : 'đang hoạt động' ?>).
             </p>
         </div>
         <div class="col-md-4 text-md-end">
@@ -168,12 +182,33 @@ include '../includes/header.php';
                                     </td>
                                     
                                     <td class="text-end pe-4">
-                                        <a href="<?= $edit_url ?>" class="btn btn-outline-primary btn-sm me-1" title="Sửa tin">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button onclick="confirmDelete(<?= $job['id'] ?>)" class="btn btn-outline-danger btn-sm" title="Xóa tin">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                        <?php if (!$showDeleted): ?>
+                                            <a href="<?= $edit_url ?>" class="btn btn-outline-primary btn-sm me-1" title="Sửa tin">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" class="d-inline" id="del-form-<?= (int) $job['id'] ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_job_delete_form')) ?>">
+                                                <input type="hidden" name="action" value="soft_delete">
+                                                <input type="hidden" name="job_id" value="<?= (int) $job['id'] ?>">
+                                                <input type="hidden" name="view" value="active">
+                                                <input type="hidden" name="page" value="<?= (int) $page ?>">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" title="Xóa tin"
+                                                        onclick="confirmSoftDelete(<?= (int) $job['id'] ?>)">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_job_restore_form')) ?>">
+                                                <input type="hidden" name="action" value="restore">
+                                                <input type="hidden" name="job_id" value="<?= (int) $job['id'] ?>">
+                                                <input type="hidden" name="view" value="deleted">
+                                                <input type="hidden" name="page" value="<?= (int) $page ?>">
+                                                <button type="submit" class="btn btn-outline-success btn-sm" title="Khôi phục">
+                                                    <i class="fas fa-undo"></i> Khôi phục
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -196,19 +231,19 @@ include '../includes/header.php';
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center mb-0">
                     <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= $page - 1 ?>" aria-label="Previous">
+                        <a class="page-link" href="?view=<?= htmlspecialchars($view) ?>&page=<?= $page - 1 ?>" aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
                     
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                         <li class="page-item <?= ($page == $i) ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                            <a class="page-link" href="?view=<?= htmlspecialchars($view) ?>&page=<?= $i ?>"><?= $i ?></a>
                         </li>
                     <?php endfor; ?>
                     
                     <li class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= $page + 1 ?>" aria-label="Next">
+                        <a class="page-link" href="?view=<?= htmlspecialchars($view) ?>&page=<?= $page + 1 ?>" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
@@ -220,11 +255,19 @@ include '../includes/header.php';
 </div>
 
 <script>
-function confirmDelete(id) {
-    // Dùng SweetAlert2 nếu có, hoặc confirm mặc định
-    if(confirm('Bạn có chắc chắn muốn xóa tin này không? Hành động này không thể hoàn tác.')) {
-        window.location.href = 'manage-jobs.php?delete=' + id;
-    }
+function confirmSoftDelete(id) {
+    Swal.fire({
+        title: 'Xóa tin này?',
+        text: 'Tin sẽ ẩn khỏi trang công khai. Bạn có thể khôi phục trong tab Đã xóa.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Xóa'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('del-form-' + id).submit();
+        }
+    });
 }
 </script>
 

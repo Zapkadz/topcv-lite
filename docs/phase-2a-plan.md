@@ -1,6 +1,6 @@
 # Phase 2A — Status model (account vs employer approval)
 
-> Implement: **2026-05-29** — chờ user test → 「2A pass」
+> Implement: **2026-05-29** — ✅ User xác nhận **「2A pass」**
 
 ## Mục tiêu
 
@@ -54,17 +54,19 @@ php docs/migrations/run-phase-2a-user-status.php
 |------|----------|
 | admin/users.php (từ chối) | `admin_reject_employer_form` |
 
-## Test checklist (user)
+## Test checklist (user) — ✅ pass 2026-05-29
 
-- [ ] **Migration:** chạy script trên DB local trước khi test
-- [ ] Đăng ký employer mới → `employer_approval_status=pending`
-- [ ] Employer pending **login được** → SweetAlert thông báo chờ duyệt
-- [ ] Employer pending vào `employer/job-create.php` → bị chặn, redirect trang chủ
-- [ ] Admin duyệt → employer đăng tin được
-- [ ] Admin từ chối → employer không login được (rejected)
-- [ ] Candidate đăng ký/login **không đổi** hành vi
+- [x] Migration (repair / migrate-phase-2a.php)
+- [x] Employer mới → pending; login + guard employer
+- [x] Admin duyệt / từ chối
+- [x] Candidate không đổi hành vi
 
-User báo **「2A pass」** khi xong.
+### Hotfix trong quá trình test
+
+- `UserRepository.php` — path `user_status.php`
+- `includes/header.php` — bỏ `SELECT status` cũ
+- `includes/guards/require_employer.php` — path `../../config/db.php`
+- `phase-2a-user-status-repair.sql` + `migrate-phase-2a.php` (schema dở)
 
 ## Git gợi ý
 

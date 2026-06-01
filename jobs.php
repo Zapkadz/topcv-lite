@@ -2,6 +2,7 @@
 // File: jobs.php
 session_start();
 include 'config/db.php';
+require_once __DIR__ . '/includes/job_rules.php';
 include 'includes/header.php';
 
 // LẤY DỮ LIỆU BỘ LỌC
@@ -14,7 +15,7 @@ $cat_id = isset($_GET['cat']) ? $_GET['cat'] : '';
 $loc_id = isset($_GET['loc']) ? $_GET['loc'] : '';
 
 // QUERY CƠ BẢN
-$where = "WHERE j.status = 'approved' AND j.deadline >= CURDATE()";
+$where = 'WHERE j.status = \'approved\' AND j.deadline >= CURDATE() AND ' . job_sql_not_deleted('j');
 $params = [];
 
 if ($keyword) {

@@ -34,12 +34,12 @@ if ($job_id <= 0 || !csrf_validate('apply_job_form', $_POST['csrf_token'] ?? '')
 }
 
 try {
-    $stmt_job = $conn->prepare('SELECT id, status, deadline FROM jobs WHERE id = ? LIMIT 1');
+    $stmt_job = $conn->prepare('SELECT id, status, deadline, deleted_at FROM jobs WHERE id = ? LIMIT 1');
     $stmt_job->execute([$job_id]);
     $job_row = $stmt_job->fetch();
     if (!$job_row || !job_is_open_for_apply($job_row)) {
         $_SESSION['swal_icon'] = 'warning';
-        $_SESSION['swal_title'] = 'Tin tuyển dụng đã hết hạn hoặc không còn nhận hồ sơ.';
+        $_SESSION['swal_title'] = 'Tin tuyển dụng không còn nhận hồ sơ (đã xóa, hết hạn hoặc chưa duyệt).';
         header("Location: job-detail.php?id=$job_id");
         exit();
     }

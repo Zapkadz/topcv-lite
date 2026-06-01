@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
         } else {
             $userId = (int) ($_POST['user_id'] ?? 0);
-            if (UserModerationService::approveEmployer($conn, $userId)) {
+            $adminId = (int) ($_SESSION['user_id'] ?? 0);
+            if (UserModerationService::approveEmployer($conn, $userId, $adminId)) {
                 $_SESSION['swal_icon'] = 'success';
                 $_SESSION['swal_title'] = 'Đã duyệt Nhà tuyển dụng!';
             } else {
@@ -39,7 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
         } else {
             $userId = (int) ($_POST['user_id'] ?? 0);
-            if (UserModerationService::rejectEmployer($conn, $userId)) {
+            $adminId = (int) ($_SESSION['user_id'] ?? 0);
+            if (UserModerationService::rejectEmployer($conn, $userId, $adminId)) {
                 $_SESSION['swal_icon'] = 'success';
                 $_SESSION['swal_title'] = 'Đã từ chối tài khoản Nhà tuyển dụng.';
             } else {

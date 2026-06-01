@@ -204,13 +204,54 @@
 - Service layer đầu tiên: `UserRepository`, `UserModerationService`, guard `require_employer.php`.
 
 ### Những gì đã thay đổi
-- Migration `docs/migrations/phase-2a-user-status.sql` (+ runner PHP).
-- `register.php`, `login.php`, `admin/users.php` (duyệt + **từ chối** NTD), `employer/auth_check.php`.
-- Badge trạng thái 2 cột trên admin users.
+- Migration `phase-2a-user-status.sql`, `phase-2a-user-status-repair.sql`, `migrate-phase-2a.php`.
+- Layer: `UserRepository`, `UserModerationService`, `user_status.php`, `schema_users.php`, `require_employer.php`.
+- Pages: `register.php`, `login.php`, `admin/users.php`, `includes/header.php`, `employer/auth_check.php`.
 
 ### Bài học rút ra
-- Một cột `status` cho nhiều nghĩa gây khó mở rộng (khóa vs chờ duyệt) — tách cột theo domain sớm.
-- Guard employer tách file `includes/guards/` — page employer chỉ `include auth_check.php`.
+- Tách cột `status` theo domain sớm — tránh overload một tinyint.
+- File trong `includes/guards/` cần `../../config/db.php`, không phải `../config`.
+- Migration SQL: chạy cả file một lần; nếu đã DROP `status` thì dùng repair script.
+- Sau đổi schema, rà **toàn project** query cột cũ (header.php sót `users.status`).
 
-### Kết quả test
-- ⏳ Chờ user chạy migration + checklist `docs/phase-2a-plan.md` → 「2A pass」
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2A pass」**
+
+## 2026-05-29 - Phase 2 / Nhóm 2B: Soft delete job
+
+### Mục tiêu
+- `jobs.deleted_at` — xóa mềm do NTD; public/apply không thấy tin đã xóa.
+- Layer: `JobRepository`, `JobService` (mẫu sau 2A).
+
+### Những gì đã thay đổi
+- Migration: `migrate-phase-2b.php` (PHP idempotent, tránh lỗi parse comment SQL).
+- `job_rules`: `job_sql_not_deleted()`, `job_is_open_for_apply` + soft delete, `job_admin_status_badge_html`.
+- Employer: `manage-jobs.php` — POST xóa/khôi phục, tab Đã xóa; CSRF `employer_job_delete_form`, `employer_job_restore_form`.
+- Public: `index`, `jobs`, `job-detail`, `apply`, `company-detail`, `employer/dashboard`.
+- Admin: badge **Đã xóa (NTD)**; pending + đã xóa NTD không vào hàng chờ duyệt.
+
+### Bài học rút ra
+- **Hai trục:** `status` (admin) vs `deleted_at` (NTD) — khôi phục chỉ clear `deleted_at`, giữ `status`.
+- Migration: đừng `array_filter` cả statement nếu file SQL có comment đầu dòng (đã lỗi chỉ chạy CREATE INDEX).
+- Admin queue phải lọc `deleted_at` khi `status = pending`, tránh duyệt tin NTD đã bỏ.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2B pass」**
+
+## 2026-05-29 - Phase 2 / Nhóm 2C: Moderation audit log
+
+### Mục tiêu
+- Ghi lại admin duyệt/từ chối job và employer; trang xem lịch sử.
+
+### Những gì đã thay đổi
+- Bảng `moderation_logs`, migration `migrate-phase-2c.php`.
+- `ModerationLogRepository`, `ModerationLogService`, `JobModerationService`.
+- `UserModerationService::approveEmployer/rejectEmployer` nhận `adminId` để ghi log.
+- `admin/jobs.php`, `admin/users.php`, `admin/moderation-log.php`, menu sidebar.
+
+### Bài học rút ra
+- Chỉ log sau khi UPDATE thành công (`rowCount` / return bool).
+- CSRF fail → redirect sớm, không gọi service → không log.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2C pass」**

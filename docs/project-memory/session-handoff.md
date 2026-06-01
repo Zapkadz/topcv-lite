@@ -1,16 +1,16 @@
-# Session Handoff — Đọc file này TRƯỚC khi làm bất cứ gì
+# Session Handoff
 
 > Cập nhật: **2026-05-29**
 
 ---
 
-## TL;DR — Làm gì ngay?
+## TL;DR
 
-1. **Phase 1 + 1.1** ✅ — user đã commit + test pass.
-2. **Docs chuẩn hóa pre-Phase 2** ✅ — user confirm **`「xác nhận docs chuẩn hóa」`**.
-3. **Git docs (tuỳ chọn):** 1 commit trước khi code Phase 2.
-4. **Phase 2:** chờ **`「xác nhận 2A」`** → status model (`phase-2-mini-plan.md`).
-5. **Quy trình:** mini-plan → confirm → code → test → log → Git checkpoint.
+1. Phase **1 + 1.1** ✅ | Docs chuẩn hóa ✅ | **2A** ✅ | **2B** ✅ pass
+2. Migration 2B: `docs/migrations/migrate-phase-2b.php` (parser SQL comment đã fix — dùng logic PHP)
+3. Git 2B: `feature/phase-2-2b-job-soft-delete` → commit → PR → `main`
+4. **2C** ✅ pass — commit `phase 2: moderation audit log (nhóm 2C)`
+5. Tiếp: **`「xác nhận 2D」`** (saved jobs) → sau đó CV roadmap
 
 ---
 
@@ -18,29 +18,29 @@
 
 | Phase | Status |
 |-------|--------|
-| 1 Critical + 1.1 | ✅ |
-| Docs chuẩn hóa | ✅ confirmed |
-| 2 (2A→2D) | Chưa — chờ confirm 2A |
+| 2A User status | ✅ pass |
+| 2B Job soft delete | ✅ pass |
+| 2C Moderation log | ✅ pass |
+| 2D Saved jobs | Chưa |
 
 ---
 
-## Prompt gợi ý (chat mới)
+## File map Phase 2B
 
-```
-Đọc docs/project-memory/session-handoff.md và current-task.md.
-Docs chuẩn hóa đã confirm. Phase 2 chờ 「xác nhận 2A」.
-Tuân thủ coding-conventions + architecture-standardization-plan.
-Tiếng Việt. User tự git commit.
-```
+- `includes/repositories/JobRepository.php`
+- `includes/services/JobService.php`
+- `includes/schema_jobs.php`
+- `includes/job_rules.php` — `job_sql_not_deleted`, `job_admin_status_badge_html`
+- `employer/manage-jobs.php` — tab Đã xóa, POST xóa/khôi phục
+- `admin/jobs.php` — pending loại tin đã xóa NTD; chặn duyệt/từ chối
+- `docs/migrations/migrate-phase-2b.php`, `phase-2b-job-soft-delete.sql`
+- `docs/phase-2b-plan.md`
 
 ---
 
-## File map
+## File map Phase 2A (tham chiếu)
 
-| File | Mục đích |
-|------|----------|
-| `docs/coding-conventions.md` | Quy ước code Phase 2+ |
-| `docs/pre-phase-2-structure-audit.md` | Audit + file dễ bị ảnh hưởng |
-| `docs/architecture-standardization-plan.md` | Service layer + đồ án |
-| `docs/phase-2-mini-plan.md` | Mini-plan 2A→2D |
-| `current-task.md` | Trạng thái hiện tại |
+- `includes/services/UserModerationService.php`
+- `includes/repositories/UserRepository.php`
+- `includes/guards/require_employer.php`
+- `docs/phase-2a-plan.md`

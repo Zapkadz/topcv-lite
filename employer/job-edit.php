@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/location_picker.php';
 require_once __DIR__ . '/../includes/html_content.php';
+require_once __DIR__ . '/../includes/services/JobService.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -19,18 +20,28 @@ $job_id = intval($_GET['id']);
 $ref_page = isset($_GET['ref_page']) ? intval($_GET['ref_page']) : 1;
 
 // 2. Lấy thông tin Job và xác thực quyền sở hữu
-$stmt = $conn->prepare("
-    SELECT j.* FROM jobs j 
-    JOIN companies c ON j.company_id = c.id 
-    WHERE j.id = ? AND c.user_id = ?
-");
-$stmt->execute([$job_id, $user_id]);
-$job = $stmt->fetch();
-
-if (!$job) {
-    echo "<script>alert('Tin không tồn tại hoặc bạn không có quyền sửa!'); window.location.href='manage-jobs.php';</script>";
+$stmt = $conn->prepare('SELECT id FROM companies WHERE user_id = ? LIMIT 1');
+$stmt->execute([$user_id]);
+$companyRow = $stmt->fetch();
+if (!$companyRow) {
+    header('Location: company.php');
     exit();
 }
+$company_id_edit = (int) $companyRow['id'];
+
+$editCheck = JobService::assertEditableByCompany($conn, $job_id, $company_id_edit);
+if (!$editCheck['ok']) {
+    $_SESSION['swal_icon'] = 'warning';
+    $_SESSION['swal_title'] = $editCheck['message'];
+    header('Location: manage-jobs.php?page=' . $ref_page);
+    exit();
+}
+
+$stmt = $conn->prepare(
+    'SELECT j.* FROM jobs j WHERE j.id = ? AND j.company_id = ? LIMIT 1'
+);
+$stmt->execute([$job_id, $company_id_edit]);
+$job = $stmt->fetch();
 
 // 3. Chuẩn bị dữ liệu cho các Select Box
 $cats = $conn->query("SELECT * FROM categories")->fetchAll();

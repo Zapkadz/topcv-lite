@@ -2,6 +2,7 @@
 // --- PHẦN 1: LOGIC PHP ---
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'config/db.php';
+require_once __DIR__ . '/includes/job_rules.php';
 include 'includes/header.php';
 
 // 1. Kiểm tra ID công ty
@@ -50,18 +51,20 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 // Đếm tổng số tin active
-$stmt_count = $conn->prepare("SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = 'approved' AND deadline >= CURDATE()");
+$stmt_count = $conn->prepare(
+    'SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = \'approved\' AND deadline >= CURDATE() AND ' . job_sql_not_deleted()
+);
 $stmt_count->execute([$company_id]);
 $total_records = $stmt_count->fetchColumn();
 $total_pages = ceil($total_records / $limit);
 
 // 5. Lấy danh sách việc làm (Có Limit & Offset)
-$sql_jobs = "SELECT j.*, l.name as location_name 
-             FROM jobs j 
-             JOIN locations l ON j.location_id = l.id 
-             WHERE j.company_id = ? AND j.status = 'approved' AND j.deadline >= CURDATE()
-             ORDER BY j.created_at DESC 
-             LIMIT $limit OFFSET $offset";
+$sql_jobs = 'SELECT j.*, l.name AS location_name
+             FROM jobs j
+             JOIN locations l ON j.location_id = l.id
+             WHERE j.company_id = ? AND j.status = \'approved\' AND j.deadline >= CURDATE() AND ' . job_sql_not_deleted('j') . '
+             ORDER BY j.created_at DESC
+             LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
 
 $stmt_jobs = $conn->prepare($sql_jobs);
 $stmt_jobs->execute([$company_id]);

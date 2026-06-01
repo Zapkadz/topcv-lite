@@ -1,7 +1,22 @@
 <?php
 /**
- * Quy tắc nghiệp vụ tin tuyển dụng: deadline, hết hạn.
+ * Quy tắc nghiệp vụ tin tuyển dụng: deadline, hết hạn, soft delete.
  */
+
+if (!function_exists('job_sql_not_deleted')) {
+    /** Điều kiện SQL: tin chưa bị xóa mềm (cần cột deleted_at). */
+    function job_sql_not_deleted(string $alias = 'j'): string
+    {
+        return "({$alias}.deleted_at IS NULL)";
+    }
+}
+
+if (!function_exists('job_is_soft_deleted')) {
+    function job_is_soft_deleted(array $job): bool
+    {
+        return !empty($job['deleted_at']);
+    }
+}
 
 if (!function_exists('job_today_date')) {
     function job_today_date(): string
@@ -53,6 +68,10 @@ if (!function_exists('job_is_open_for_apply')) {
     /** Tin được phép nhận hồ sơ ứng tuyển */
     function job_is_open_for_apply(array $job): bool
     {
+        if (job_is_soft_deleted($job)) {
+            return false;
+        }
+
         return ($job['status'] ?? '') === 'approved' && !job_is_expired($job['deadline'] ?? null);
     }
 }
@@ -60,6 +79,10 @@ if (!function_exists('job_is_open_for_apply')) {
 if (!function_exists('job_admin_status_badge_html')) {
   function job_admin_status_badge_html(array $job): string
     {
+        if (job_is_soft_deleted($job)) {
+            return '<span class="badge bg-dark">Đã xóa (NTD)</span>';
+        }
+
         $status = $job['status'] ?? '';
         $expired = job_is_expired($job['deadline'] ?? null);
 

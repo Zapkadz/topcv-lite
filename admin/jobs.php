@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/html_content.php';
+require_once __DIR__ . '/../includes/schema_moderation.php';
+require_once __DIR__ . '/../includes/services/JobModerationService.php';
 include 'includes/header.php';
 
 // --- XỬ LÝ POST (Duyệt hoặc Từ chối) ---
@@ -12,20 +14,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: jobs.php');
         exit();
     }
-    $job_id = $_POST['job_id'];
-    $action = $_POST['action'];
+    $job_id = (int) ($_POST['job_id'] ?? 0);
+    $action = $_POST['action'] ?? '';
 
-    if ($action == 'approve') {
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'approved', admin_note = NULL WHERE id = ?");
-        $stmt->execute([$job_id]);
-        $_SESSION['swal_icon'] = 'success';
-        $_SESSION['swal_title'] = 'Đã duyệt tin đăng!';
-    } elseif ($action == 'reject') {
-        $note = $_POST['admin_note'];
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'rejected', admin_note = ? WHERE id = ?");
-        $stmt->execute([$note, $job_id]);
-        $_SESSION['swal_icon'] = 'success';
-        $_SESSION['swal_title'] = 'Đã từ chối tin đăng!';
+    $stmtCheck = $conn->prepare('SELECT id, deleted_at FROM jobs WHERE id = ? LIMIT 1');
+    $stmtCheck->execute([$job_id]);
+    $jobRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+    if (!$jobRow) {
+        $_SESSION['swal_icon'] = 'error';
+        $_SESSION['swal_title'] = 'Không tìm thấy tin tuyển dụng.';
+    } elseif (job_is_soft_deleted($jobRow)) {
+        $_SESSION['swal_icon'] = 'warning';
+        $_SESSION['swal_title'] = 'Tin đã bị NTD xóa — không duyệt/từ chối được. Chỉ xem ở tab Tất cả tin.';
+    } elseif ($action === 'approve') {
+        $adminId = (int) ($_SESSION['user_id'] ?? 0);
+        if (JobModerationService::approve($conn, $job_id, $adminId)) {
+            $_SESSION['swal_icon'] = 'success';
+            $_SESSION['swal_title'] = 'Đã duyệt tin đăng!';
+        } else {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Không thể duyệt tin (có thể đã xóa hoặc không tồn tại).';
+        }
+    } elseif ($action === 'reject') {
+        $note = (string) ($_POST['admin_note'] ?? '');
+        $adminId = (int) ($_SESSION['user_id'] ?? 0);
+        if (JobModerationService::reject($conn, $job_id, $adminId, $note)) {
+            $_SESSION['swal_icon'] = 'success';
+            $_SESSION['swal_title'] = 'Đã từ chối tin đăng!';
+        } else {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Không thể từ chối tin (có thể đã xóa hoặc không tồn tại).';
+        }
     }
 
     header("Location: jobs.php");
@@ -49,9 +69,9 @@ $sql = "SELECT j.*, c.name as company_name, c.logo
         ORDER BY j.created_at DESC";
 $all_jobs = $conn->query($sql)->fetchAll();
 
-// Tách ra 2 mảng để hiển thị tab
-$pending_jobs = array_filter($all_jobs, function ($j) {
-    return $j['status'] == 'pending';
+// Chờ duyệt: pending và chưa bị NTD xóa mềm (tin đã xóa chỉ xem tab Tất cả)
+$pending_jobs = array_filter($all_jobs, static function ($j) {
+    return ($j['status'] ?? '') === 'pending' && !job_is_soft_deleted($j);
 });
 ?>
 

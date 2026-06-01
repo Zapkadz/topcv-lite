@@ -1,6 +1,6 @@
 # Phase 2 — Mini Plan (Business Logic Fixes)
 
-> **Trạng thái:** Chờ user confirm từng nhóm trước khi code.  
+> **Trạng thái:** 2A ✅ pass | 2B chờ confirm.  
 > **Tiền đề:** Phase 1 + 1.1 ✅ | Docs chuẩn hóa ✅  
 > **Kiến trúc:** Page Controller + Service/Repository (`docs/architecture-standardization-plan.md`)
 

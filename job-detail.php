@@ -5,6 +5,7 @@ include 'config/db.php';
 require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/job_rules.php';
 require_once __DIR__ . '/includes/html_content.php';
+require_once __DIR__ . '/includes/repositories/JobRepository.php';
 include 'includes/header.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -16,22 +17,16 @@ $job_id = intval($_GET['id']);
 
 // [LOGIC 1] TĂNG LƯỢT XEM (CHỐNG SPAM F5)
 // Chỉ tăng view nếu trong phiên làm việc này chưa xem tin này
-if (!isset($_SESSION['viewed_job_' . $job_id])) {
-    $stmt_view = $conn->prepare("UPDATE jobs SET view_count = view_count + 1 WHERE id = ?");
+$job = JobRepository::findPublicById($conn, $job_id);
+
+if ($job && !isset($_SESSION['viewed_job_' . $job_id])) {
+    $stmt_view = $conn->prepare(
+        'UPDATE jobs SET view_count = view_count + 1 WHERE id = ? AND deleted_at IS NULL'
+    );
     $stmt_view->execute([$job_id]);
     $_SESSION['viewed_job_' . $job_id] = true;
+    $job = JobRepository::findPublicById($conn, $job_id);
 }
-
-// [LOGIC 2] LẤY CHI TIẾT TIN & CÔNG TY
-// Join thêm bảng locations để lấy tên thành phố
-$sql = "SELECT j.*, c.name as company_name, c.logo, c.address as company_address, l.name as city 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        JOIN locations l ON j.location_id = l.id 
-        WHERE j.id = ? AND j.status = 'approved'";
-$stmt = $conn->prepare($sql);
-$stmt->execute([$job_id]);
-$job = $stmt->fetch();
 
 $job_expired = $job ? job_is_expired($job['deadline']) : false;
 $job_open_for_apply = $job ? job_is_open_for_apply($job) : false;
