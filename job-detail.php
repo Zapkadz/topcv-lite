@@ -8,7 +8,9 @@ require_once __DIR__ . '/includes/html_content.php';
 require_once __DIR__ . '/includes/repositories/JobRepository.php';
 require_once __DIR__ . '/includes/schema_saved_jobs.php';
 require_once __DIR__ . '/includes/services/SavedJobService.php';
-include 'includes/header.php';
+require_once __DIR__ . '/includes/schema_cvs.php';
+require_once __DIR__ . '/includes/schema_applications_cv.php';
+require_once __DIR__ . '/includes/services/CvService.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: index.php");
@@ -66,6 +68,25 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
         }
     }
 }
+
+$cv_list = [];
+$cv_schema_ready = false;
+$default_cv_id = 0;
+if ($user_role === 'candidate' && isset($_SESSION['user_id']) && cvs_schema_ready($conn)) {
+    $cv_schema_ready = true;
+    $cv_list = CvService::listForUser($conn, (int) $_SESSION['user_id']);
+    foreach ($cv_list as $cv) {
+        if ((int) ($cv['is_primary'] ?? 0) === 1) {
+            $default_cv_id = (int) $cv['id'];
+            break;
+        }
+    }
+    if ($default_cv_id === 0 && count($cv_list) > 0) {
+        $default_cv_id = (int) $cv_list[0]['id'];
+    }
+}
+
+include 'includes/header.php';
 ?>
 
 <style>
@@ -253,7 +274,7 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
 <?php if ($user_role == 'candidate' && !$has_applied && $job_open_for_apply): ?>
 <div class="modal fade" id="applyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="apply.php" method="POST" enctype="multipart/form-data" class="modal-content">
+        <form action="apply.php" method="POST" class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fs-6">Ứng tuyển: <strong><?= htmlspecialchars($job['title']) ?></strong></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -261,77 +282,68 @@ if (isset($_SESSION['user_id']) && $user_role == 'candidate') {
             <div class="modal-body">
                 <input type="hidden" name="job_id" value="<?= $job['id'] ?>">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('apply_job_form')) ?>">
-                
-                <p class="small text-muted mb-3">Vui lòng kiểm tra kỹ thông tin trước khi ứng tuyển.</p>
 
-                <?php 
-                    $stmt_cv = $conn->prepare("SELECT cv_path FROM candidates WHERE id = ?");
-                    $stmt_cv->execute([$candidate_id]);
-                    $online_cv = $stmt_cv->fetchColumn();
-                ?>
+                <p class="small text-muted mb-3">Chọn một CV từ Quản lý CV online. Hệ thống lưu bản CV tại thời điểm nộp.</p>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Chọn CV <span class="text-danger">*</span></label>
-                    
-                    <div class="form-check card p-2 mb-2 bg-light border-0">
-                        <input class="form-check-input ms-1 mt-2" type="radio" name="cv_type" value="online" id="cv_online" <?= $online_cv ? 'checked' : 'disabled' ?>>
-                        <label class="form-check-label ms-2" for="cv_online">
-                            <div>Dùng CV đã tải lên hồ sơ</div>
-                            <?php if($online_cv): ?>
-                                <small><a href="<?= $online_cv ?>" target="_blank" class="text-primary text-decoration-none"><i class="fas fa-eye"></i> Xem CV hiện tại</a></small>
-                            <?php else: ?>
-                                <small class="text-danger fst-italic">(Bạn chưa cập nhật CV trong hồ sơ)</small>
-                            <?php endif; ?>
-                        </label>
+                <?php if (!$cv_schema_ready): ?>
+                    <?= applications_cv_migration_hint_html() ?>
+                <?php elseif (count($cv_list) === 0): ?>
+                    <div class="alert alert-warning">
+                        Bạn chưa có CV online.
+                        <a href="candidate/cv-manage.php" class="alert-link">Tạo CV ngay</a>
                     </div>
-
-                    <div class="form-check card p-2 border-0 bg-light">
-                        <input class="form-check-input ms-1 mt-2" type="radio" name="cv_type" value="upload" id="cv_upload" <?= !$online_cv ? 'checked' : '' ?>>
-                        <label class="form-check-label ms-2 w-100" for="cv_upload">
-                            <div>Tải lên CV mới (PDF, DOC, DOCX)</div>
-                            <input type="file" name="new_cv" class="form-control form-control-sm mt-2" id="cv_file_input" accept=".pdf,.doc,.docx" <?= $online_cv ? 'disabled' : '' ?>>
-                        </label>
+                <?php else: ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="cv_profile_id">Chọn CV để nộp <span class="text-danger">*</span></label>
+                        <select name="cv_profile_id" id="cv_profile_id" class="form-select" required>
+                            <?php foreach ($cv_list as $cv): ?>
+                                <?php
+                                $cvId = (int) $cv['id'];
+                                $isPrimary = (int) ($cv['is_primary'] ?? 0) === 1;
+                                $label = (string) $cv['title'] . ($isPrimary ? ' ★' : '');
+                                ?>
+                                <option value="<?= $cvId ?>" <?= $cvId === $default_cv_id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($label) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted d-block mt-1">★ = CV mặc định</small>
+                        <a href="#" id="apply-preview-cv-link" class="small text-primary" target="_blank" rel="noopener">
+                            <i class="fas fa-eye"></i> Xem trước CV đã chọn
+                        </a>
                     </div>
-                </div>
+                <?php endif; ?>
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Thư giới thiệu (Cover Letter)</label>
-                    <textarea name="cover_letter" class="form-control" rows="4" placeholder="Viết ngắn gọn lý do tại sao bạn phù hợp với vị trí này..."></textarea>
+                    <textarea name="cover_letter" class="form-control" rows="4"
+                        placeholder="Viết ngắn gọn lý do tại sao bạn phù hợp với vị trí này..."></textarea>
                 </div>
             </div>
             <div class="modal-footer border-top-0 pt-0">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-                <button type="submit" class="btn btn-primary fw-bold px-4">Gửi hồ sơ</button>
+                <button type="submit" class="btn btn-primary fw-bold px-4"
+                    <?= (!$cv_schema_ready || count($cv_list) === 0) ? 'disabled' : '' ?>>
+                    Gửi hồ sơ
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    // Script xử lý bật/tắt input file khi chọn loại CV
-    document.addEventListener("DOMContentLoaded", function() {
-        const fileInput = document.getElementById('cv_file_input');
-        const radios = document.querySelectorAll('input[name="cv_type"]');
-
-        radios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'upload') {
-                    fileInput.disabled = false;
-                    fileInput.required = true;
-                } else {
-                    fileInput.disabled = true;
-                    fileInput.required = false;
-                    fileInput.value = ''; // Reset file
-                }
-            });
-        });
-        
-        // Kích hoạt trạng thái ban đầu (nếu load trang mà đang chọn upload)
-        if(document.getElementById('cv_upload').checked) {
-             fileInput.disabled = false;
-             fileInput.required = true;
-        }
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    var select = document.getElementById('cv_profile_id');
+    var link = document.getElementById('apply-preview-cv-link');
+    if (!select || !link) {
+        return;
+    }
+    function updatePreviewLink() {
+        link.href = 'candidate/cv-preview.php?id=' + encodeURIComponent(select.value);
+    }
+    select.addEventListener('change', updatePreviewLink);
+    updatePreviewLink();
+});
 </script>
 <?php endif; ?>
 

@@ -8,35 +8,26 @@
 
 | Phase | Status |
 |-------|--------|
-| Phase 2 (2A–2D) | ✅ |
-| CV-0 | ✅ |
-| CV-A | ✅ pass |
-| **CV-B** | ✅ **`「CV-B pass」`** — chờ user commit |
-| **CV-C** | Chờ **`「xác nhận CV-C」`** |
+| CV-B | ✅ pass + commit |
+| **CV-C** | ✅ code — chờ test **`「CV-C pass」`** |
 
 ---
 
-## Bước tiếp theo (theo quy trình)
+## CV-C — đã implement
 
-### Ngay bây giờ (bạn làm)
+- Migration: `migrate-phase-cv-c.php`
+- `ApplicationService`, `CvService::snapshotForApply`
+- `apply.php` + modal `job-detail.php` (dropdown CV)
+- `employer/applicants.php` + `applicant-cv-snapshot.php`
 
-1. ~~**`「CV-B pass」`**~~ ✅
-2. **Commit git** (tự commit), gợi ý message:
-   - `phase CV: UI quản lý và builder CV online (nhóm CV-B)`
-   - (hoặc 2 commit: UI + `fix: validation SĐT, tháng/năm, avatar, preview`)
-3. Chạy migration nếu chưa: `docs/migrations/migrate-phase-cv-b-formats.php`
-4. Push / PR lên `main` (tùy chiến lược nhánh hiện tại)
+## Test nhanh
 
-### Sau đó (bắt đầu CV-C)
+1. http://localhost/topcv_lite/docs/migrations/migrate-phase-cv-c.php
+2. Candidate: có CV → apply job → chọn CV
+3. Employer: applicants → **CV online**
+4. Sửa CV sau apply → employer vẫn thấy snapshot cũ
+5. Đơn cũ (file PDF) → **File CV** vẫn mở được
 
-5. Gửi **`「xác nhận CV-C」`** → mình soạn `docs/phase-cv-c-plan.md` → **chờ bạn đọc** → mới code
-6. Phạm vi **CV-C** (MVP bắt buộc — xem `docs/structured-cv-roadmap.md`):
-   - Migration: `applications.cv_profile_id`, `cv_snapshot_json`
-   - **Apply:** `job-detail.php` / `apply.php` — dropdown chọn CV online + snapshot khi nộp
-   - **Employer:** `employer/applicants.php` — xem CV structured từ snapshot (read-only)
-   - Regression: vẫn apply bằng upload file PDF/DOC
-7. Test xong → **`「CV-C pass」`** → commit → CV-D (section đầy đủ + template đẹp) nếu cần cho đồ án
+## Sau pass
 
-**Lưu ý:** Preview classic + nút Xem đã có ở CV-B; CV-C tập trung **luồng ứng tuyển + NTD**, không làm lại editor.
-
-**Tham chiếu:** `docs/phase-cv-0-ux-spec.md`, `docs/structured-cv-roadmap.md`
+`「CV-C pass」` → commit → `「xác nhận CV-D」` (tùy đồ án)

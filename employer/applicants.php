@@ -3,6 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/schema_applications_cv.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -43,9 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['app_id'])) {
 include '../includes/header.php';
 
 // 3. SỬA LỖI SQL: Join qua bảng candidates để lấy đúng thông tin User ứng viên
-$sql = "SELECT app.id as app_id, app.created_at as time_apply, app.status, app.cv_snapshot, app.cover_letter,
-               u.fullname, u.email, u.phone, 
-               j.title as job_title 
+$sql = "SELECT app.id AS app_id, app.created_at AS time_apply, app.status,
+               app.cv_snapshot, app.cv_snapshot_json, app.cover_letter,
+               u.fullname, u.email, u.phone,
+               j.title AS job_title
         FROM applications app
         JOIN jobs j ON app.job_id = j.id
         JOIN candidates cand ON app.candidate_id = cand.id
@@ -53,12 +55,19 @@ $sql = "SELECT app.id as app_id, app.created_at as time_apply, app.status, app.c
         WHERE j.company_id = ?
         ORDER BY app.created_at DESC";
 
-$stmt = $conn->prepare($sql);
-$stmt->execute([$company_id]);
-$apps = $stmt->fetchAll();
+$apps = [];
+if (applications_cv_columns_ready($conn)) {
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([$company_id]);
+    $apps = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
 ?>
 
 <div class="container py-5">
+    <?php if (!applications_cv_columns_ready($conn)): ?>
+        <?= applications_cv_migration_hint_html() ?>
+    <?php endif; ?>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-primary"><i class="fas fa-user-tie"></i> Quản lý hồ sơ ứng viên</h3>
@@ -102,13 +111,25 @@ $apps = $stmt->fetchAll();
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="d-flex gap-1">
-                                            <a href="../<?= $row['cv_snapshot'] ?>" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
-                                                <i class="fas fa-file-pdf"></i> CV
-                                            </a>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <?php if (!empty($row['cv_snapshot_json'])): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-primary shadow-sm"
+                                                    onclick="openCvSnapshotModal(<?= (int) $row['app_id'] ?>, <?= htmlspecialchars(json_encode($row['fullname'], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)">
+                                                    <i class="fas fa-id-card"></i> CV online
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if (!empty($row['cv_snapshot'])): ?>
+                                                <a href="../<?= htmlspecialchars((string) $row['cv_snapshot']) ?>" target="_blank"
+                                                    class="btn btn-sm btn-outline-danger shadow-sm">
+                                                    <i class="fas fa-file-pdf"></i> File CV
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if (empty($row['cv_snapshot_json']) && empty($row['cv_snapshot'])): ?>
+                                                <span class="small text-muted">—</span>
+                                            <?php endif; ?>
                                             <?php if ($row['cover_letter']): ?>
-                                                <button class="btn btn-sm btn-outline-info shadow-sm"
-                                                    onclick="showCoverLetter(`<?= htmlspecialchars($row['fullname']) ?>`, `<?= htmlspecialchars(addslashes($row['cover_letter'])) ?>`)">
+                                                <button type="button" class="btn btn-sm btn-outline-info shadow-sm"
+                                                    onclick="showCoverLetter(<?= htmlspecialchars(json_encode($row['fullname']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($row['cover_letter']), ENT_QUOTES) ?>)">
                                                     <i class="fas fa-envelope-open-text"></i> Thư
                                                 </button>
                                             <?php endif; ?>
@@ -155,6 +176,20 @@ $apps = $stmt->fetchAll();
     </div>
 </div>
 
+<div class="modal fade" id="cvSnapshotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="cvSnapshotModalTitle">CV online (snapshot)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="min-height: 400px;">
+                <iframe id="cvSnapshotFrame" title="CV snapshot" class="w-100 border-0" style="min-height: 70vh;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" class="modal-content shadow-lg border-0">
@@ -195,12 +230,23 @@ $apps = $stmt->fetchAll();
     function showCoverLetter(name, text) {
         Swal.fire({
             title: '<h5 class="fw-bold">Thư giới thiệu từ ' + name + '</h5>',
-            html: '<div class="text-start p-2 border rounded bg-light" style="font-size: 0.95rem; line-height: 1.6;">' + text + '</div>',
+            html: '<div class="text-start p-2 border rounded bg-light" style="font-size: 0.95rem; line-height: 1.6;">' + text.replace(/\n/g, '<br>') + '</div>',
             icon: 'info',
             confirmButtonText: 'Đóng',
             confirmButtonColor: '#0d6efd'
         });
     }
+
+    function openCvSnapshotModal(appId, fullname) {
+        document.getElementById('cvSnapshotModalTitle').textContent = 'CV online — ' + fullname;
+        document.getElementById('cvSnapshotFrame').src = 'applicant-cv-snapshot.php?app_id=' + appId;
+        var modal = new bootstrap.Modal(document.getElementById('cvSnapshotModal'));
+        modal.show();
+    }
+
+    document.getElementById('cvSnapshotModal')?.addEventListener('hidden.bs.modal', function () {
+        document.getElementById('cvSnapshotFrame').src = 'about:blank';
+    });
 </script>
 
 <style>
