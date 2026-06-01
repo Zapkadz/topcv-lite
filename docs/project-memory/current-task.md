@@ -8,16 +8,15 @@
 
 | Phase | Status |
 |-------|--------|
-| 2A | ✅ pass |
-| 2B | ✅ pass |
-| 2C Moderation log | ✅ pass |
-| **2D Saved jobs** | Chờ **`「xác nhận 2D」`** |
-| CV roadmap | Sau 2D |
+| **Phase 2 (2A–2D)** | ✅ **HOÀN TẤT** |
+| CV structured | Chờ **`「xác nhận CV roadmap」`** → **CV-0** |
 
 ---
 
 ## Bước tiếp theo
 
-1. User tự commit 2C (xem hướng dẫn trong chat / bên dưới)
-2. PR 2C → `main` (tuỳ workflow)
-3. **`「xác nhận 2D」`** khi sẵn sàng
+1. User commit 2D (nếu chưa): `phase 2: saved jobs cho candidate (nhóm 2D)`
+2. Merge PR Phase 2 → `main` (tuỳ workflow)
+3. **`「xác nhận CV roadmap」`** — rồi **`「xác nhận CV-0」`** (wireframe, chỉ docs)
+
+**Tài liệu CV:** `docs/structured-cv-roadmap.md`

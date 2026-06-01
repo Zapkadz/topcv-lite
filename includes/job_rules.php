@@ -105,3 +105,24 @@ if (!function_exists('job_admin_status_badge_html')) {
         return '<span class="badge bg-light text-dark border">Không rõ</span>';
     }
 }
+
+if (!function_exists('job_saved_listing_badge_html')) {
+    /** Badge cho tab "Đã lưu" — tin có thể hết hạn / đã xóa nhưng vẫn trong danh sách. */
+    function job_saved_listing_badge_html(array $job): string
+    {
+        if (job_is_soft_deleted($job)) {
+            return '<span class="badge bg-dark">Không còn hiệu lực (đã xóa)</span>';
+        }
+
+        $status = $job['status'] ?? '';
+        if ($status !== 'approved') {
+            return '<span class="badge bg-secondary">Không còn hiệu lực</span>';
+        }
+
+        if (job_is_expired($job['deadline'] ?? null)) {
+            return '<span class="badge bg-secondary">Hết hạn</span>';
+        }
+
+        return '<span class="badge bg-success">Còn tuyển</span>';
+    }
+}

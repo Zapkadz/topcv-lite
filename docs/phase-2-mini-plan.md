@@ -1,6 +1,6 @@
 # Phase 2 — Mini Plan (Business Logic Fixes)
 
-> **Trạng thái:** 2A ✅ pass | 2B chờ confirm.  
+> **Trạng thái:** Phase 2 ✅ 2A–2D pass (2026-05-29).  
 > **Tiền đề:** Phase 1 + 1.1 ✅ | Docs chuẩn hóa ✅  
 > **Kiến trúc:** Page Controller + Service/Repository (`docs/architecture-standardization-plan.md`)
 
