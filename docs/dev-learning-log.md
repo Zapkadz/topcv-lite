@@ -272,3 +272,28 @@
 
 ### Kết quả test (user xác nhận 2026-05-29)
 - ✅ **「2D pass」**
+
+## 2026-05-29 - CV structured: Xác nhận roadmap + CV-0 spec
+
+### User
+- ✅ **`「xác nhận CV roadmap」`**
+
+### Tài liệu
+- `docs/structured-cv-roadmap.md` (phase CV-0…F)
+- `docs/phase-cv-0-ux-spec.md` (wireframe, IA, map field → DB)
+
+### Tiếp theo
+- Chờ **`「xác nhận CV-0」`** → code **CV-A**
+
+## 2026-05-29 - Phase CV / Nhóm CV-A: Schema + Service
+
+### User
+- ✅ **`「xác nhận CV-0」`**
+
+### Những gì đã thay đổi
+- Bảng `cv_profiles`, `cv_educations`, `cv_experiences`, `cv_skills`
+- `CvRepository`, `CvService`, `cv_rules.php`, `schema_cvs.php`
+- Migration `migrate-phase-cv-a.php`, `smoke-test-cv-a.php`
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「CV-A pass」**

@@ -236,6 +236,65 @@ INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `ac
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `cv_profiles` (Phase CV-A)
+--
+
+CREATE TABLE `cv_profiles` (
+  `id` int(11) NOT NULL,
+  `candidate_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `full_name` varchar(255) NOT NULL DEFAULT '',
+  `target_position` varchar(255) NOT NULL DEFAULT '',
+  `date_of_birth` date DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `website` varchar(255) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `avatar_path` varchar(255) DEFAULT NULL,
+  `career_objective` text DEFAULT NULL,
+  `interests` text DEFAULT NULL,
+  `attachment_path` varchar(255) DEFAULT NULL,
+  `template_key` varchar(32) NOT NULL DEFAULT 'classic',
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `completion_percent` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `cv_educations` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `start_date` varchar(32) DEFAULT NULL,
+  `end_date` varchar(32) DEFAULT NULL,
+  `school_name` varchar(255) NOT NULL DEFAULT '',
+  `major` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `cv_experiences` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `start_date` varchar(32) DEFAULT NULL,
+  `end_date` varchar(32) DEFAULT NULL,
+  `company_name` varchar(255) NOT NULL DEFAULT '',
+  `position` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `cv_skills` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `skill_name` varchar(255) NOT NULL DEFAULT '',
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `saved_jobs` (Phase 2D)
 --
 
@@ -309,6 +368,26 @@ ALTER TABLE `jobs`
 --
 ALTER TABLE `locations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `cv_profiles`
+--
+ALTER TABLE `cv_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_profiles_candidate` (`candidate_id`),
+  ADD KEY `idx_cv_profiles_primary` (`candidate_id`,`is_primary`);
+
+ALTER TABLE `cv_educations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_educations_cv` (`cv_id`,`sort_order`);
+
+ALTER TABLE `cv_experiences`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_experiences_cv` (`cv_id`,`sort_order`);
+
+ALTER TABLE `cv_skills`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_skills_cv` (`cv_id`,`sort_order`);
 
 --
 -- Chỉ mục cho bảng `saved_jobs`
@@ -393,6 +472,18 @@ ALTER TABLE `moderation_logs`
 ALTER TABLE `saved_jobs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `cv_profiles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_educations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_experiences`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_skills`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- Các ràng buộc cho các bảng đã đổ
 --
@@ -436,6 +527,18 @@ ALTER TABLE `moderation_logs`
 ALTER TABLE `saved_jobs`
   ADD CONSTRAINT `saved_jobs_candidate_fk` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `saved_jobs_job_fk` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_profiles`
+  ADD CONSTRAINT `cv_profiles_candidate_fk` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_educations`
+  ADD CONSTRAINT `cv_educations_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_experiences`
+  ADD CONSTRAINT `cv_experiences_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_skills`
+  ADD CONSTRAINT `cv_skills_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

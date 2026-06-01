@@ -11,7 +11,7 @@
 3. Git 2B: `feature/phase-2-2b-job-soft-delete` → commit → PR → `main`
 4. **2C** ✅ pass — commit `phase 2: moderation audit log (nhóm 2C)`
 5. **Phase 2** ✅ 2A–2D pass
-6. Tiếp: **`「xác nhận CV roadmap」`** → CV-0 → CV-A…
+6. CV-0 ✅ | CV-A ✅ pass → **`「xác nhận CV-B」`** (UI manage + builder)
 
 ---
 
