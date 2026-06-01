@@ -233,6 +233,22 @@ INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `phone`, `role`, `ac
 (3, 'Trần Thị Huyền', 'tranhuyen@gmail.com', '$2y$10$Nj.kTYt9FcyGlYwdW00t8OjEsUic1ebYNsc8Zy7zZM8MV4//7lkUu', NULL, 'employer', 'active', 'approved', '2026-01-01 10:27:18'),
 (4, 'trần trí huy', 'huytran@gmail.com', '$2y$10$YolsAh7720319j5VYbc3y.AdYkIye94rg9fg5gPwuAuPLOjla2QSC', NULL, 'employer', 'active', 'approved', '2026-01-01 13:54:03');
 
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `moderation_logs` (Phase 2C)
+--
+
+CREATE TABLE `moderation_logs` (
+  `id` int(11) NOT NULL,
+  `admin_id` int(11) NOT NULL,
+  `entity_type` enum('job','employer') NOT NULL,
+  `entity_id` int(11) NOT NULL,
+  `action` enum('approve','reject') NOT NULL,
+  `note` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Chỉ mục cho các bảng đã đổ
 --
@@ -280,6 +296,15 @@ ALTER TABLE `jobs`
 --
 ALTER TABLE `locations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `moderation_logs`
+--
+ALTER TABLE `moderation_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_moderation_entity` (`entity_type`,`entity_id`),
+  ADD KEY `idx_moderation_created` (`created_at`),
+  ADD KEY `idx_moderation_admin` (`admin_id`);
 
 --
 -- Chỉ mục cho bảng `users`
@@ -335,6 +360,12 @@ ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT cho bảng `moderation_logs`
+--
+ALTER TABLE `moderation_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Các ràng buộc cho các bảng đã đổ
 --
 
@@ -364,6 +395,12 @@ ALTER TABLE `jobs`
   ADD CONSTRAINT `jobs_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `jobs_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`),
   ADD CONSTRAINT `jobs_ibfk_3` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`);
+
+--
+-- Các ràng buộc cho bảng `moderation_logs`
+--
+ALTER TABLE `moderation_logs`
+  ADD CONSTRAINT `moderation_logs_admin_fk` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

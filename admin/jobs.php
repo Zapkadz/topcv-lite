@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/html_content.php';
+require_once __DIR__ . '/../includes/schema_moderation.php';
+require_once __DIR__ . '/../includes/services/JobModerationService.php';
 include 'includes/header.php';
 
 // --- XỬ LÝ POST (Duyệt hoặc Từ chối) ---
@@ -26,16 +28,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['swal_icon'] = 'warning';
         $_SESSION['swal_title'] = 'Tin đã bị NTD xóa — không duyệt/từ chối được. Chỉ xem ở tab Tất cả tin.';
     } elseif ($action === 'approve') {
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'approved', admin_note = NULL WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$job_id]);
-        $_SESSION['swal_icon'] = 'success';
-        $_SESSION['swal_title'] = 'Đã duyệt tin đăng!';
+        $adminId = (int) ($_SESSION['user_id'] ?? 0);
+        if (JobModerationService::approve($conn, $job_id, $adminId)) {
+            $_SESSION['swal_icon'] = 'success';
+            $_SESSION['swal_title'] = 'Đã duyệt tin đăng!';
+        } else {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Không thể duyệt tin (có thể đã xóa hoặc không tồn tại).';
+        }
     } elseif ($action === 'reject') {
-        $note = $_POST['admin_note'] ?? '';
-        $stmt = $conn->prepare("UPDATE jobs SET status = 'rejected', admin_note = ? WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$note, $job_id]);
-        $_SESSION['swal_icon'] = 'success';
-        $_SESSION['swal_title'] = 'Đã từ chối tin đăng!';
+        $note = (string) ($_POST['admin_note'] ?? '');
+        $adminId = (int) ($_SESSION['user_id'] ?? 0);
+        if (JobModerationService::reject($conn, $job_id, $adminId, $note)) {
+            $_SESSION['swal_icon'] = 'success';
+            $_SESSION['swal_title'] = 'Đã từ chối tin đăng!';
+        } else {
+            $_SESSION['swal_icon'] = 'error';
+            $_SESSION['swal_title'] = 'Không thể từ chối tin (có thể đã xóa hoặc không tồn tại).';
+        }
     }
 
     header("Location: jobs.php");

@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../repositories/UserRepository.php';
 require_once __DIR__ . '/../user_status.php';
+require_once __DIR__ . '/ModerationLogService.php';
 
 class UserModerationService
 {
@@ -88,14 +89,24 @@ class UserModerationService
         return null;
     }
 
-    public static function approveEmployer(PDO $conn, int $userId): bool
+    public static function approveEmployer(PDO $conn, int $userId, ?int $adminId = null): bool
     {
-        return UserRepository::setEmployerApproval($conn, $userId, 'approved');
+        $ok = UserRepository::setEmployerApproval($conn, $userId, 'approved');
+        if ($ok && $adminId !== null && $adminId > 0) {
+            ModerationLogService::record($conn, $adminId, 'employer', $userId, 'approve', null);
+        }
+
+        return $ok;
     }
 
-    public static function rejectEmployer(PDO $conn, int $userId): bool
+    public static function rejectEmployer(PDO $conn, int $userId, ?int $adminId = null): bool
     {
-        return UserRepository::setEmployerApproval($conn, $userId, 'rejected');
+        $ok = UserRepository::setEmployerApproval($conn, $userId, 'rejected');
+        if ($ok && $adminId !== null && $adminId > 0) {
+            ModerationLogService::record($conn, $adminId, 'employer', $userId, 'reject', null);
+        }
+
+        return $ok;
     }
 
     /**

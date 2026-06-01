@@ -156,6 +156,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <a href="users.php" class="nav-link <?= $current_page == 'users.php' ? 'active' : '' ?>">
                 <i class="fas fa-users"></i> Người dùng
             </a>
+            <a href="moderation-log.php" class="nav-link <?= $current_page == 'moderation-log.php' ? 'active' : '' ?>">
+                <i class="fas fa-clipboard-list"></i> Nhật ký duyệt
+            </a>
             <a href="../logout.php" class="nav-link text-danger mt-4">
                 <i class="fas fa-sign-out-alt"></i> Đăng xuất
             </a>

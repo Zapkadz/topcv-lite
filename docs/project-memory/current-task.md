@@ -9,15 +9,15 @@
 | Phase | Status |
 |-------|--------|
 | 2A | ✅ pass |
-| 2B Soft delete job | ✅ pass |
-| **2C Moderation log** | Chờ **`「xác nhận 2C」`** |
+| 2B | ✅ pass |
+| 2C Moderation log | ✅ pass |
+| **2D Saved jobs** | Chờ **`「xác nhận 2D」`** |
+| CV roadmap | Sau 2D |
 
 ---
 
 ## Bước tiếp theo
 
-1. User commit 2B (nếu chưa): `phase 2: soft delete và lifecycle job (nhóm 2B)`
-2. PR 2B → `main` (tuỳ workflow)
-3. Khi sẵn sàng: **`「xác nhận 2C」`** — audit log duyệt/từ chối/xóa
-
-**Git branch gợi ý:** `feature/phase-2-2b-job-soft-delete`
+1. User tự commit 2C (xem hướng dẫn trong chat / bên dưới)
+2. PR 2C → `main` (tuỳ workflow)
+3. **`「xác nhận 2D」`** khi sẵn sàng

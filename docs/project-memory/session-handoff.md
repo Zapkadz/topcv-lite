@@ -9,7 +9,8 @@
 1. Phase **1 + 1.1** ✅ | Docs chuẩn hóa ✅ | **2A** ✅ | **2B** ✅ pass
 2. Migration 2B: `docs/migrations/migrate-phase-2b.php` (parser SQL comment đã fix — dùng logic PHP)
 3. Git 2B: `feature/phase-2-2b-job-soft-delete` → commit → PR → `main`
-4. Tiếp: **`「xác nhận 2C」`** (moderation audit log)
+4. **2C** ✅ pass — commit `phase 2: moderation audit log (nhóm 2C)`
+5. Tiếp: **`「xác nhận 2D」`** (saved jobs) → sau đó CV roadmap
 
 ---
 
@@ -19,7 +20,7 @@
 |-------|--------|
 | 2A User status | ✅ pass |
 | 2B Job soft delete | ✅ pass |
-| 2C Moderation log | Chưa |
+| 2C Moderation log | ✅ pass |
 | 2D Saved jobs | Chưa |
 
 ---

@@ -237,3 +237,21 @@
 
 ### Kết quả test (user xác nhận 2026-05-29)
 - ✅ **「2B pass」**
+
+## 2026-05-29 - Phase 2 / Nhóm 2C: Moderation audit log
+
+### Mục tiêu
+- Ghi lại admin duyệt/từ chối job và employer; trang xem lịch sử.
+
+### Những gì đã thay đổi
+- Bảng `moderation_logs`, migration `migrate-phase-2c.php`.
+- `ModerationLogRepository`, `ModerationLogService`, `JobModerationService`.
+- `UserModerationService::approveEmployer/rejectEmployer` nhận `adminId` để ghi log.
+- `admin/jobs.php`, `admin/users.php`, `admin/moderation-log.php`, menu sidebar.
+
+### Bài học rút ra
+- Chỉ log sau khi UPDATE thành công (`rowCount` / return bool).
+- CSRF fail → redirect sớm, không gọi service → không log.
+
+### Kết quả test (user xác nhận 2026-05-29)
+- ✅ **「2C pass」**
