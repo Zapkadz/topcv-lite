@@ -1,0 +1,25 @@
+.cv-preview-modern-sidebar {
+    background: linear-gradient(180deg, #1e5631 0%, #198754 100%);
+}
+
+.cv-preview-modern .cv-preview-contact li {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.cv-preview-modern .cv-preview-contact i {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+@media print {
+    .cv-preview-modern-sidebar {
+        background: #198754 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .cv-preview-modern-sidebar {
+        border-radius: 0;
+    }
+}

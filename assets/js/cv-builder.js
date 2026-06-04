@@ -53,17 +53,20 @@
         });
     }
 
-    var educationTemplate = document.getElementById('tpl-education-row');
-    var experienceTemplate = document.getElementById('tpl-experience-row');
-    var skillTemplate = document.getElementById('tpl-skill-row');
+    var sections = [
+        ['education-rows', 'educations', 'tpl-education-row'],
+        ['experience-rows', 'experiences', 'tpl-experience-row'],
+        ['skill-rows', 'skills', 'tpl-skill-row'],
+        ['activity-rows', 'activities', 'tpl-activity-row'],
+        ['certificate-rows', 'certificates', 'tpl-certificate-row'],
+        ['award-rows', 'awards', 'tpl-award-row'],
+        ['reference-rows', 'references', 'tpl-reference-row'],
+    ];
 
-    if (educationTemplate) {
-        bindRepeatSection('education-rows', 'educations', educationTemplate.innerHTML);
-    }
-    if (experienceTemplate) {
-        bindRepeatSection('experience-rows', 'experiences', experienceTemplate.innerHTML);
-    }
-    if (skillTemplate) {
-        bindRepeatSection('skill-rows', 'skills', skillTemplate.innerHTML);
-    }
+    sections.forEach(function (cfg) {
+        var tpl = document.getElementById(cfg[2]);
+        if (tpl) {
+            bindRepeatSection(cfg[0], cfg[1], tpl.innerHTML);
+        }
+    });
 })();

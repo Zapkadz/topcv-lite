@@ -297,6 +297,67 @@ CREATE TABLE `cv_skills` (
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `cv_activities` (Phase CV-D)
+--
+
+CREATE TABLE `cv_activities` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `start_date` char(7) DEFAULT NULL,
+  `end_date` char(7) DEFAULT NULL,
+  `organization` varchar(255) NOT NULL DEFAULT '',
+  `role` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `cv_certificates` (Phase CV-D)
+--
+
+CREATE TABLE `cv_certificates` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `issued_at` char(7) DEFAULT NULL,
+  `certificate_name` varchar(255) NOT NULL DEFAULT '',
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `cv_awards` (Phase CV-D)
+--
+
+CREATE TABLE `cv_awards` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `awarded_at` char(7) DEFAULT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `cv_references` (Phase CV-D)
+--
+
+CREATE TABLE `cv_references` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `full_name` varchar(255) NOT NULL DEFAULT '',
+  `position` varchar(255) DEFAULT NULL,
+  `contact_info` varchar(255) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `saved_jobs` (Phase 2D)
 --
 
@@ -393,6 +454,34 @@ ALTER TABLE `cv_skills`
   ADD KEY `idx_cv_skills_cv` (`cv_id`,`sort_order`);
 
 --
+-- Chỉ mục cho bảng `cv_activities`
+--
+ALTER TABLE `cv_activities`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_activities_cv` (`cv_id`,`sort_order`);
+
+--
+-- Chỉ mục cho bảng `cv_certificates`
+--
+ALTER TABLE `cv_certificates`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_certificates_cv` (`cv_id`,`sort_order`);
+
+--
+-- Chỉ mục cho bảng `cv_awards`
+--
+ALTER TABLE `cv_awards`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_awards_cv` (`cv_id`,`sort_order`);
+
+--
+-- Chỉ mục cho bảng `cv_references`
+--
+ALTER TABLE `cv_references`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_references_cv` (`cv_id`,`sort_order`);
+
+--
 -- Chỉ mục cho bảng `saved_jobs`
 --
 ALTER TABLE `saved_jobs`
@@ -487,6 +576,18 @@ ALTER TABLE `cv_experiences`
 ALTER TABLE `cv_skills`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `cv_activities`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_certificates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_awards`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `cv_references`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- Các ràng buộc cho các bảng đã đổ
 --
@@ -543,6 +644,18 @@ ALTER TABLE `cv_experiences`
 
 ALTER TABLE `cv_skills`
   ADD CONSTRAINT `cv_skills_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_activities`
+  ADD CONSTRAINT `cv_activities_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_certificates`
+  ADD CONSTRAINT `cv_certificates_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_awards`
+  ADD CONSTRAINT `cv_awards_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_references`
+  ADD CONSTRAINT `cv_references_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -84,6 +84,39 @@ if (!function_exists('cv_combine_month_year')) {
     }
 }
 
+if (!function_exists('cv_allowed_template_keys')) {
+    /**
+     * @return list<string>
+     */
+    function cv_allowed_template_keys(): array
+    {
+        return ['classic', 'modern'];
+    }
+}
+
+if (!function_exists('cv_normalize_template_key')) {
+    function cv_normalize_template_key(string $key): string
+    {
+        $key = strtolower(trim($key));
+
+        return in_array($key, cv_allowed_template_keys(), true) ? $key : 'classic';
+    }
+}
+
+if (!function_exists('cv_row_single_month_year')) {
+    /**
+     * @param array<string, mixed> $row
+     */
+    function cv_row_single_month_year(array $row, string $prefix): ?string
+    {
+        return cv_combine_month_year(
+            $row[$prefix . '_month'] ?? '',
+            $row[$prefix . '_year'] ?? '',
+            $row[$prefix . '_at'] ?? ($row[$prefix . '_date'] ?? '')
+        );
+    }
+}
+
 if (!function_exists('cv_row_period_date')) {
     /**
      * @param array<string, mixed> $row
@@ -320,6 +353,51 @@ if (!function_exists('cv_validate_children')) {
             }
         }
 
+        foreach ($children['activities'] ?? [] as $i => $row) {
+            $line = (int) $i + 1;
+            $org = trim((string) ($row['organization'] ?? ''));
+            if ($org === '') {
+                return ['ok' => false, 'message' => "Hoạt động dòng {$line}: vui lòng nhập tổ chức / hoạt động."];
+            }
+            $start = $row['start_date'] ?? null;
+            if ($start === null || $start === '') {
+                return ['ok' => false, 'message' => "Hoạt động dòng {$line}: nhập tháng và năm bắt đầu."];
+            }
+            $end = $row['end_date'] ?? null;
+            if ($end !== null && $end !== '' && cv_compare_year_month((string) $end, (string) $start) < 0) {
+                return ['ok' => false, 'message' => "Hoạt động dòng {$line}: tháng kết thúc không được trước tháng bắt đầu."];
+            }
+        }
+
+        foreach ($children['certificates'] ?? [] as $i => $row) {
+            $line = (int) $i + 1;
+            if (trim((string) ($row['certificate_name'] ?? '')) === '') {
+                return ['ok' => false, 'message' => "Chứng chỉ dòng {$line}: vui lòng nhập tên chứng chỉ."];
+            }
+            $issued = $row['issued_at'] ?? null;
+            if ($issued !== null && $issued !== '' && cv_normalize_year_month((string) $issued) === null) {
+                return ['ok' => false, 'message' => "Chứng chỉ dòng {$line}: tháng/năm cấp không hợp lệ."];
+            }
+        }
+
+        foreach ($children['awards'] ?? [] as $i => $row) {
+            $line = (int) $i + 1;
+            if (trim((string) ($row['title'] ?? '')) === '') {
+                return ['ok' => false, 'message' => "Giải thưởng dòng {$line}: vui lòng nhập tên giải thưởng."];
+            }
+            $awarded = $row['awarded_at'] ?? null;
+            if ($awarded !== null && $awarded !== '' && cv_normalize_year_month((string) $awarded) === null) {
+                return ['ok' => false, 'message' => "Giải thưởng dòng {$line}: tháng/năm không hợp lệ."];
+            }
+        }
+
+        foreach ($children['references'] ?? [] as $i => $row) {
+            $line = (int) $i + 1;
+            if (trim((string) ($row['full_name'] ?? '')) === '') {
+                return ['ok' => false, 'message' => "Người giới thiệu dòng {$line}: vui lòng nhập họ tên."];
+            }
+        }
+
         return ['ok' => true, 'message' => ''];
     }
 }
@@ -349,7 +427,7 @@ if (!function_exists('cv_estimate_completion_percent')) {
     function cv_estimate_completion_percent(array $profile, array $children): int
     {
         $score = 0;
-        $max = 10;
+        $max = 14;
 
         if (trim((string) ($profile['full_name'] ?? '')) !== '') {
             $score++;
@@ -366,13 +444,31 @@ if (!function_exists('cv_estimate_completion_percent')) {
         if (trim((string) ($profile['career_objective'] ?? '')) !== '') {
             $score++;
         }
+        if (trim((string) ($profile['interests'] ?? '')) !== '') {
+            $score++;
+        }
         if (count($children['educations'] ?? []) > 0) {
-            $score += 2;
+            $score++;
         }
         if (count($children['experiences'] ?? []) > 0) {
-            $score += 2;
+            $score++;
         }
         if (count($children['skills'] ?? []) > 0) {
+            $score++;
+        }
+        if (count($children['activities'] ?? []) > 0) {
+            $score++;
+        }
+        if (count($children['certificates'] ?? []) > 0) {
+            $score++;
+        }
+        if (count($children['awards'] ?? []) > 0) {
+            $score++;
+        }
+        if (count($children['references'] ?? []) > 0) {
+            $score++;
+        }
+        if (trim((string) ($profile['avatar_path'] ?? '')) !== '') {
             $score++;
         }
 
@@ -397,6 +493,8 @@ if (!function_exists('cv_parse_builder_post')) {
             'website' => $post['website'] ?? '',
             'address' => $post['address'] ?? '',
             'career_objective' => $post['career_objective'] ?? '',
+            'interests' => $post['interests'] ?? '',
+            'template_key' => $post['template_key'] ?? 'classic',
         ];
 
         return [
@@ -405,6 +503,10 @@ if (!function_exists('cv_parse_builder_post')) {
                 'educations' => cv_filter_education_rows($post['educations'] ?? []),
                 'experiences' => cv_filter_experience_rows($post['experiences'] ?? []),
                 'skills' => cv_filter_skill_rows($post['skills'] ?? []),
+                'activities' => cv_filter_activity_rows($post['activities'] ?? []),
+                'certificates' => cv_filter_certificate_rows($post['certificates'] ?? []),
+                'awards' => cv_filter_award_rows($post['awards'] ?? []),
+                'references' => cv_filter_reference_rows($post['references'] ?? []),
             ],
         ];
     }
@@ -505,6 +607,139 @@ if (!function_exists('cv_filter_skill_rows')) {
                 'sort_order' => (int) $i,
             ];
             if ($normalized['skill_name'] === '' && $normalized['description'] === '') {
+                continue;
+            }
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('cv_filter_activity_rows')) {
+    /**
+     * @param mixed $rows
+     * @return list<array<string, mixed>>
+     */
+    function cv_filter_activity_rows($rows): array
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [
+                'start_date' => cv_row_period_date($row, 'start'),
+                'end_date' => cv_row_period_date($row, 'end'),
+                'organization' => trim((string) ($row['organization'] ?? '')),
+                'role' => trim((string) ($row['role'] ?? '')),
+                'description' => trim((string) ($row['description'] ?? '')),
+                'sort_order' => (int) $i,
+            ];
+            if ($normalized['organization'] === ''
+                && $normalized['role'] === ''
+                && $normalized['start_date'] === null
+                && $normalized['end_date'] === null
+                && $normalized['description'] === '') {
+                continue;
+            }
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('cv_filter_certificate_rows')) {
+    /**
+     * @param mixed $rows
+     * @return list<array<string, mixed>>
+     */
+    function cv_filter_certificate_rows($rows): array
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [
+                'issued_at' => cv_row_single_month_year($row, 'issued'),
+                'certificate_name' => trim((string) ($row['certificate_name'] ?? '')),
+                'sort_order' => (int) $i,
+            ];
+            if ($normalized['certificate_name'] === '' && $normalized['issued_at'] === null) {
+                continue;
+            }
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('cv_filter_award_rows')) {
+    /**
+     * @param mixed $rows
+     * @return list<array<string, mixed>>
+     */
+    function cv_filter_award_rows($rows): array
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [
+                'awarded_at' => cv_row_single_month_year($row, 'awarded'),
+                'title' => trim((string) ($row['title'] ?? '')),
+                'description' => trim((string) ($row['description'] ?? '')),
+                'sort_order' => (int) $i,
+            ];
+            if ($normalized['title'] === ''
+                && $normalized['awarded_at'] === null
+                && $normalized['description'] === '') {
+                continue;
+            }
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('cv_filter_reference_rows')) {
+    /**
+     * @param mixed $rows
+     * @return list<array<string, mixed>>
+     */
+    function cv_filter_reference_rows($rows): array
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [
+                'full_name' => trim((string) ($row['full_name'] ?? '')),
+                'position' => trim((string) ($row['position'] ?? '')),
+                'contact_info' => trim((string) ($row['contact_info'] ?? '')),
+                'sort_order' => (int) $i,
+            ];
+            if ($normalized['full_name'] === ''
+                && $normalized['position'] === ''
+                && $normalized['contact_info'] === '') {
                 continue;
             }
             $out[] = $normalized;

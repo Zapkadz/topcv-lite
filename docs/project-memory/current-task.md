@@ -8,26 +8,18 @@
 
 | Phase | Status |
 |-------|--------|
-| CV-B | ✅ pass + commit |
-| **CV-C** | ✅ code — chờ test **`「CV-C pass」`** |
+| CV-A, CV-B | ✅ |
+| **CV-C** | ✅ pass (cherry-pick trên nhánh CV-D) |
+| **CV-D** | ✅ **`「CV-D pass」`** — đã commit |
 
 ---
 
-## CV-C — đã implement
+## Git — bước tiếp theo (bạn)
 
-- Migration: `migrate-phase-cv-c.php`
-- `ApplicationService`, `CvService::snapshotForApply`
-- `apply.php` + modal `job-detail.php` (dropdown CV)
-- `employer/applicants.php` + `applicant-cv-snapshot.php`
+1. `git push -u origin feature/phase-cv-d-sections`
+2. PR → `main` (gồm CV-C + CV-D)
+3. Merge PR → `git pull origin main`
 
-## Test nhanh
+## Phase tiếp (tùy đồ án)
 
-1. http://localhost/topcv_lite/docs/migrations/migrate-phase-cv-c.php
-2. Candidate: có CV → apply job → chọn CV
-3. Employer: applicants → **CV online**
-4. Sửa CV sau apply → employer vẫn thấy snapshot cũ
-5. Đơn cũ (file PDF) → **File CV** vẫn mở được
-
-## Sau pass
-
-`「CV-C pass」` → commit → `「xác nhận CV-D」` (tùy đồ án)
+- **`「xác nhận CV-E」`** — upload PDF đính kèm, export PDF (nhánh mới từ `main`)
