@@ -320,3 +320,29 @@
 
 ### Tiếp theo
 - **`「xác nhận CV-C」`** — apply snapshot + employer xem CV
+
+## 2026-05-29 - Phase CV / Nhóm CV-C: Apply snapshot + employer
+
+### Những gì đã thay đổi
+- `applications.cv_profile_id`, `cv_snapshot_json`
+- `ApplicationService::applyToJob`, dropdown CV trên `job-detail.php`
+- Employer modal snapshot
+
+### Git
+- Commit `640bf08` trên `feature/phase-cv-b-ui` — **không có trên `main`** khi tạo nhánh CV-D
+- Khôi phục: `git cherry-pick 640bf08` lên `feature/phase-cv-d-sections`
+
+## 2026-05-29 - Phase CV / Nhóm CV-D: Section + template
+
+### User
+- **`「xác nhận CV-D」`**, **`「bắt đầu code CV-D」`**
+
+### Những gì đã thay đổi
+- Migration 4 bảng section; template classic/modern; builder/preview mở rộng
+
+### Kết quả test
+- ✅ **`「CV-D pass」`**
+
+### Tiếp theo
+- Push PR `feature/phase-cv-d-sections` → `main`
+- **`「xác nhận CV-E」`** (tùy chọn)

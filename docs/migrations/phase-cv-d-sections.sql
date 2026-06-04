@@ -1,0 +1,2 @@
+-- Phase CV-D — section activities, certificates, awards, references
+-- Chạy qua migrate-phase-cv-d.php (_cv-d-migrate-steps.php)

@@ -106,6 +106,7 @@ class CvService
             CvRepository::insertEducations($conn, $cvId, $normalizedChildren['educations']);
             CvRepository::insertExperiences($conn, $cvId, $normalizedChildren['experiences']);
             CvRepository::insertSkills($conn, $cvId, $normalizedChildren['skills']);
+            self::insertExtendedChildren($conn, $cvId, $normalizedChildren);
             $conn->commit();
 
             return ['ok' => true, 'message' => 'Đã tạo CV.', 'cv_id' => $cvId];
@@ -157,10 +158,11 @@ class CvService
         try {
             $conn->beginTransaction();
             CvRepository::updateProfile($conn, $cvId, $fields);
-            CvRepository::deleteChildren($conn, $cvId);
+            CvRepository::deleteChildren($conn, $cvId, cvs_extended_sections_ready($conn));
             CvRepository::insertEducations($conn, $cvId, $normalizedChildren['educations']);
             CvRepository::insertExperiences($conn, $cvId, $normalizedChildren['experiences']);
             CvRepository::insertSkills($conn, $cvId, $normalizedChildren['skills']);
+            self::insertExtendedChildren($conn, $cvId, $normalizedChildren);
             $conn->commit();
 
             return ['ok' => true, 'message' => 'Đã lưu CV.'];
@@ -240,6 +242,38 @@ class CvService
     }
 
     /**
+     * @return array{ok: bool, message: string, cv_profile_id: int|null, snapshot_json: string|null}
+     */
+    public static function snapshotForApply(PDO $conn, int $userId, int $cvProfileId): array
+    {
+        if (!cvs_schema_ready($conn)) {
+            return ['ok' => false, 'message' => 'Schema CV chưa sẵn sàng.', 'cv_profile_id' => null, 'snapshot_json' => null];
+        }
+
+        $loaded = self::getFullForUser($conn, $userId, $cvProfileId);
+        if (!$loaded['ok'] || !$loaded['data']) {
+            return [
+                'ok' => false,
+                'message' => $loaded['message'] ?: 'CV không tồn tại hoặc bạn không có quyền.',
+                'cv_profile_id' => null,
+                'snapshot_json' => null,
+            ];
+        }
+
+        $json = self::buildSnapshotJson($conn, $cvProfileId);
+        if ($json === null) {
+            return ['ok' => false, 'message' => 'Không thể tạo snapshot CV.', 'cv_profile_id' => null, 'snapshot_json' => null];
+        }
+
+        return [
+            'ok' => true,
+            'message' => '',
+            'cv_profile_id' => $cvProfileId,
+            'snapshot_json' => $json,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $profile
      * @return array<string, mixed>
      */
@@ -247,18 +281,49 @@ class CvService
     {
         $cvId = (int) $profile['id'];
 
-        return [
+        $packed = [
             'profile' => $profile,
             'educations' => CvRepository::listEducations($conn, $cvId),
             'experiences' => CvRepository::listExperiences($conn, $cvId),
             'skills' => CvRepository::listSkills($conn, $cvId),
             'snapshot_at' => date('c'),
         ];
+
+        if (cvs_extended_sections_ready($conn)) {
+            $packed['activities'] = CvRepository::listActivities($conn, $cvId);
+            $packed['certificates'] = CvRepository::listCertificates($conn, $cvId);
+            $packed['awards'] = CvRepository::listAwards($conn, $cvId);
+            $packed['references'] = CvRepository::listReferences($conn, $cvId);
+        }
+
+        return $packed;
     }
 
     /**
-     * @param array{educations?: list, experiences?: list, skills?: list} $children
-     * @return array{educations: list, experiences: list, skills: list}
+     * @param array<string, mixed> $children
+     */
+    private static function insertExtendedChildren(PDO $conn, int $cvId, array $children): void
+    {
+        if (!cvs_extended_sections_ready($conn)) {
+            return;
+        }
+        CvRepository::insertActivities($conn, $cvId, $children['activities'] ?? []);
+        CvRepository::insertCertificates($conn, $cvId, $children['certificates'] ?? []);
+        CvRepository::insertAwards($conn, $cvId, $children['awards'] ?? []);
+        CvRepository::insertReferences($conn, $cvId, $children['references'] ?? []);
+    }
+
+    /**
+     * @param array<string, mixed> $children
+     * @return array{
+     *   educations: list,
+     *   experiences: list,
+     *   skills: list,
+     *   activities: list,
+     *   certificates: list,
+     *   awards: list,
+     *   references: list
+     * }
      */
     private static function normalizeChildren(array $children): array
     {
@@ -266,6 +331,10 @@ class CvService
             'educations' => array_values($children['educations'] ?? []),
             'experiences' => array_values($children['experiences'] ?? []),
             'skills' => array_values($children['skills'] ?? []),
+            'activities' => array_values($children['activities'] ?? []),
+            'certificates' => array_values($children['certificates'] ?? []),
+            'awards' => array_values($children['awards'] ?? []),
+            'references' => array_values($children['references'] ?? []),
         ];
     }
 
@@ -296,7 +365,7 @@ class CvService
             'career_objective' => self::nullIfEmpty(trim((string) ($profile['career_objective'] ?? ''))),
             'interests' => self::nullIfEmpty(trim((string) ($profile['interests'] ?? ''))),
             'attachment_path' => self::nullIfEmpty(trim((string) ($profile['attachment_path'] ?? ''))),
-            'template_key' => trim((string) ($profile['template_key'] ?? 'classic')) ?: 'classic',
+            'template_key' => cv_normalize_template_key((string) ($profile['template_key'] ?? 'classic')),
             'is_primary' => (int) ($profile['is_primary'] ?? 0),
             'completion_percent' => cv_estimate_completion_percent($profile, $children),
         ];
