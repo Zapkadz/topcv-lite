@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/cv_rules.php';
+require_once __DIR__ . '/../includes/cv_import_rules.php';
 require_once __DIR__ . '/../includes/cv_avatar.php';
 require_once __DIR__ . '/../includes/services/CvService.php';
 
@@ -18,7 +19,12 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'candidate') {
 $userId = (int) $_SESSION['user_id'];
 $cvId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $isEdit = $cvId > 0;
+$fromImport = !$isEdit
+    && isset($_GET['from_import'])
+    && (string) $_GET['from_import'] === '1';
 $schemaReady = cvs_schema_ready($conn);
+$importAttachmentPath = '';
+$importMeta = ['parse_source' => '', 'warnings' => []];
 
 $profile = [
     'title' => '',
@@ -65,6 +71,10 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     $parsed['profile']['avatar_path'] = $avatarResult['path'];
+    $parsed['profile']['attachment_path'] = cv_import_validate_attachment_path(
+        (string) ($parsed['profile']['attachment_path'] ?? ''),
+        $userId
+    );
 
     if ($postCvId > 0) {
         $result = CvService::saveForUser($conn, $userId, $postCvId, $parsed['profile'], $parsed['children']);
@@ -78,6 +88,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
     $_SESSION['swal_title'] = $result['message'];
     if ($result['ok'] && !empty($result['cv_id'])) {
+        unset($_SESSION['cv_import_draft']);
         header('Location: cv-manage.php');
         exit();
     }
@@ -112,6 +123,67 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($profile['template_key'])) {
         $profile['template_key'] = 'classic';
     }
+} elseif ($schemaReady && $fromImport && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $draft = $_SESSION['cv_import_draft'] ?? null;
+    $draftUserId = is_array($draft) ? (int) ($draft['user_id'] ?? 0) : 0;
+
+    if (!is_array($draft) || $draftUserId !== $userId) {
+        if (is_array($draft)) {
+            unset($_SESSION['cv_import_draft']);
+        }
+        $_SESSION['swal_icon'] = 'warning';
+        $_SESSION['swal_title'] = $draftUserId > 0 && $draftUserId !== $userId
+            ? 'Phiên import không hợp lệ. Vui lòng upload PDF lại.'
+            : 'Không có dữ liệu import. Vui lòng upload PDF lại.';
+        header('Location: ' . ($draftUserId > 0 && $draftUserId !== $userId ? 'cv-manage.php' : 'cv-import.php'));
+        exit();
+    }
+
+    $draftProfile = is_array($draft['profile'] ?? null) ? $draft['profile'] : [];
+    $draftChildren = is_array($draft['children'] ?? null) ? $draft['children'] : [];
+    $importMeta = is_array($draft['meta'] ?? null) ? $draft['meta'] : ['parse_source' => '', 'warnings' => []];
+    $importAttachmentPath = trim((string) ($draft['attachment_path'] ?? ''));
+
+    foreach ([
+        'title', 'full_name', 'target_position', 'date_of_birth', 'gender',
+        'phone', 'email', 'website', 'address', 'career_objective', 'interests', 'template_key',
+    ] as $key) {
+        $val = trim((string) ($draftProfile[$key] ?? ''));
+        if ($val !== '') {
+            $profile[$key] = $draftProfile[$key];
+        }
+    }
+    $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
+    if (empty($profile['template_key'])) {
+        $profile['template_key'] = 'classic';
+    }
+
+    $stmt = $conn->prepare('SELECT fullname, email, phone FROM users WHERE id = ? LIMIT 1');
+    $stmt->execute([$userId]);
+    $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($userRow) {
+        if (trim((string) ($profile['full_name'] ?? '')) === '') {
+            $profile['full_name'] = (string) ($userRow['fullname'] ?? '');
+        }
+        if (trim((string) ($profile['email'] ?? '')) === '') {
+            $profile['email'] = (string) ($userRow['email'] ?? '');
+        }
+        if (trim((string) ($profile['phone'] ?? '')) === '') {
+            $prefillPhone = cv_normalize_phone((string) ($userRow['phone'] ?? ''));
+            if (cv_is_valid_phone_vn($prefillPhone)) {
+                $profile['phone'] = $prefillPhone;
+            }
+        }
+    }
+
+    $educations = is_array($draftChildren['educations'] ?? null) ? $draftChildren['educations'] : [];
+    $experiences = is_array($draftChildren['experiences'] ?? null) ? $draftChildren['experiences'] : [];
+    $skills = is_array($draftChildren['skills'] ?? null) ? $draftChildren['skills'] : [];
+    $activities = is_array($draftChildren['activities'] ?? null) ? $draftChildren['activities'] : [];
+    $certificates = is_array($draftChildren['certificates'] ?? null) ? $draftChildren['certificates'] : [];
+    $awards = is_array($draftChildren['awards'] ?? null) ? $draftChildren['awards'] : [];
+    $references = is_array($draftChildren['references'] ?? null) ? $draftChildren['references'] : [];
+    $projects = is_array($draftChildren['projects'] ?? null) ? $draftChildren['projects'] : [];
 } elseif ($schemaReady && !$isEdit && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     $stmt = $conn->prepare('SELECT fullname, email, phone FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$userId]);
@@ -130,7 +202,21 @@ $avatarPreviewUrl = cv_avatar_public_url($profile['avatar_path'] ?? null);
 $avatarRules = cv_avatar_rules();
 $dobBounds = cv_date_of_birth_bounds();
 
-$pageTitle = $isEdit ? 'Sửa CV online' : 'Tạo CV mới';
+$pageTitle = $isEdit ? 'Sửa CV online' : ($fromImport ? 'Tạo CV từ PDF' : 'Tạo CV mới');
+
+/**
+ * @param array{parse_source?: string, warnings?: list<string>} $meta
+ */
+function cv_builder_import_source_label(array $meta): string
+{
+    $source = (string) ($meta['parse_source'] ?? '');
+    return match ($source) {
+        'ai' => 'AI',
+        'fallback' => 'phân tích cơ bản (fallback)',
+        'ai+fallback' => 'AI + bổ sung fallback',
+        default => 'import PDF',
+    };
+}
 
 /**
  * @param 'start'|'end' $role
@@ -453,11 +539,40 @@ include '../includes/header.php';
     <?php elseif (!$extendedReady): ?>
         <?= cvs_extended_migration_hint_html() ?>
     <?php else: ?>
+        <?php if ($fromImport && $importAttachmentPath !== ''): ?>
+            <?php
+            $importWarnings = is_array($importMeta['warnings'] ?? null) ? $importMeta['warnings'] : [];
+            $importPdfUrl = BASE_URL . ltrim($importAttachmentPath, '/');
+            ?>
+            <div class="alert alert-info border-0 shadow-sm mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div>
+                        <strong><i class="fas fa-file-pdf"></i> Đã nhập từ PDF</strong>
+                        — vui lòng kiểm tra và chỉnh sửa trước khi lưu.
+                        <br><small class="text-muted">Nguồn phân tích: <?= htmlspecialchars(cv_builder_import_source_label($importMeta)) ?></small>
+                        <?php if ($importWarnings !== []): ?>
+                            <ul class="small mb-0 mt-2 ps-3">
+                                <?php foreach ($importWarnings as $warning): ?>
+                                    <li><?= htmlspecialchars((string) $warning) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                    <a href="<?= htmlspecialchars($importPdfUrl) ?>" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                        <i class="fas fa-external-link-alt"></i> Xem file PDF gốc
+                    </a>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <form method="POST" class="card border-0 shadow-sm" enctype="multipart/form-data">
             <div class="card-body p-4 p-lg-5">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('candidate_cv_save_form')) ?>">
                 <?php if ($isEdit): ?>
                     <input type="hidden" name="cv_id" value="<?= $cvId ?>">
+                <?php endif; ?>
+                <?php if ($fromImport && $importAttachmentPath !== ''): ?>
+                    <input type="hidden" name="attachment_path" value="<?= htmlspecialchars($importAttachmentPath) ?>">
                 <?php endif; ?>
 
                 <div class="mb-4">

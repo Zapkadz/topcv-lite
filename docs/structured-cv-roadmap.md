@@ -159,9 +159,9 @@ CV-C  Tích hợp: preview + apply + employer xem
         ↓
 CV-D  Section đầy đủ + template + polish UX
         ↓
-CV-E  Upload đính kèm / export PDF (tùy chọn)
+CV-E  Import PDF → AI điền sẵn form (Mức B, tùy chọn)
         ↓
-CV-F  Parse PDF/AI (defer — master Phase 4)
+CV-F  OCR / DOCX / queue parse (defer)
 ```
 
 ### Ma trận phụ thuộc
@@ -173,8 +173,8 @@ CV-F  Parse PDF/AI (defer — master Phase 4)
 | CV-B | CV-A | `cv-manage`, `cv-builder`, menu, profile |
 | CV-C | CV-B | `apply`, `applicants`, `cv-preview`, snapshot |
 | CV-D | CV-C | Bảng section còn lại, template, JS reorder |
-| CV-E | CV-D | `attachment_path`, export PDF |
-| CV-F | CV-E hoặc skip | Parse tự động |
+| CV-E | CV-D | Import PDF, AI parse → pre-fill builder, `attachment_path` |
+| CV-F | CV-E hoặc skip | OCR, DOCX, async queue |
 
 ### Scope đồ án tối thiểu (MVP triển khai)
 
@@ -304,32 +304,35 @@ CV-F  Parse PDF/AI (defer — master Phase 4)
 
 ---
 
-## Nhóm CV-E — Upload đính kèm + export PDF (P2, tùy chọn)
+## Nhóm CV-E — Import PDF → AI điền sẵn form (P2, Mức B)
+
+> Chi tiết: **`docs/phase-cv-e-plan.md`**, setup: **`docs/setup-cv-import.md`**
 
 ### Phạm vi
-- Upload PDF/DOC → `cv_profiles.attachment_path` (đính kèm, không thay structured)
-- Màn **Đối chiếu**: file trái / form phải — user điền thủ công
-- Export PDF từ preview (Dompdf / mPDF)
-- (Backlog) Nhân bản CV: “Tạo từ bản cv1” → copy rows sang `cv_id` mới
-- (Backlog) Migrate `candidates.cv_path` → `attachment_path` bản primary
+- Upload **PDF** trên `cv-import.php` → trích text local → **AI** map JSON → pre-fill `cv-builder`
+- User review/sửa → Lưu → `cv_profiles` + `attachment_path` (file gốc)
+- Fallback rule-based khi API lỗi; rate limit import
+- (Backlog) Export PDF preview, nhân bản CV, migrate `cv_path`
 
 ### Không làm
-- Parse tự động → **CV-F**
+- OCR PDF scan, DOC/DOCX → **CV-F**
+- Auto-lưu không qua builder; parse tại apply
 
 ### Test checklist
-- [ ] Upload hợp lệ MIME/size
-- [ ] Export PDF khớp preview
-- [ ] Đính kèm + structured cùng tồn tại
+- [ ] PDF text → form có dữ liệu hợp lý
+- [ ] Lưu → preview + apply snapshot OK
+- [ ] PDF scan / API lỗi → thông báo rõ
 
 ### Commit gợi ý
-`phase CV: upload đính kèm và export PDF CV (nhóm CV-E)`
+`phase CV: import PDF và AI điền sẵn form CV (nhóm CV-E, Mức B)`
 
 ---
 
-## Nhóm CV-F — Parse upload → gợi ý điền form (P3, defer)
+## Nhóm CV-F — Nâng cấp parse (P3, defer)
 
-- Giữ như mức **nặng** cũ (Phase 4 master roadmap): pdftotext / API, queue, user confirm từng field.
-- **Không** nằm MVP đồ án trừ khi có thời gian.
+- OCR (Tesseract) cho PDF scan; import DOC/DOCX
+- Queue async + trạng thái parse; confidence score từng field
+- **Không** bắt buộc nếu CV-E (Mức B) đã đủ demo.
 
 ---
 

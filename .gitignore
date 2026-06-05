@@ -10,6 +10,11 @@ uploads/cv/*
 uploads/logos/*
 !uploads/logos/.gitkeep
 
+# Composer / AI local secrets
+/vendor/
+/composer.phar
+config/ai.local.php
+
 # Báo cáo HTML export local
 Bao_Cao_Phan_Tich_TopCV_Lite.html
 Bao_Cao_Phan_Tich_TopCV_Lite_files/
