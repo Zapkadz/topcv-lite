@@ -22,18 +22,18 @@ AI làm 1 khối E → báo file + lệnh test → USER test → USER gửi 「E
 
 | Mục | Giá trị |
 |-----|---------|
-| Phase | CV-E — Mức B (pdfparser + Gemini) |
+| Phase | CV-E — Mức B (pdfparser + Groq/OpenRouter/Gemini) |
 | Nhánh | `feature/phase-cv-e-import` |
-| **Khối hiện tại** | **E3 pass** — chờ `「xác nhận E4」` / commit E2+E3 |
-| Khối tiếp theo (sau confirm) | E4 (upload UI cv-import.php) |
-| Commit CV-E | ❌ Chưa commit |
+| **Khối hiện tại** | ✅ **CV-E pass** — PR → merge `main` |
+| Khối tiếp theo | PR → merge `main` |
+| Commit CV-E | ✅ E4–E7 (E0–E3 trước đó) |
 | PR | ❌ Chưa tạo |
-| `config/ai.local.php` | ❌ User chưa tạo (cần cho test E2+) |
+| Setup doc | `docs/setup-cv-import.md` |
 
-### Ghi chú phiên trước
+### Ghi chú phiên
 
-- AI đã làm **nhảy cóc** E0→E1→E2 trong một phiên (sai quy trình).
-- **E2 file đã tồn tại** (`cv_parse_prompt.php`, `AiCvParserService.php`) nhưng **chưa được user confirm** — coi trạng thái E2 là `code sẵn, chờ pass E1 rồi test E2`.
+- Provider AI production demo: **Groq** (`llama-3.3-70b-versatile`).
+- PDF thiết kế Canva: text nhiễu — clean + prompt AI; không tách mục cứng (đã revert `structure_for_ai`).
 
 ---
 
@@ -41,15 +41,15 @@ AI làm 1 khối E → báo file + lệnh test → USER test → USER gửi 「E
 
 | Khối | Code | User test | User confirm | Commit |
 |------|------|-----------|--------------|--------|
-| E0 | ✅ | ⏳ | ⏳ | ❌ |
-| E1 | ✅ | ✅ | ✅ | ❌ |
-| E2 | ✅ | ✅ | ✅ | ❌ |
-| E3 | ✅ | ✅ | ✅ | ❌ |
-| E4 | ❌ | — | — | ❌ |
-| E5 | ❌ | — | — | ❌ |
-| E6 | ❌ | — | — | ❌ |
-| E7 | ❌ | — | — | ❌ |
-| E8 | ❌ | — | — | ❌ |
+| E0 | ✅ | ✅ | ✅ | ✅ |
+| E1 | ✅ | ✅ | ✅ | ✅ |
+| E2 | ✅ | ✅ | ✅ | ✅ |
+| E3 | ✅ | ✅ | ✅ | ✅ |
+| E4 | ✅ | ✅ | ✅ | ✅ |
+| E5 | ✅ | ✅ | ✅ | ✅ |
+| E6 | ✅ | ✅ | ✅ | ✅ |
+| E7 | ✅ | ✅ | ✅ | ✅ |
+| E8 | ✅ | ✅ | ✅ | ✅ |
 
 Chú thích: ✅ xong | ⏳ đang chờ | ❌ chưa | 🟡 code có nhưng chưa confirm
 
@@ -226,21 +226,42 @@ php docs\migrations\_test-ai-parse.php "đường_dẫn\cv_text_mẫu.txt"
 
 ## E8 — Docs & regression
 
-**Pass khi:** Checklist mục 9 trong plan tick hết; user `「CV-E pass」`.
+**Pass khi:** Checklist regression bên dưới tick hết; user `「CV-E pass」`.
 
 | # | Việc | Trạng thái | File |
 |---|------|------------|------|
-| E8.1 | `structured-cv-roadmap.md` | 🟡 đã chỉnh trước | |
-| E8.2 | `dev-learning-log.md` | ❌ | |
-| E8.3 | `current-task.md` | 🟡 đã chỉnh trước | |
-| E8.4 | Regression apply snapshot CV-C | ❌ | |
-| E8.5 | Regression builder thủ công CV-D | ❌ | |
-| E8.6 | Xóa/đánh dấu script test dev-only | ❌ | |
-| E8.7 | Cập nhật file checklist này → done | ❌ | |
+| E8.1 | `structured-cv-roadmap.md` | ✅ | CV-E = import Mức B |
+| E8.2 | `dev-learning-log.md` | ✅ | mục CV-E |
+| E8.3 | `current-task.md` | ✅ | E8 coded |
+| E8.4 | Regression apply snapshot CV-C | ⏳ | user test |
+| E8.5 | Regression builder thủ công CV-D | ⏳ | user test |
+| E8.6 | Đánh dấu script test dev-only | ✅ | `docs/migrations/_test-*.php` |
+| E8.7 | Cập nhật checklist | ✅ | file này |
 
-**User confirm:** `「CV-E pass」` → commit → PR → merge
+**User confirm:** `「CV-E pass」` ✅
 
-**Commit gợi ý:** `docs(cv-e): setup và learning log` (hoặc gộp vào commit cuối)
+**Commit gợi ý:** `docs(cv-e): learning log, roadmap va regression checklist`
+
+### Checklist regression (user — trước `「CV-E pass」`)
+
+**Import happy path**
+
+- [ ] `cv-manage` → **Tạo CV từ PDF** → upload → builder pre-fill
+- [ ] Banner + link PDF gốc; sửa field → **Lưu** → icon 📎 trên manage
+- [ ] **Preview** CV import OK
+
+**Regression CV-C / CV-D**
+
+- [ ] **Apply job** với CV vừa import → employer modal **CV online** có đủ section (snapshot)
+- [ ] **Tạo CV thủ công** (không import) vẫn OK
+- [ ] **Sửa CV** `?id=` không bị lẫn draft import
+- [ ] **Xóa CV** có `attachment_path` — không crash (PDF orphan OK)
+
+**Edge (đã test một phần — tick nếu OK)**
+
+- [ ] Rate limit: lần 6 import/giờ bị chặn
+- [ ] File > 5MB / MIME sai → từ chối
+- [ ] PDF scan → thông báo rõ
 
 ---
 
@@ -300,7 +321,8 @@ php docs\migrations\_test-ai-parse.php "đường_dẫn\cv_text_mẫu.txt"
 
 | Ngày | Khối | User confirm | Commit | Ghi chú |
 |------|------|--------------|--------|---------|
-| 2026-06-05 | E0 | ⏳ chờ | — | Composer + config xong |
-| 2026-06-05 | E1 | ✅ pass | — | ok=true, text_len=1492 (PDF text-based) |
-| 2026-06-05 | E2 | ✅ pass | — | Groq ok=true, full_name+email+sections |
-| 2026-06-05 | E3 | ✅ pass | — | Pipeline PDF→AI→normalize, dates YYYY-MM |
+| 2026-06-05 | E0–E3 | ✅ | 64de128, 918695b, 2d9b66b | pdfparser + Groq pipeline |
+| 2026-06-05 | E4–E5 | ✅ | bf8c43f | import UI + pre-fill |
+| 2026-06-06 | E6 | ✅ | c171380 | attachment_path |
+| 2026-06-06 | E7 | ✅ | dec7231 | rate limit + setup doc |
+| 2026-06-06 | E8 / CV-E | ✅ | 483dec3 | learning log, roadmap, dev-only scripts |

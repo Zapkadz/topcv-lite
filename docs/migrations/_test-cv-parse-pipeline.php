@@ -1,4 +1,8 @@
 <?php
+/**
+ * DEV ONLY — CLI test CV-E pipeline PDF→AI→normalize. Không expose qua web.
+ * @see docs/setup-cv-import.md
+ */
 
 require_once __DIR__ . '/../../includes/services/CvParseService.php';
 

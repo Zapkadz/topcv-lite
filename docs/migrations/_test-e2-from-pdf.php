@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Test E2 end-to-end: PDF (E1 extract) → AI parse (E2).
+ * DEV ONLY — Test E2: PDF → extract → AI. Không expose qua web.
+ * @see docs/setup-cv-import.md
  * Usage: php _test-e2-from-pdf.php "uploads\cv\file.pdf"
  */
 

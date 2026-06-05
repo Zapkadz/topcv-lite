@@ -1,6 +1,6 @@
 # Current Task — TopCV Lite
 
-> Cập nhật: **2026-05-29**
+> Cập nhật: **2026-06-06**
 
 ---
 
@@ -8,22 +8,26 @@
 
 | Phase | Status |
 |-------|--------|
-| CV-A, CV-B | ✅ |
-| **CV-C** | ✅ pass (cherry-pick trên nhánh CV-D) |
-| **CV-D** | ✅ **`「CV-D pass」`** — đã commit |
+| CV-A … CV-D | ✅ merged / pass |
+| **CV-E** | ✅ **`「CV-E pass」`** — chờ PR → merge |
 
 ---
 
-## Git — bước tiếp theo (bạn)
+## Git — bước tiếp theo (sau `「CV-E pass」`)
 
-1. `git push -u origin feature/phase-cv-d-sections`
-2. PR → `main` (gồm CV-C + CV-D)
-3. Merge PR → `git pull origin main`
+1. Commit E8 (docs)
+2. `git push -u origin feature/phase-cv-e-import`
+3. PR → `main` (phase CV-E)
+4. Merge → `git pull origin main`
 
-## Phase đang làm — CV-E (Mức B)
+## Phase CV-E (Mức B)
 
 - **Plan:** `docs/phase-cv-e-plan.md`
-- **Checklist tiến độ:** `docs/project-memory/phase-cv-e-checklist.md` ← đọc file này khi chat mới
+- **Checklist:** `docs/project-memory/phase-cv-e-checklist.md`
+- **Setup:** `docs/setup-cv-import.md`
 - **Nhánh:** `feature/phase-cv-e-import`
-- **Khối hiện tại:** **E7 pass** — tiếp theo **E8** (regression + docs) sau `「xác nhận E8」` / `「tiếp tục E8」`
-- **Provider AI:** Groq (`llama-3.3-70b-versatile`) — `config/ai.local.php`
+- **Provider AI:** Groq — `config/ai.local.php` (gitignore)
+
+### Regression (user)
+
+Xem checklist E8 trong `phase-cv-e-checklist.md` → tick xong → **`「CV-E pass」`**

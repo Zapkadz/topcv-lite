@@ -346,3 +346,34 @@
 ### Tiếp theo
 - Push PR `feature/phase-cv-d-sections` → `main`
 - **`「xác nhận CV-E」`** (tùy chọn)
+
+## 2026-06-06 - Phase CV / Nhóm CV-E: Import PDF → AI pre-fill (Mức B)
+
+### User
+- **`「xác nhận CV-E」`**, khối E0→E7 pass + commit trên `feature/phase-cv-e-import`
+
+### Kiến trúc
+- **Local:** `smalot/pdfparser` trích text PDF (không gửi binary lên AI)
+- **AI:** Groq `llama-3.3-70b-versatile` (fallback OpenRouter/Gemini trong code)
+- **Pipeline:** extract → clean text → AI JSON → fallback regex → normalize → session draft → builder → Lưu + `attachment_path`
+
+### Những gì đã thay đổi (tóm tắt)
+- `cv-import.php`, `cv-manage` CTA, `cv-builder` nhánh `from_import=1`
+- `PdfTextExtractor`, `AiCvParserService`, `CvParseService`, `cv_import_text_clean.php`
+- Prompt AI chống lẫn mục; `cv_import_prune_incomplete_children`
+- Rate limit 5 import/giờ; `docs/setup-cv-import.md`
+
+### Bài học / giới hạn
+- PDF **Word export** → text ổn; PDF **Canva/template** → text nhiễu (lặp chữ, ngày tách nội dung)
+- Tách mục cứng (`--- Mục N ---`) **kém hơn** prompt AI trên PDF nhiễu — đã revert
+- Clean text (dedup, section break) + prompt “thời gian phải kèm trường/công ty” hiệu quả hơn
+- Gemini free tier user test bị 429; Groq ổn định hơn cho demo
+- **CV-F defer:** OCR scan, Vision multimodal, DOCX
+
+### Kết quả test (user)
+- E1–E7: ✅ pass (xem `phase-cv-e-checklist.md` checkpoint log)
+- E8 regression: ⏳ chờ `「CV-E pass」`
+
+### Tiếp theo
+- User tick regression checklist → **`「CV-E pass」`** → PR merge
+- Tuỳ chọn **CV-F** (OCR / Vision)

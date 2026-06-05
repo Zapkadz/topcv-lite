@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Chẩn đoán kết nối AI (gemini hoặc openrouter).
+ * DEV ONLY — Chẩn đoán kết nối AI. Không expose qua web.
+ * @see docs/setup-cv-import.md
  * Usage: php _test-gemini-diagnose.php
  */
 

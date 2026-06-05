@@ -1,4 +1,8 @@
 <?php
+/**
+ * DEV ONLY — CLI test CV-E PDF text extract. Không expose qua web.
+ * @see docs/setup-cv-import.md
+ */
 
 require_once __DIR__ . '/../../includes/services/PdfTextExtractor.php';
 require_once __DIR__ . '/../../includes/cv_import_rules.php';

@@ -90,6 +90,8 @@ Lần thứ 6 trong cùng giờ → thông báo *"Thử lại sau 1 giờ"*.
 
 ## 7. Script kiểm tra (dev)
 
+> Các file `docs/migrations/_test-*.php` đánh dấu **DEV ONLY** — chỉ chạy CLI local.
+
 ```powershell
 # Trích text PDF
 php docs\migrations\_test-pdf-extract.php "uploads\cv\file.pdf"

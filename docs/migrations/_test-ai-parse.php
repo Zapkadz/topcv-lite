@@ -1,4 +1,8 @@
 <?php
+/**
+ * DEV ONLY — CLI test CV-E AI parse từ file text. Không expose qua web.
+ * @see docs/setup-cv-import.md
+ */
 
 require_once __DIR__ . '/../../includes/services/AiCvParserService.php';
 require_once __DIR__ . '/../../includes/cv_import_rules.php';
