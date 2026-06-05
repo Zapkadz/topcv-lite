@@ -113,9 +113,26 @@ include '../includes/header.php';
                                 </td>
                                 <td><?= date('H:i - d/m/Y', strtotime($row['created_at'])) ?></td>
                                 <td>
-                                    <a href="../<?= htmlspecialchars($row['cv_snapshot']) ?>" target="_blank" class="text-danger fw-bold text-decoration-none">
-                                        <i class="fas fa-file-pdf"></i> Xem CV
-                                    </a>
+                                    <?php
+                                    $hasJsonCv = !empty($row['cv_snapshot_json']);
+                                    $fileCv = trim((string) ($row['cv_snapshot'] ?? ''));
+                                    $hasFileCv = $fileCv !== '';
+                                    ?>
+                                    <?php if ($hasJsonCv): ?>
+                                        <a href="application-cv-snapshot.php?app_id=<?= (int) $row['id'] ?>"
+                                            target="_blank" rel="noopener"
+                                            class="text-primary fw-bold text-decoration-none">
+                                            <i class="fas fa-id-card"></i> Xem CV online
+                                        </a>
+                                    <?php elseif ($hasFileCv): ?>
+                                        <a href="../<?= htmlspecialchars($fileCv) ?>"
+                                            target="_blank" rel="noopener"
+                                            class="text-danger fw-bold text-decoration-none">
+                                            <i class="fas fa-file-pdf"></i> Xem CV (file)
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small">—</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php
