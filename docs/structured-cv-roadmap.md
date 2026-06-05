@@ -84,6 +84,7 @@ Một ứng viên có thể có nhiều CV; một CV “đang dùng” khi apply
 | `cv_certificates` | `cv_id`, `issued_at`, `certificate_name`, `sort_order` |
 | `cv_awards` | `cv_id`, `awarded_at`, `title`, `description`, `sort_order` |
 | `cv_skills` | `cv_id`, `skill_name`, `description`, `sort_order` |
+| `cv_projects` | `cv_id`, `start_date`, `end_date`, `project_name`, `position`, `description`, `sort_order` |
 | `cv_references` | `cv_id`, `full_name`, `position`, `contact_info`, `sort_order` |
 
 **Index:** `(cv_id, sort_order)` trên mỗi bảng con.

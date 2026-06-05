@@ -42,7 +42,9 @@ $activities = [];
 $certificates = [];
 $awards = [];
 $references = [];
+$projects = [];
 $extendedReady = $schemaReady && cvs_extended_sections_ready($conn);
+$projectsReady = $schemaReady && cvs_projects_ready($conn);
 
 if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate('candidate_cv_save_form', $_POST['csrf_token'] ?? '')) {
@@ -88,6 +90,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $certificates = $parsed['children']['certificates'];
     $awards = $parsed['children']['awards'];
     $references = $parsed['children']['references'];
+    $projects = $parsed['children']['projects'];
 } elseif ($schemaReady && $isEdit && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     $loaded = CvService::getFullForUser($conn, $userId, $cvId);
     if (!$loaded['ok'] || !$loaded['data']) {
@@ -104,6 +107,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $certificates = $loaded['data']['certificates'] ?? [];
     $awards = $loaded['data']['awards'] ?? [];
     $references = $loaded['data']['references'] ?? [];
+    $projects = $loaded['data']['projects'] ?? [];
     $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
     if (empty($profile['template_key'])) {
         $profile['template_key'] = 'classic';
@@ -235,6 +239,37 @@ function cv_builder_experience_row(int|string $index, array $row): void
 /**
  * @param array<string, mixed> $row
  */
+function cv_builder_project_row(int|string $index, array $row): void
+{
+    ?>
+    <div class="cv-repeat-row border rounded p-3 mb-3 bg-light">
+        <div class="row g-2">
+            <?php cv_builder_month_year_fields($index, 'projects', 'start', $row, true); ?>
+            <?php cv_builder_month_year_fields($index, 'projects', 'end', $row, false); ?>
+            <div class="col-md-6">
+                <label class="form-label small">Tên dự án <span class="text-danger">*</span></label>
+                <input type="text" name="projects[<?= $index ?>][project_name]" class="form-control form-control-sm" required
+                    value="<?= htmlspecialchars((string) ($row['project_name'] ?? '')) ?>">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">Vị trí trong dự án</label>
+                <input type="text" name="projects[<?= $index ?>][position]" class="form-control form-control-sm"
+                    placeholder="VD: Frontend Developer"
+                    value="<?= htmlspecialchars((string) ($row['position'] ?? '')) ?>">
+            </div>
+            <div class="col-12">
+                <label class="form-label small">Mô tả</label>
+                <textarea name="projects[<?= $index ?>][description]" class="form-control form-control-sm" rows="3"
+                    placeholder="Mục tiêu dự án, vai trò, công nghệ, kết quả đạt được..."><?= htmlspecialchars((string) ($row['description'] ?? '')) ?></textarea>
+            </div>
+            <div class="col-12 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger js-remove-row"><i class="fas fa-trash"></i> Xóa dòng</button>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
 /**
  * @param array<string, mixed> $row
  */
@@ -568,6 +603,22 @@ include '../includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
+                <?php if (!$projectsReady): ?>
+                    <?= cvs_projects_migration_hint_html() ?>
+                <?php else: ?>
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <h5 class="fw-bold mb-0">Dự án</h5>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-add-row="project-rows">
+                        <i class="fas fa-plus"></i> Thêm dự án
+                    </button>
+                </div>
+                <div id="project-rows" class="mb-4">
+                    <?php foreach ($projects as $i => $row): ?>
+                        <?php cv_builder_project_row((int) $i, $row); ?>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
                 <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
                     <h5 class="fw-bold mb-0">Kỹ năng</h5>
                     <button type="button" class="btn btn-sm btn-outline-success" data-add-row="skill-rows">
@@ -637,6 +688,7 @@ include '../includes/header.php';
 
         <script type="text/template" id="tpl-education-row"><?php cv_builder_education_row('__INDEX__', []); ?></script>
         <script type="text/template" id="tpl-experience-row"><?php cv_builder_experience_row('__INDEX__', []); ?></script>
+        <script type="text/template" id="tpl-project-row"><?php cv_builder_project_row('__INDEX__', []); ?></script>
         <script type="text/template" id="tpl-skill-row"><?php cv_builder_skill_row('__INDEX__', []); ?></script>
         <script type="text/template" id="tpl-activity-row"><?php cv_builder_activity_row('__INDEX__', []); ?></script>
         <script type="text/template" id="tpl-certificate-row"><?php cv_builder_certificate_row('__INDEX__', []); ?></script>

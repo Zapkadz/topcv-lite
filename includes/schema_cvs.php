@@ -58,10 +58,41 @@ if (!function_exists('cvs_schema_migration_hint_html')) {
     }
 }
 
+if (!function_exists('cvs_projects_ready')) {
+    function cvs_projects_ready(PDO $conn): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        if (!cvs_schema_ready($conn)) {
+            $cached = false;
+
+            return $cached;
+        }
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'cv_projects'");
+            $cached = (bool) $stmt->fetch();
+        } catch (Throwable $e) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
+}
+
 if (!function_exists('cvs_extended_migration_hint_html')) {
     function cvs_extended_migration_hint_html(): string
     {
         return '<div class="alert alert-warning">Chưa có bảng section mở rộng (CV-D). '
             . '<a href="/topcv_lite/docs/migrations/migrate-phase-cv-d.php">Chạy migration CV-D</a></div>';
+    }
+}
+
+if (!function_exists('cvs_projects_migration_hint_html')) {
+    function cvs_projects_migration_hint_html(): string
+    {
+        return '<div class="alert alert-warning">Chưa có bảng <strong>Dự án</strong> (cv_projects). '
+            . '<a href="/topcv_lite/docs/migrations/migrate-phase-cv-projects.php">Chạy migration CV Projects</a></div>';
     }
 }

@@ -56,6 +56,7 @@
     var sections = [
         ['education-rows', 'educations', 'tpl-education-row'],
         ['experience-rows', 'experiences', 'tpl-experience-row'],
+        ['project-rows', 'projects', 'tpl-project-row'],
         ['skill-rows', 'skills', 'tpl-skill-row'],
         ['activity-rows', 'activities', 'tpl-activity-row'],
         ['certificate-rows', 'certificates', 'tpl-certificate-row'],

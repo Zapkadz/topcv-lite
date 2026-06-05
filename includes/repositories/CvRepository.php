@@ -223,6 +223,19 @@ class CvRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function listProjects(PDO $conn, int $cvId): array
+    {
+        $stmt = $conn->prepare(
+            'SELECT * FROM cv_projects WHERE cv_id = ? ORDER BY sort_order ASC, id ASC'
+        );
+        $stmt->execute([$cvId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public static function deleteChildren(PDO $conn, int $cvId, bool $includeExtended = true): void
     {
         $conn->prepare('DELETE FROM cv_educations WHERE cv_id = ?')->execute([$cvId]);
@@ -238,6 +251,11 @@ class CvRepository
             $conn->prepare('DELETE FROM cv_references WHERE cv_id = ?')->execute([$cvId]);
         } catch (Throwable $e) {
             // Bảng CV-D chưa có — bỏ qua
+        }
+        try {
+            $conn->prepare('DELETE FROM cv_projects WHERE cv_id = ?')->execute([$cvId]);
+        } catch (Throwable $e) {
+            // Bảng cv_projects chưa có — bỏ qua
         }
     }
 
@@ -380,6 +398,28 @@ class CvRepository
                 $row['full_name'] ?? '',
                 $row['position'] ?? null,
                 $row['contact_info'] ?? null,
+                $row['sort_order'] ?? $i,
+            ]);
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    public static function insertProjects(PDO $conn, int $cvId, array $rows): void
+    {
+        $stmt = $conn->prepare(
+            'INSERT INTO cv_projects (cv_id, start_date, end_date, project_name, position, description, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        foreach ($rows as $i => $row) {
+            $stmt->execute([
+                $cvId,
+                $row['start_date'] ?? null,
+                $row['end_date'] ?? null,
+                $row['project_name'] ?? '',
+                $row['position'] ?? null,
+                $row['description'] ?? null,
                 $row['sort_order'] ?? $i,
             ]);
         }
