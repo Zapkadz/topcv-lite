@@ -34,6 +34,10 @@ if (!empty($result['message'])) {
 
 $meta = $result['meta'] ?? [];
 echo 'parse_source=' . (string) ($meta['parse_source'] ?? '') . "\n";
+echo 'text_noise_score=' . (string) ($meta['text_noise_score'] ?? '') . "\n";
+if (!empty($meta['text_clean_steps']) && is_array($meta['text_clean_steps'])) {
+    echo 'text_clean_steps=' . implode(',', $meta['text_clean_steps']) . "\n";
+}
 if (!empty($meta['warnings']) && is_array($meta['warnings'])) {
     foreach ($meta['warnings'] as $warning) {
         echo 'warning=' . $warning . "\n";

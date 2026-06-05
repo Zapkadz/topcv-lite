@@ -3,6 +3,7 @@
 require_once __DIR__ . '/PdfTextExtractor.php';
 require_once __DIR__ . '/AiCvParserService.php';
 require_once __DIR__ . '/../cv_import_rules.php';
+require_once __DIR__ . '/../cv_import_text_clean.php';
 require_once __DIR__ . '/../cv_parse_fallback.php';
 
 /**
@@ -35,17 +36,22 @@ class CvParseService
      *   message: string,
      *   profile: array<string, mixed>,
      *   children: array<string, list>,
-     *   meta: array{parse_source: string, warnings: list<string>}
+     *   meta: array{parse_source: string, warnings: list<string>, text_noise_score?: float, text_clean_steps?: list<string>}
      * }
      */
     public static function importFromText(string $text): array
     {
-        $text = cv_import_truncate_text($text);
+        $cleanResult = cv_import_clean_extracted_text($text);
+        $text = cv_import_truncate_text((string) ($cleanResult['text'] ?? ''));
         if (mb_strlen($text) < cv_import_min_text_len()) {
             return self::fail('Nội dung CV quá ngắn hoặc PDF không có text layer.');
         }
 
         $warnings = [];
+        $noiseScore = (float) ($cleanResult['noise_score'] ?? 0.0);
+        if ($noiseScore >= 0.25) {
+            $warnings[] = 'PDF thiết kế có thể còn text lộn xộn — vui lòng kiểm tra kỹ trước khi lưu.';
+        }
         $parseSource = 'fallback';
         $rawDraft = null;
 
@@ -75,6 +81,8 @@ class CvParseService
         $normalized['meta'] = [
             'parse_source' => $parseSource,
             'warnings' => $warnings,
+            'text_noise_score' => $noiseScore,
+            'text_clean_steps' => $cleanResult['steps'] ?? [],
         ];
 
         return [

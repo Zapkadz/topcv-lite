@@ -20,6 +20,11 @@
 2. PR → `main` (gồm CV-C + CV-D)
 3. Merge PR → `git pull origin main`
 
-## Phase tiếp (tùy đồ án)
+## Phase đang làm — CV-E (Mức B)
 
-- **`「xác nhận CV-E」`** — upload PDF đính kèm, export PDF (nhánh mới từ `main`)
+- **Plan:** `docs/phase-cv-e-plan.md`
+- **Checklist tiến độ:** `docs/project-memory/phase-cv-e-checklist.md` ← đọc file này khi chat mới
+- **Nhánh:** `feature/phase-cv-e-import`
+- **Khối hiện tại:** **E5 pass** — tiếp theo **E6** (lưu CV + attachment) sau `「xác nhận E6」` / `「tiếp tục E6」`
+- **Provider AI:** Groq (`llama-3.3-70b-versatile`) — `config/ai.local.php`
+- **Chưa commit** E2 (và E0+E1 nếu chưa commit)

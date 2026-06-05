@@ -149,17 +149,29 @@ if (!function_exists('cv_normalize_import_draft')) {
             'references' => cv_import_normalize_reference_rows($raw['references'] ?? []),
         ];
 
+        $filtered = [
+            'educations' => cv_filter_education_rows($children['educations']),
+            'experiences' => cv_filter_experience_rows($children['experiences']),
+            'skills' => cv_filter_skill_rows($children['skills']),
+            'projects' => cv_filter_project_rows($children['projects']),
+            'activities' => cv_filter_activity_rows($children['activities']),
+            'certificates' => cv_filter_certificate_rows($children['certificates']),
+            'awards' => cv_filter_award_rows($children['awards']),
+            'references' => cv_filter_reference_rows($children['references']),
+        ];
+        $filtered = cv_import_prune_incomplete_children($filtered);
+
         return [
             'profile' => $profile,
             'children' => [
-                'educations' => cv_import_limit_rows(cv_filter_education_rows($children['educations'])),
-                'experiences' => cv_import_limit_rows(cv_filter_experience_rows($children['experiences'])),
-                'skills' => cv_import_limit_rows(cv_filter_skill_rows($children['skills'])),
-                'projects' => cv_import_limit_rows(cv_filter_project_rows($children['projects'])),
-                'activities' => cv_import_limit_rows(cv_filter_activity_rows($children['activities'])),
-                'certificates' => cv_import_limit_rows(cv_filter_certificate_rows($children['certificates'])),
-                'awards' => cv_import_limit_rows(cv_filter_award_rows($children['awards'])),
-                'references' => cv_import_limit_rows(cv_filter_reference_rows($children['references'])),
+                'educations' => cv_import_limit_rows($filtered['educations']),
+                'experiences' => cv_import_limit_rows($filtered['experiences']),
+                'skills' => cv_import_limit_rows($filtered['skills']),
+                'projects' => cv_import_limit_rows($filtered['projects']),
+                'activities' => cv_import_limit_rows($filtered['activities']),
+                'certificates' => cv_import_limit_rows($filtered['certificates']),
+                'awards' => cv_import_limit_rows($filtered['awards']),
+                'references' => cv_import_limit_rows($filtered['references']),
             ],
         ];
     }
@@ -173,6 +185,82 @@ if (!function_exists('cv_import_limit_rows')) {
     function cv_import_limit_rows(array $rows): array
     {
         return array_slice($rows, 0, cv_import_max_rows_per_section());
+    }
+}
+
+if (!function_exists('cv_import_is_trivial_text')) {
+    function cv_import_is_trivial_text(string $value): bool
+    {
+        $v = trim($value);
+        if ($v === '' || $v === '-' || $v === '—' || $v === '–') {
+            return true;
+        }
+
+        return mb_strlen($v) <= 1;
+    }
+}
+
+if (!function_exists('cv_import_prune_incomplete_children')) {
+    /**
+     * Bỏ mục AI tạo ra chỉ có ngày mà không có trường/công ty — thường gặp với PDF nhiễu.
+     *
+     * @param array<string, list<array<string, mixed>>> $children
+     * @return array<string, list<array<string, mixed>>>
+     */
+    function cv_import_prune_incomplete_children(array $children): array
+    {
+        $children['educations'] = array_values(array_filter(
+            $children['educations'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['school_name'] ?? ''))
+        ));
+
+        $children['experiences'] = array_values(array_filter(
+            $children['experiences'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['company_name'] ?? ''))
+        ));
+
+        $children['projects'] = array_values(array_filter(
+            $children['projects'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['project_name'] ?? ''))
+        ));
+
+        $children['activities'] = array_values(array_filter(
+            $children['activities'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['organization'] ?? ''))
+        ));
+
+        $children['skills'] = array_values(array_filter(
+            $children['skills'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['skill_name'] ?? ''))
+        ));
+
+        $children['certificates'] = array_values(array_filter(
+            $children['certificates'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['certificate_name'] ?? ''))
+        ));
+
+        $children['awards'] = array_values(array_filter(
+            $children['awards'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['title'] ?? ''))
+        ));
+
+        $children['references'] = array_values(array_filter(
+            $children['references'] ?? [],
+            static fn(array $row): bool => !cv_import_is_trivial_text((string) ($row['full_name'] ?? ''))
+        ));
+
+        foreach (['educations', 'experiences', 'projects', 'activities', 'awards'] as $section) {
+            foreach ($children[$section] as $i => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                if (cv_import_is_trivial_text((string) ($row['description'] ?? ''))) {
+                    $children[$section][$i]['description'] = '';
+                }
+            }
+        }
+
+        return $children;
     }
 }
 

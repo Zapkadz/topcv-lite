@@ -63,9 +63,14 @@ include '../includes/header.php';
             <p class="text-muted mb-0">Tạo nhiều bản CV, chọn bản mặc định khi ứng tuyển (tích hợp apply ở CV-C).</p>
         </div>
         <?php if ($schemaReady): ?>
-            <a href="cv-builder.php" class="btn btn-success fw-bold">
-                <i class="fas fa-plus"></i> Tạo CV mới
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="cv-builder.php" class="btn btn-success fw-bold">
+                    <i class="fas fa-plus"></i> Tạo CV mới
+                </a>
+                <a href="cv-import.php" class="btn btn-outline-success fw-bold">
+                    <i class="fas fa-file-upload"></i> Tạo CV từ PDF
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -77,7 +82,10 @@ include '../includes/header.php';
                 <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
                 <h5 class="fw-bold">Chưa có CV online</h5>
                 <p class="text-muted">Tạo CV đầu tiên để nhà tuyển dụng đọc trực tiếp trên web.</p>
-                <a href="cv-builder.php" class="btn btn-success fw-bold">Tạo CV đầu tiên</a>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a href="cv-builder.php" class="btn btn-success fw-bold">Tạo CV thủ công</a>
+                    <a href="cv-import.php" class="btn btn-outline-success fw-bold">Tạo CV từ PDF</a>
+                </div>
             </div>
         </div>
     <?php else: ?>

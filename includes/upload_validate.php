@@ -1,7 +1,7 @@
 <?php
 /**
  * Validate upload file — extension + MIME (finfo) + size.
- * $kind: 'cv' | 'image' | 'cv_avatar'
+ * $kind: 'cv' | 'cv_pdf_import' | 'image' | 'cv_avatar'
  *
  * @return array{ok: bool, message: string, extension?: string}
  */
@@ -18,6 +18,14 @@ if (!function_exists('upload_validate')) {
                 ],
                 'max_bytes' => 5 * 1024 * 1024,
                 'type_label' => 'PDF, DOC hoặc DOCX',
+            ],
+            'cv_pdf_import' => [
+                'extensions' => ['pdf'],
+                'mimes' => [
+                    'application/pdf',
+                ],
+                'max_bytes' => 5 * 1024 * 1024,
+                'type_label' => 'PDF',
             ],
             'image' => [
                 'extensions' => ['jpg', 'jpeg', 'png', 'webp'],
