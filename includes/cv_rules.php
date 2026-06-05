@@ -346,6 +346,27 @@ if (!function_exists('cv_validate_children')) {
             }
         }
 
+        foreach ($children['projects'] ?? [] as $i => $row) {
+            $line = (int) $i + 1;
+            $name = trim((string) ($row['project_name'] ?? ''));
+            if ($name === '') {
+                return ['ok' => false, 'message' => "Dự án dòng {$line}: vui lòng nhập tên dự án."];
+            }
+
+            $start = $row['start_date'] ?? null;
+            if ($start === null || $start === '') {
+                return ['ok' => false, 'message' => "Dự án dòng {$line}: nhập tháng (1–12) và năm (4 chữ số) bắt đầu."];
+            }
+
+            $end = $row['end_date'] ?? null;
+            if ($end !== null && $end !== '' && cv_normalize_year_month((string) $end) === null) {
+                return ['ok' => false, 'message' => "Dự án dòng {$line}: tháng/năm kết thúc không hợp lệ."];
+            }
+            if ($end !== null && $end !== '' && cv_compare_year_month((string) $end, (string) $start) < 0) {
+                return ['ok' => false, 'message' => "Dự án dòng {$line}: tháng kết thúc không được trước tháng bắt đầu."];
+            }
+        }
+
         foreach ($children['skills'] ?? [] as $i => $row) {
             $line = (int) $i + 1;
             if (trim((string) ($row['skill_name'] ?? '')) === '') {
@@ -427,7 +448,7 @@ if (!function_exists('cv_estimate_completion_percent')) {
     function cv_estimate_completion_percent(array $profile, array $children): int
     {
         $score = 0;
-        $max = 14;
+        $max = 15;
 
         if (trim((string) ($profile['full_name'] ?? '')) !== '') {
             $score++;
@@ -451,6 +472,9 @@ if (!function_exists('cv_estimate_completion_percent')) {
             $score++;
         }
         if (count($children['experiences'] ?? []) > 0) {
+            $score++;
+        }
+        if (count($children['projects'] ?? []) > 0) {
             $score++;
         }
         if (count($children['skills'] ?? []) > 0) {
@@ -507,6 +531,7 @@ if (!function_exists('cv_parse_builder_post')) {
                 'certificates' => cv_filter_certificate_rows($post['certificates'] ?? []),
                 'awards' => cv_filter_award_rows($post['awards'] ?? []),
                 'references' => cv_filter_reference_rows($post['references'] ?? []),
+                'projects' => cv_filter_project_rows($post['projects'] ?? []),
             ],
         ];
     }
@@ -607,6 +632,43 @@ if (!function_exists('cv_filter_skill_rows')) {
                 'sort_order' => (int) $i,
             ];
             if ($normalized['skill_name'] === '' && $normalized['description'] === '') {
+                continue;
+            }
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('cv_filter_project_rows')) {
+    /**
+     * @param mixed $rows
+     * @return list<array<string, mixed>>
+     */
+    function cv_filter_project_rows($rows): array
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [
+                'start_date' => cv_row_period_date($row, 'start'),
+                'end_date' => cv_row_period_date($row, 'end'),
+                'project_name' => trim((string) ($row['project_name'] ?? '')),
+                'position' => trim((string) ($row['position'] ?? '')),
+                'description' => trim((string) ($row['description'] ?? '')),
+                'sort_order' => (int) $i,
+            ];
+            if ($normalized['project_name'] === ''
+                && $normalized['position'] === ''
+                && $normalized['start_date'] === null
+                && $normalized['end_date'] === null
+                && $normalized['description'] === '') {
                 continue;
             }
             $out[] = $normalized;

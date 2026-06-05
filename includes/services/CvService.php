@@ -295,6 +295,9 @@ class CvService
             $packed['awards'] = CvRepository::listAwards($conn, $cvId);
             $packed['references'] = CvRepository::listReferences($conn, $cvId);
         }
+        if (cvs_projects_ready($conn)) {
+            $packed['projects'] = CvRepository::listProjects($conn, $cvId);
+        }
 
         return $packed;
     }
@@ -304,13 +307,15 @@ class CvService
      */
     private static function insertExtendedChildren(PDO $conn, int $cvId, array $children): void
     {
-        if (!cvs_extended_sections_ready($conn)) {
-            return;
+        if (cvs_extended_sections_ready($conn)) {
+            CvRepository::insertActivities($conn, $cvId, $children['activities'] ?? []);
+            CvRepository::insertCertificates($conn, $cvId, $children['certificates'] ?? []);
+            CvRepository::insertAwards($conn, $cvId, $children['awards'] ?? []);
+            CvRepository::insertReferences($conn, $cvId, $children['references'] ?? []);
         }
-        CvRepository::insertActivities($conn, $cvId, $children['activities'] ?? []);
-        CvRepository::insertCertificates($conn, $cvId, $children['certificates'] ?? []);
-        CvRepository::insertAwards($conn, $cvId, $children['awards'] ?? []);
-        CvRepository::insertReferences($conn, $cvId, $children['references'] ?? []);
+        if (cvs_projects_ready($conn)) {
+            CvRepository::insertProjects($conn, $cvId, $children['projects'] ?? []);
+        }
     }
 
     /**
@@ -322,7 +327,8 @@ class CvService
      *   activities: list,
      *   certificates: list,
      *   awards: list,
-     *   references: list
+     *   references: list,
+     *   projects: list
      * }
      */
     private static function normalizeChildren(array $children): array
@@ -335,6 +341,7 @@ class CvService
             'certificates' => array_values($children['certificates'] ?? []),
             'awards' => array_values($children['awards'] ?? []),
             'references' => array_values($children['references'] ?? []),
+            'projects' => array_values($children['projects'] ?? []),
         ];
     }
 

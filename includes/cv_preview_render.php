@@ -14,7 +14,8 @@ if (!function_exists('cv_preview_normalize_data')) {
      *   activities: list,
      *   certificates: list,
      *   awards: list,
-     *   references: list
+     *   references: list,
+     *   projects: list
      * }
      */
     function cv_preview_normalize_data(array $data): array
@@ -25,6 +26,7 @@ if (!function_exists('cv_preview_normalize_data')) {
             'profile' => is_array($profile) ? $profile : [],
             'educations' => array_values($data['educations'] ?? []),
             'experiences' => array_values($data['experiences'] ?? []),
+            'projects' => array_values($data['projects'] ?? []),
             'skills' => array_values($data['skills'] ?? []),
             'activities' => array_values($data['activities'] ?? []),
             'certificates' => array_values($data['certificates'] ?? []),
@@ -120,6 +122,26 @@ if (!function_exists('cv_preview_render_body_sections')) {
                             <span class="text-muted fw-normal">(<?= htmlspecialchars(cv_preview_period_range_label($exp['start_date'] ?? null, $exp['end_date'] ?? null)) ?>)</span>
                         </div>
                         <?php if (!empty($exp['description'])): ?><div class="small text-muted"><?= nl2br(htmlspecialchars((string) $exp['description'])) ?></div><?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+        <?php endif;
+
+        if (count($data['projects']) > 0): ?>
+            <section class="mb-4">
+                <h2 class="<?= htmlspecialchars($headingClass) ?>">Dự án</h2>
+                <?php foreach ($data['projects'] as $proj): ?>
+                    <div class="mb-2">
+                        <div class="fw-semibold">
+                            <?= htmlspecialchars((string) ($proj['project_name'] ?? '')) ?>
+                            <?php if (!empty($proj['position'])): ?>
+                                — <?= htmlspecialchars((string) $proj['position']) ?>
+                            <?php endif; ?>
+                            <span class="text-muted fw-normal">(<?= htmlspecialchars(cv_preview_period_range_label($proj['start_date'] ?? null, $proj['end_date'] ?? null)) ?>)</span>
+                        </div>
+                        <?php if (!empty($proj['description'])): ?>
+                            <div class="small text-muted"><?= nl2br(htmlspecialchars((string) $proj['description'])) ?></div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </section>

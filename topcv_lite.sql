@@ -358,6 +358,23 @@ CREATE TABLE `cv_references` (
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `cv_projects`
+--
+
+CREATE TABLE `cv_projects` (
+  `id` int(11) NOT NULL,
+  `cv_id` int(11) NOT NULL,
+  `start_date` char(7) DEFAULT NULL,
+  `end_date` char(7) DEFAULT NULL,
+  `project_name` varchar(255) NOT NULL DEFAULT '',
+  `position` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `saved_jobs` (Phase 2D)
 --
 
@@ -482,6 +499,13 @@ ALTER TABLE `cv_references`
   ADD KEY `idx_cv_references_cv` (`cv_id`,`sort_order`);
 
 --
+-- Chỉ mục cho bảng `cv_projects`
+--
+ALTER TABLE `cv_projects`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cv_projects_cv` (`cv_id`,`sort_order`);
+
+--
 -- Chỉ mục cho bảng `saved_jobs`
 --
 ALTER TABLE `saved_jobs`
@@ -588,6 +612,9 @@ ALTER TABLE `cv_awards`
 ALTER TABLE `cv_references`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `cv_projects`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- Các ràng buộc cho các bảng đã đổ
 --
@@ -656,6 +683,9 @@ ALTER TABLE `cv_awards`
 
 ALTER TABLE `cv_references`
   ADD CONSTRAINT `cv_references_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cv_projects`
+  ADD CONSTRAINT `cv_projects_cv_fk` FOREIGN KEY (`cv_id`) REFERENCES `cv_profiles` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

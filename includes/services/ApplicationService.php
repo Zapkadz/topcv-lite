@@ -97,4 +97,28 @@ class ApplicationService
 
         return $row ?: null;
     }
+
+    /**
+     * Candidate: xem đơn ứng tuyển của chính mình (snapshot lúc nộp).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getApplicationForCandidate(PDO $conn, int $appId, int $userId): ?array
+    {
+        $stmt = $conn->prepare(
+            'SELECT app.id AS app_id, app.job_id, app.cv_profile_id,
+                    app.cv_snapshot, app.cv_snapshot_json, app.cover_letter, app.status, app.created_at,
+                    j.title AS job_title, c.name AS company_name
+             FROM applications app
+             JOIN jobs j ON app.job_id = j.id
+             JOIN companies c ON j.company_id = c.id
+             JOIN candidates cand ON app.candidate_id = cand.id
+             WHERE app.id = ? AND cand.user_id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$appId, $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
 }
