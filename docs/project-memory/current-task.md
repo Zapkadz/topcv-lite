@@ -25,6 +25,5 @@
 - **Plan:** `docs/phase-cv-e-plan.md`
 - **Checklist tiến độ:** `docs/project-memory/phase-cv-e-checklist.md` ← đọc file này khi chat mới
 - **Nhánh:** `feature/phase-cv-e-import`
-- **Khối hiện tại:** **E5 pass** — tiếp theo **E6** (lưu CV + attachment) sau `「xác nhận E6」` / `「tiếp tục E6」`
+- **Khối hiện tại:** **E6 pass** — tiếp theo **E7** (rate limit + docs) sau `「xác nhận E7」` / `「tiếp tục E7」`
 - **Provider AI:** Groq (`llama-3.3-70b-versatile`) — `config/ai.local.php`
-- **Chưa commit** E2 (và E0+E1 nếu chưa commit)

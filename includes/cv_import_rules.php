@@ -177,6 +177,40 @@ if (!function_exists('cv_normalize_import_draft')) {
     }
 }
 
+if (!function_exists('cv_import_validate_attachment_path')) {
+    /**
+     * Chỉ chấp nhận PDF import thuộc user, chống path traversal.
+     */
+    function cv_import_validate_attachment_path(string $path, int $userId): string
+    {
+        $path = trim(str_replace('\\', '/', $path));
+        if ($path === '' || $userId <= 0) {
+            return '';
+        }
+
+        if (str_contains($path, '..') || str_starts_with($path, '/')) {
+            return '';
+        }
+
+        $prefix = 'uploads/cv/import/';
+        if (!str_starts_with($path, $prefix)) {
+            return '';
+        }
+
+        $filename = substr($path, strlen($prefix));
+        if ($filename === '' || !preg_match('/^' . $userId . '_\d{14}_[a-f0-9]+\.pdf$/', $filename)) {
+            return '';
+        }
+
+        $absolute = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        if (!is_file($absolute)) {
+            return '';
+        }
+
+        return $path;
+    }
+}
+
 if (!function_exists('cv_import_limit_rows')) {
     /**
      * @param list<array<string, mixed>> $rows

@@ -110,6 +110,14 @@ include '../includes/header.php';
                             <tr>
                                 <td>
                                     <span class="fw-bold"><?= htmlspecialchars((string) $cv['title']) ?></span>
+                                    <?php
+                                    $attachmentPath = trim((string) ($cv['attachment_path'] ?? ''));
+                                    if ($attachmentPath !== ''):
+                                        $attachmentUrl = BASE_URL . ltrim($attachmentPath, '/');
+                                    ?>
+                                        <a href="<?= htmlspecialchars($attachmentUrl) ?>" class="ms-1 text-muted" target="_blank" rel="noopener"
+                                            title="Xem PDF gốc import"><i class="fas fa-paperclip"></i></a>
+                                    <?php endif; ?>
                                     <?php if (trim((string) ($cv['full_name'] ?? '')) !== ''): ?>
                                         <br><small class="text-muted"><?= htmlspecialchars((string) $cv['full_name']) ?></small>
                                     <?php endif; ?>

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/cv_rules.php';
+require_once __DIR__ . '/../includes/cv_import_rules.php';
 require_once __DIR__ . '/../includes/cv_avatar.php';
 require_once __DIR__ . '/../includes/services/CvService.php';
 
@@ -70,6 +71,10 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     $parsed['profile']['avatar_path'] = $avatarResult['path'];
+    $parsed['profile']['attachment_path'] = cv_import_validate_attachment_path(
+        (string) ($parsed['profile']['attachment_path'] ?? ''),
+        $userId
+    );
 
     if ($postCvId > 0) {
         $result = CvService::saveForUser($conn, $userId, $postCvId, $parsed['profile'], $parsed['children']);
@@ -83,6 +88,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
     $_SESSION['swal_title'] = $result['message'];
     if ($result['ok'] && !empty($result['cv_id'])) {
+        unset($_SESSION['cv_import_draft']);
         header('Location: cv-manage.php');
         exit();
     }

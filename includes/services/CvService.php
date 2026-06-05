@@ -145,6 +145,11 @@ class CvService
             return ['ok' => false, 'message' => 'CV không tồn tại hoặc bạn không có quyền.'];
         }
 
+        if (trim((string) ($profile['attachment_path'] ?? '')) === ''
+            && trim((string) ($existing['attachment_path'] ?? '')) !== '') {
+            $profile['attachment_path'] = (string) $existing['attachment_path'];
+        }
+
         $normalizedChildren = self::normalizeChildren($children);
         $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
 

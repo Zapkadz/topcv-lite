@@ -198,10 +198,10 @@ php docs\migrations\_test-ai-parse.php "đường_dẫn\cv_text_mẫu.txt"
 
 | # | Việc | Trạng thái | File |
 |---|------|------------|------|
-| E6.1 | `cv_parse_builder_post` nhận `attachment_path` | ❌ | `includes/cv_rules.php` |
-| E6.2 | Validate path chống traversal | ❌ | |
-| E6.3 | Clear session sau create OK | ❌ | `cv-builder.php` |
-| E6.4 | (Tuỳ chọn) icon đính kèm trên cv-manage | ❌ | |
+| E6.1 | `cv_parse_builder_post` nhận `attachment_path` | ✅ | `includes/cv_rules.php` |
+| E6.2 | Validate path chống traversal | ✅ | `includes/cv_import_rules.php` |
+| E6.3 | Clear session sau create OK | ✅ | `cv-builder.php` |
+| E6.4 | (Tuỳ chọn) icon đính kèm trên cv-manage | ✅ | `candidate/cv-manage.php` |
 
 **User confirm:** `「E6 pass」`
 

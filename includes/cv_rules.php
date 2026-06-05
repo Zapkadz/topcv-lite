@@ -519,6 +519,7 @@ if (!function_exists('cv_parse_builder_post')) {
             'career_objective' => $post['career_objective'] ?? '',
             'interests' => $post['interests'] ?? '',
             'template_key' => $post['template_key'] ?? 'classic',
+            'attachment_path' => trim((string) ($post['attachment_path'] ?? '')),
         ];
 
         return [
