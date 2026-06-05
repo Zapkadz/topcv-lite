@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/upload_validate.php';
+require_once __DIR__ . '/../includes/cv_import_rules.php';
 require_once __DIR__ . '/../includes/ai_config.php';
 require_once __DIR__ . '/../includes/services/CvParseService.php';
 
@@ -26,6 +27,15 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: cv-import.php');
         exit();
     }
+
+    $rateCheck = cv_import_rate_limit_check($userId);
+    if (!$rateCheck['ok']) {
+        $_SESSION['swal_icon'] = 'warning';
+        $_SESSION['swal_title'] = $rateCheck['message'];
+        header('Location: cv-import.php');
+        exit();
+    }
+    cv_import_rate_limit_record($userId);
 
     $fileCheck = upload_validate($_FILES['cv_pdf'] ?? [], 'cv_pdf_import');
     if (!$fileCheck['ok']) {
@@ -101,6 +111,7 @@ include '../includes/header.php';
                     <li>Chỉ chấp nhận file <strong>PDF</strong> (tối đa 5MB).</li>
                     <li>CV nên là file có thể <strong>bôi đen/copy chữ</strong> trong PDF (không phải scan ảnh).</li>
                     <li>Quá trình phân tích có thể mất <strong>10–30 giây</strong>.</li>
+                    <li>Giới hạn <strong><?= (int) cv_import_rate_limit_max_per_hour() ?> lần import / giờ</strong> trên mỗi tài khoản.</li>
                 </ul>
 
                 <form method="POST" enctype="multipart/form-data" id="cv-import-form">

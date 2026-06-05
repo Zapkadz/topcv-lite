@@ -203,7 +203,7 @@ php docs\migrations\_test-ai-parse.php "đường_dẫn\cv_text_mẫu.txt"
 | E6.3 | Clear session sau create OK | ✅ | `cv-builder.php` |
 | E6.4 | (Tuỳ chọn) icon đính kèm trên cv-manage | ✅ | `candidate/cv-manage.php` |
 
-**User confirm:** `「E6 pass」`
+**User confirm:** `「E6 pass」` ✅
 
 ---
 
@@ -213,12 +213,12 @@ php docs\migrations\_test-ai-parse.php "đường_dẫn\cv_text_mẫu.txt"
 
 | # | Việc | Trạng thái | File |
 |---|------|------------|------|
-| E7.1 | `cv_import_rate_limit_check()` | ❌ | `includes/cv_import_rules.php` |
-| E7.2 | Gọi rate limit ở cv-import POST | ❌ | |
-| E7.3 | `docs/setup-cv-import.md` | ❌ | |
-| E7.4 | Ghi chú `max_execution_time` XAMPP | ❌ | |
+| E7.1 | `cv_import_rate_limit_check()` | ✅ | `includes/cv_import_rules.php` |
+| E7.2 | Gọi rate limit ở cv-import POST | ✅ | `candidate/cv-import.php` |
+| E7.3 | `docs/setup-cv-import.md` | ✅ | |
+| E7.4 | Ghi chú `max_execution_time` XAMPP | ✅ | `docs/setup-cv-import.md` |
 
-**User confirm:** `「E7 pass」`
+**User confirm:** `「E7 pass」` ✅
 
 **Commit gợi ý (gộp E6–E7):** `feat(cv-e): lưu attachment và rate limit import`
 

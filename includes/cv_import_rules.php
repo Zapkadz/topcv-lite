@@ -211,6 +211,74 @@ if (!function_exists('cv_import_validate_attachment_path')) {
     }
 }
 
+if (!function_exists('cv_import_rate_limit_max_per_hour')) {
+    function cv_import_rate_limit_max_per_hour(): int
+    {
+        return 5;
+    }
+}
+
+if (!function_exists('cv_import_rate_limit_window_seconds')) {
+    function cv_import_rate_limit_window_seconds(): int
+    {
+        return 3600;
+    }
+}
+
+if (!function_exists('cv_import_rate_limit_check')) {
+    /**
+     * @return array{ok: bool, message: string}
+     */
+    function cv_import_rate_limit_check(int $userId): array
+    {
+        if ($userId <= 0) {
+            return ['ok' => false, 'message' => 'Phiên đăng nhập không hợp lệ.'];
+        }
+
+        $now = time();
+        $window = cv_import_rate_limit_window_seconds();
+        $max = cv_import_rate_limit_max_per_hour();
+        $hits = $_SESSION['cv_import_hits'] ?? [];
+        if (!is_array($hits)) {
+            $hits = [];
+        }
+
+        $recent = [];
+        foreach ($hits as $ts) {
+            if (!is_int($ts) && !(is_string($ts) && ctype_digit($ts))) {
+                continue;
+            }
+            $ts = (int) $ts;
+            if ($ts > 0 && ($now - $ts) < $window) {
+                $recent[] = $ts;
+            }
+        }
+
+        $_SESSION['cv_import_hits'] = $recent;
+
+        if (count($recent) >= $max) {
+            return [
+                'ok' => false,
+                'message' => 'Bạn đã import quá nhiều lần. Vui lòng thử lại sau 1 giờ.',
+            ];
+        }
+
+        return ['ok' => true, 'message' => ''];
+    }
+}
+
+if (!function_exists('cv_import_rate_limit_record')) {
+    function cv_import_rate_limit_record(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        cv_import_rate_limit_check($userId);
+        $_SESSION['cv_import_hits'][] = time();
+    }
+}
+
 if (!function_exists('cv_import_limit_rows')) {
     /**
      * @param list<array<string, mixed>> $rows
