@@ -3,6 +3,15 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'config/db.php';
 require_once __DIR__ . '/includes/job_rules.php';
+require_once __DIR__ . '/includes/schema_jobs.php';
+
+$jobNotDeletedPlain = jobs_schema_has_soft_delete($conn)
+    ? job_sql_not_deleted('')
+    : '1=1';
+$jobNotDeletedAlias = jobs_schema_has_soft_delete($conn)
+    ? job_sql_not_deleted('j')
+    : '1=1';
+
 include 'includes/header.php';
 
 // 1. Kiểm tra ID công ty
@@ -52,7 +61,7 @@ $offset = ($page - 1) * $limit;
 
 // Đếm tổng số tin active
 $stmt_count = $conn->prepare(
-    'SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = \'approved\' AND deadline >= CURDATE() AND ' . job_sql_not_deleted()
+    'SELECT COUNT(*) FROM jobs WHERE company_id = ? AND status = \'approved\' AND deadline >= CURDATE() AND ' . $jobNotDeletedPlain
 );
 $stmt_count->execute([$company_id]);
 $total_records = $stmt_count->fetchColumn();
@@ -62,7 +71,7 @@ $total_pages = ceil($total_records / $limit);
 $sql_jobs = 'SELECT j.*, l.name AS location_name
              FROM jobs j
              JOIN locations l ON j.location_id = l.id
-             WHERE j.company_id = ? AND j.status = \'approved\' AND j.deadline >= CURDATE() AND ' . job_sql_not_deleted('j') . '
+             WHERE j.company_id = ? AND j.status = \'approved\' AND j.deadline >= CURDATE() AND ' . $jobNotDeletedAlias . '
              ORDER BY j.created_at DESC
              LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
 

@@ -7,7 +7,9 @@ if (!function_exists('job_sql_not_deleted')) {
     /** Điều kiện SQL: tin chưa bị xóa mềm (cần cột deleted_at). */
     function job_sql_not_deleted(string $alias = 'j'): string
     {
-        return "({$alias}.deleted_at IS NULL)";
+        $prefix = $alias !== '' ? $alias . '.' : '';
+
+        return "({$prefix}deleted_at IS NULL)";
     }
 }
 
