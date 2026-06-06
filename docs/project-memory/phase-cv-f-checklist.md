@@ -48,9 +48,9 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | F3 | CvParseService integrate | ⬜ | ⬜ | ⬜ | ⬜ |
 | F4 | cv-import toggle + builder banner | ✅ | ✅ | ✅ | ✅ |
 | F5 | Rate limit GPT | ✅ | ✅ | ✅ | ✅ |
-| F6 | Test 4 PDF mẫu | ⬜ | ⬜ | ⬜ | ⬜ |
+| F6 | Test 4 PDF mẫu | ✅ | ✅ | ✅ | ⬜ |
 | F7 | DOCX (optional — defer) | ⏸️ | — | — | — |
-| F8 | Docs + regression CV-E | ⬜ | ⬜ | ⬜ | ⬜ |
+| F8 | Docs + regression CV-E | ⏸️ | — | — | — |
 
 ---
 
@@ -176,3 +176,4 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | 2026-06-05 | User **`「F2 pass」`** — vision via ShopAIKey `/responses` |
 | 2026-06-05 | User **`「F4 pass」`** — UI 2 card Text-base / Chuẩn GPT sau upload |
 | 2026-06-05 | User **`「F5 pass」`** — quota GPT 5/tổng đời DB (users.cv_gpt_import_uses) |
+| 2026-06-05 | User **`「F6 pass」`** — batch test 4 PDF; F7/F8 bỏ qua → CV-F done |

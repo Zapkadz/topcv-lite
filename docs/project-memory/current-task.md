@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-D | ✅ merged / pass |
 | **CV-E** | ✅ pass — merged `main` (PR #12) |
-| **CV-F** | ✅ **F5 pass** — chờ **F6** |
+| **CV-F** | ✅ **F6 pass** — CV-F done (F7/F8 bỏ qua) → sẵn sàng PR |
 
 ---
 
@@ -27,19 +27,20 @@
 
 - [x] OpenAI/ShopAIKey key trong `ai.local.php` (block `openai`)
 - [x] **`「F0 pass」`** — `_test-openai-config.php` OK
-- [ ] Chuẩn bị 4 PDF test — có sẵn trong `uploads/cv/` và `uploads/cv/import/`
-- [x] **`「F1 pass」`** — router + quota GPT **5/tổng đời** (implement F5)
-- [x] **`「F2 pass」`** — GPT vision parser (ShopAIKey responses)
-- [x] **`「F4 pass」`** — màn chọn Text-base / Chuẩn GPT sau upload
-- [x] **`「F5 pass」`** — quota GPT 5/tổng đời (DB + file fallback)
+- [x] **`「F1 pass」`** — smart router
+- [x] **`「F2 pass」`** — GPT vision (ShopAIKey)
+- [x] **`「F4 pass」`** — UI chọn Text-base / Chuẩn GPT
+- [x] **`「F5 pass」`** — quota GPT 5/tổng đời (DB)
+- [x] **`「F6 pass」`** — 4 loại PDF CLI + web OK
+- ~~F7 DOCX~~ / ~~F8 docs~~ — **bỏ qua** (user chốt)
 
-### Quy trình (giống CV-E)
+### Quy trình
 
 ```text
-F0 → test → 「F0 pass」 → (commit nếu yêu cầu) → F1 → … → F8 → 「CV-F pass」 → PR
+F0–F6 pass + commit → 「CV-F pass」 → PR (không F7/F8)
 ```
 
-F0–F5 committed; tiếp F6 (test 4 loại PDF).
+F0–F6 committed trên nhánh `feature/phase-cv-f-vision`.
 
 ---
 
