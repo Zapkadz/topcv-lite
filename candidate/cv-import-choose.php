@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/cv_import_rules.php';
+require_once __DIR__ . '/../includes/schema_cv_import.php';
 require_once __DIR__ . '/../includes/cv_import_pdf_quality.php';
 require_once __DIR__ . '/../includes/cv_import_vip.php';
 require_once __DIR__ . '/../includes/ai_config.php';
@@ -61,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $textRecommended = !$isNoisy && $routeAuto === 'text_fast';
 $visionRecommended = $isNoisy || in_array($routeAuto, ['vision_gpt', 'vision_gpt_forced'], true);
 $visionDisabled = !$openAiReady || (!$gptQuota['ok'] && !$isVip);
+$quotaDbReady = users_cv_gpt_quota_ready($conn);
 
 include '../includes/header.php';
 ?>
@@ -74,6 +76,21 @@ include '../includes/header.php';
             — gợi ý: <strong><?= htmlspecialchars(cv_import_parse_mode_label($routeAuto)) ?></strong>
         </p>
     </div>
+
+    <?php if (!$quotaDbReady && !$isVip): ?>
+        <?= cv_import_gpt_quota_migration_hint_html() ?>
+    <?php endif; ?>
+
+    <?php if (!$isVip && !$gptQuota['ok']): ?>
+        <div class="alert alert-danger border-0 shadow-sm mb-4">
+            <strong><i class="fas fa-ban"></i> Đã hết lượt Chuẩn GPT</strong>
+            <p class="mb-0 mt-1 small">
+                Bạn đã dùng <strong><?= (int) $gptQuota['used'] ?>/<?= (int) $gptQuota['max'] ?></strong> lần Chuẩn GPT trên tài khoản.
+                Vẫn có thể dùng <strong>Text-base (Groq)</strong> không giới hạn.
+                <strong>Nâng cấp VIP</strong> để Chuẩn GPT không giới hạn (sắp ra mắt).
+            </p>
+        </div>
+    <?php endif; ?>
 
     <?php if ($isNoisy): ?>
         <div class="alert alert-warning border-0 shadow-sm mb-4">

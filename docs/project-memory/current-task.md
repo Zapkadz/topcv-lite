@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-D | ✅ merged / pass |
 | **CV-E** | ✅ pass — merged `main` (PR #12) |
-| **CV-F** | ✅ **F4 pass** — chờ **F5** |
+| **CV-F** | ✅ **F5 pass** — chờ **F6** |
 
 ---
 
@@ -31,7 +31,7 @@
 - [x] **`「F1 pass」`** — router + quota GPT **5/tổng đời** (implement F5)
 - [x] **`「F2 pass」`** — GPT vision parser (ShopAIKey responses)
 - [x] **`「F4 pass」`** — màn chọn Text-base / Chuẩn GPT sau upload
-- [ ] **F5** — quota GPT 5/tổng đời (stub file-based đã có trong F4)
+- [x] **`「F5 pass」`** — quota GPT 5/tổng đời (DB + file fallback)
 
 ### Quy trình (giống CV-E)
 
@@ -39,7 +39,7 @@
 F0 → test → 「F0 pass」 → (commit nếu yêu cầu) → F1 → … → F8 → 「CV-F pass」 → PR
 ```
 
-F0 + F1 + F2 + F4 committed; tiếp F5 (quota hoàn thiện).
+F0–F5 committed; tiếp F6 (test 4 loại PDF).
 
 ---
 
