@@ -77,3 +77,101 @@ if (!function_exists('ai_config_ready')) {
         return true;
     }
 }
+
+if (!function_exists('ai_openai_defaults')) {
+    /**
+     * @return array<string, mixed>
+     */
+    function ai_openai_defaults(): array
+    {
+        return [
+            'api_key' => '',
+            'base_url' => 'https://api.shopaikey.com/v1',
+            'model' => 'gpt-4o',
+            'timeout_seconds' => 55,
+            'max_pdf_pages' => 5,
+            'enabled' => true,
+        ];
+    }
+}
+
+if (!function_exists('ai_openai_config')) {
+    /**
+     * Cấu hình OpenAI-format cho CV-F (GPT vision). Độc lập provider CV-E (Groq).
+     * Block `openai` trong config/ai.local.php; hỗ trợ proxy ShopAIKey qua base_url.
+     *
+     * @return array<string, mixed>
+     */
+    function ai_openai_config(): array
+    {
+        static $config = null;
+        if ($config !== null) {
+            return $config;
+        }
+
+        $openai = ai_openai_defaults();
+
+        $full = ai_config();
+        if (!empty($full['openai']) && is_array($full['openai'])) {
+            $openai = array_merge($openai, $full['openai']);
+        }
+
+        $envKey = getenv('OPENAI_API_KEY');
+        if (is_string($envKey) && trim($envKey) !== '') {
+            $openai['api_key'] = trim($envKey);
+        }
+
+        $baseUrl = rtrim(trim((string) ($openai['base_url'] ?? '')), '/');
+        if ($baseUrl === '') {
+            $baseUrl = 'https://api.shopaikey.com/v1';
+        }
+        $openai['base_url'] = $baseUrl;
+
+        $config = $openai;
+
+        return $config;
+    }
+}
+
+if (!function_exists('ai_openai_endpoint')) {
+    /**
+     * Ghép URL API (OpenAI hoặc ShopAIKey-compatible).
+     */
+    function ai_openai_endpoint(string $path): string
+    {
+        $base = rtrim((string) (ai_openai_config()['base_url'] ?? ''), '/');
+        $path = '/' . ltrim($path, '/');
+
+        return $base . $path;
+    }
+}
+
+if (!function_exists('ai_openai_key_valid')) {
+    function ai_openai_key_valid(string $key): bool
+    {
+        $key = trim($key);
+        $placeholders = [
+            'YOUR_OPENAI_API_KEY_HERE',
+            'sk-xxxxxxxx',
+            'sk-proj-xxxxxxxx',
+        ];
+
+        if ($key === '' || in_array($key, $placeholders, true)) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('ai_openai_ready')) {
+    function ai_openai_ready(): bool
+    {
+        $config = ai_openai_config();
+        if (empty($config['enabled'])) {
+            return false;
+        }
+
+        return ai_openai_key_valid((string) ($config['api_key'] ?? ''));
+    }
+}

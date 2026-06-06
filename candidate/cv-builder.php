@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/cv_rules.php';
 require_once __DIR__ . '/../includes/cv_import_rules.php';
+require_once __DIR__ . '/../includes/cv_import_pdf_quality.php';
 require_once __DIR__ . '/../includes/cv_avatar.php';
 require_once __DIR__ . '/../includes/services/CvService.php';
 
@@ -205,13 +206,23 @@ $dobBounds = cv_date_of_birth_bounds();
 $pageTitle = $isEdit ? 'Sửa CV online' : ($fromImport ? 'Tạo CV từ PDF' : 'Tạo CV mới');
 
 /**
- * @param array{parse_source?: string, warnings?: list<string>} $meta
+ * @param array{parse_source?: string, parse_mode?: string, warnings?: list<string>} $meta
  */
 function cv_builder_import_source_label(array $meta): string
 {
+    $parseMode = (string) ($meta['parse_mode'] ?? '');
+    if ($parseMode !== '') {
+        return match ($parseMode) {
+            'text_fast' => 'Text-base (Groq)',
+            'vision_gpt', 'vision_gpt_forced' => 'Chuẩn GPT (vision)',
+            default => cv_import_parse_mode_label($parseMode),
+        };
+    }
+
     $source = (string) ($meta['parse_source'] ?? '');
     return match ($source) {
-        'ai' => 'AI',
+        'ai' => 'Text-base (Groq)',
+        'vision' => 'Chuẩn GPT (vision)',
         'fallback' => 'phân tích cơ bản (fallback)',
         'ai+fallback' => 'AI + bổ sung fallback',
         default => 'import PDF',

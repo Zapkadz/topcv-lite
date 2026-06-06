@@ -374,6 +374,7 @@
 - E1–E7: ✅ pass (xem `phase-cv-e-checklist.md` checkpoint log)
 - E8 regression: ⏳ chờ `「CV-E pass」`
 
-### Tiếp theo
-- User tick regression checklist → **`「CV-E pass」`** → PR merge
-- Tuỳ chọn **CV-F** (OCR / Vision)
+### Tiếp theo (sau CV-E)
+- CV-E merged PR #12 → `main`
+- User **`「xác nhận CV-F」`** (2026-06-05) — plan `docs/phase-cv-f-plan.md`, nhánh `feature/phase-cv-f-vision`
+- Chờ OpenAI key + PDF test → **`「bắt đầu code CV-F」`**

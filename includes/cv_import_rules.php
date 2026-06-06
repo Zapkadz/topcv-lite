@@ -259,7 +259,8 @@ if (!function_exists('cv_import_rate_limit_check')) {
         if (count($recent) >= $max) {
             return [
                 'ok' => false,
-                'message' => 'Bạn đã import quá nhiều lần. Vui lòng thử lại sau 1 giờ.',
+                'message' => 'Bạn đã upload quá nhiều lần (' . $max . '/giờ). '
+                    . 'Giới hạn này chống spam — Text-base không giới hạn quota; Chuẩn GPT có quota riêng.',
             ];
         }
 
@@ -276,6 +277,269 @@ if (!function_exists('cv_import_rate_limit_record')) {
 
         cv_import_rate_limit_check($userId);
         $_SESSION['cv_import_hits'][] = time();
+    }
+}
+
+if (!function_exists('cv_import_pdo')) {
+    function cv_import_pdo(): ?PDO
+    {
+        global $conn;
+
+        return ($conn instanceof PDO) ? $conn : null;
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_max_lifetime')) {
+    /** User thường: tối đa số lần Chuẩn GPT trên cả tài khoản (không reset theo tháng). */
+    function cv_import_gpt_quota_max_lifetime(): int
+    {
+        return 5;
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_exhausted_message')) {
+    function cv_import_gpt_quota_exhausted_message(int $max): string
+    {
+        return 'Bạn đã dùng hết ' . $max . ' lần Chuẩn GPT trên tài khoản. '
+            . 'Nâng cấp VIP để không giới hạn hoặc dùng Text-base (Groq).';
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_file_path')) {
+    function cv_import_gpt_quota_file_path(int $userId): string
+    {
+        $dir = dirname(__DIR__) . '/uploads/cv/import/quota';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        return $dir . DIRECTORY_SEPARATOR . $userId . '.txt';
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_used_file')) {
+    function cv_import_gpt_quota_used_file(int $userId): int
+    {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $path = cv_import_gpt_quota_file_path($userId);
+        if (!is_file($path)) {
+            return 0;
+        }
+
+        return max(0, (int) trim((string) @file_get_contents($path)));
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_record_file')) {
+    function cv_import_gpt_quota_record_file(int $userId, int $used): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        @file_put_contents(cv_import_gpt_quota_file_path($userId), (string) max(0, $used), LOCK_EX);
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_used_db')) {
+    function cv_import_gpt_quota_used_db(PDO $conn, int $userId): int
+    {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $stmt = $conn->prepare('SELECT cv_gpt_import_uses FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return max(0, (int) ($row['cv_gpt_import_uses'] ?? 0));
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_sync_file_to_db')) {
+    /** One-time: nếu F4 đã ghi file quota, đồng bộ lên DB khi cột mới có. */
+    function cv_import_gpt_quota_sync_file_to_db(PDO $conn, int $userId): void
+    {
+        if ($userId <= 0 || !users_cv_gpt_quota_ready($conn)) {
+            return;
+        }
+
+        $fileUsed = cv_import_gpt_quota_used_file($userId);
+        if ($fileUsed <= 0) {
+            return;
+        }
+
+        $dbUsed = cv_import_gpt_quota_used_db($conn, $userId);
+        if ($dbUsed >= $fileUsed) {
+            return;
+        }
+
+        $stmt = $conn->prepare('UPDATE users SET cv_gpt_import_uses = ? WHERE id = ? AND cv_gpt_import_uses < ?');
+        $stmt->execute([$fileUsed, $userId, $fileUsed]);
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_used')) {
+    function cv_import_gpt_quota_used(int $userId): int
+    {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $pdo = cv_import_pdo();
+        if ($pdo !== null) {
+            require_once __DIR__ . '/schema_cv_import.php';
+            if (users_cv_gpt_quota_ready($pdo)) {
+                cv_import_gpt_quota_sync_file_to_db($pdo, $userId);
+
+                return cv_import_gpt_quota_used_db($pdo, $userId);
+            }
+        }
+
+        return cv_import_gpt_quota_used_file($userId);
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_remaining')) {
+    function cv_import_gpt_quota_remaining(int $userId): int
+    {
+        if (function_exists('cv_user_import_is_vip') && cv_user_import_is_vip($userId)) {
+            return 999;
+        }
+
+        return max(0, cv_import_gpt_quota_max_lifetime() - cv_import_gpt_quota_used($userId));
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_check')) {
+    /**
+     * @return array{ok: bool, message: string, remaining: int, used: int, max: int, storage: string}
+     */
+    function cv_import_gpt_quota_check(int $userId): array
+    {
+        $max = cv_import_gpt_quota_max_lifetime();
+        $used = cv_import_gpt_quota_used($userId);
+        $remaining = cv_import_gpt_quota_remaining($userId);
+        $storage = 'file';
+
+        $pdo = cv_import_pdo();
+        if ($pdo !== null) {
+            require_once __DIR__ . '/schema_cv_import.php';
+            if (users_cv_gpt_quota_ready($pdo)) {
+                $storage = 'db';
+            }
+        }
+
+        if (function_exists('cv_user_import_is_vip') && cv_user_import_is_vip($userId)) {
+            return [
+                'ok' => true,
+                'message' => '',
+                'remaining' => $remaining,
+                'used' => $used,
+                'max' => $max,
+                'storage' => $storage,
+            ];
+        }
+
+        if ($used >= $max) {
+            return [
+                'ok' => false,
+                'message' => cv_import_gpt_quota_exhausted_message($max),
+                'remaining' => 0,
+                'used' => $used,
+                'max' => $max,
+                'storage' => $storage,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => '',
+            'remaining' => $remaining,
+            'used' => $used,
+            'max' => $max,
+            'storage' => $storage,
+        ];
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_record')) {
+    /** Gọi sau parse Chuẩn GPT thành công — không trừ khi user chọn Text-base. */
+    function cv_import_gpt_quota_record(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        if (function_exists('cv_user_import_is_vip') && cv_user_import_is_vip($userId)) {
+            return;
+        }
+
+        $max = cv_import_gpt_quota_max_lifetime();
+        $pdo = cv_import_pdo();
+        if ($pdo !== null) {
+            require_once __DIR__ . '/schema_cv_import.php';
+            if (users_cv_gpt_quota_ready($pdo)) {
+                $stmt = $pdo->prepare(
+                    'UPDATE users SET cv_gpt_import_uses = cv_gpt_import_uses + 1 WHERE id = ? AND cv_gpt_import_uses < ?'
+                );
+                $stmt->execute([$userId, $max]);
+
+                return;
+            }
+        }
+
+        $used = cv_import_gpt_quota_used_file($userId) + 1;
+        cv_import_gpt_quota_record_file($userId, $used);
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_reset')) {
+    /** Dev/test only — reset quota về 0. */
+    function cv_import_gpt_quota_reset(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $pdo = cv_import_pdo();
+        if ($pdo !== null) {
+            require_once __DIR__ . '/schema_cv_import.php';
+            if (users_cv_gpt_quota_ready($pdo)) {
+                $stmt = $pdo->prepare('UPDATE users SET cv_gpt_import_uses = 0 WHERE id = ?');
+                $stmt->execute([$userId]);
+            }
+        }
+
+        $path = cv_import_gpt_quota_file_path($userId);
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+}
+
+if (!function_exists('cv_import_gpt_quota_set_used_dev')) {
+    /** Dev/test — đặt số lần đã dùng (không vượt max+5). */
+    function cv_import_gpt_quota_set_used_dev(int $userId, int $used): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $used = max(0, min($used, cv_import_gpt_quota_max_lifetime() + 5));
+        $pdo = cv_import_pdo();
+        if ($pdo !== null) {
+            require_once __DIR__ . '/schema_cv_import.php';
+            if (users_cv_gpt_quota_ready($pdo)) {
+                $stmt = $pdo->prepare('UPDATE users SET cv_gpt_import_uses = ? WHERE id = ?');
+                $stmt->execute([$used, $userId]);
+            }
+        }
+
+        cv_import_gpt_quota_record_file($userId, $used);
     }
 }
 
