@@ -29,14 +29,24 @@ if ($resolved === null) {
     exit(1);
 }
 
-$result = CvParseService::importFromPdfPath($resolved);
+$parseMode = 'auto';
+foreach ($argv as $arg) {
+    if (str_starts_with($arg, '--mode=')) {
+        $parseMode = substr($arg, 7);
+    }
+}
 
+$result = CvParseService::importFromPdfPath($resolved, ['parse_mode' => $parseMode]);
+
+echo 'requested_mode=' . $parseMode . "\n";
 echo 'ok=' . ($result['ok'] ? 'true' : 'false') . "\n";
 if (!empty($result['message'])) {
     echo 'message=' . $result['message'] . "\n";
 }
 
 $meta = $result['meta'] ?? [];
+echo 'parse_mode=' . (string) ($meta['parse_mode'] ?? '') . "\n";
+echo 'parse_mode_reason=' . (string) ($meta['parse_mode_reason'] ?? '') . "\n";
 echo 'parse_source=' . (string) ($meta['parse_source'] ?? '') . "\n";
 echo 'text_noise_score=' . (string) ($meta['text_noise_score'] ?? '') . "\n";
 if (!empty($meta['text_clean_steps']) && is_array($meta['text_clean_steps'])) {

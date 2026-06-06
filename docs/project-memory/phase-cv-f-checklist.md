@@ -25,7 +25,7 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | Phase | CV-F — Mức C (GPT-4o PDF vision + smart router) |
 | Nhánh | `feature/phase-cv-f-vision` |
 | User confirm plan | ✅ **`「xác nhận CV-F」`** — 2026-06-05 |
-| **Khối hiện tại** | **F1** — smart router (sau F0 pass) |
+| **Khối hiện tại** | **F2** — GPT vision parser |
 | Phụ thuộc | CV-E merged `main` ✅ |
 | MVP scope | PDF + GPT vision; **DOCX defer F7** (optional sau pass) |
 
@@ -43,7 +43,7 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | Khối | Mô tả ngắn | Code | User test | User confirm | Commit |
 |------|------------|------|-----------|--------------|--------|
 | F0 | Config OpenAI + ai_config | ✅ | ✅ | ✅ | ⬜ |
-| F1 | PDF quality router | ⬜ | ⬜ | ⬜ | ⬜ |
+| F1 | PDF quality router | ✅ | ✅ | ✅ | ⬜ |
 | F2 | OpenAiCvVisionParserService + schema + prompt | ⬜ | ⬜ | ⬜ | ⬜ |
 | F3 | CvParseService integrate | ⬜ | ⬜ | ⬜ | ⬜ |
 | F4 | cv-import toggle + builder banner | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -107,26 +107,29 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 
 ---
 
-## F4 — UI (~0.5 ngày)
+## F4 — UI chọn engine sau upload (~0.5–1 ngày)
 
 | # | Làm gì | File | Verify |
 |---|--------|------|--------|
-| F4.1 | Radio parse mode | `cv-import.php` | auto / text / vision |
-| F4.2 | Cảnh báo thiếu OpenAI key | GET import | vẫn upload text path |
-| F4.3 | Banner parse_mode | `cv-builder.php` | hiển thị GPT vs Groq |
+| F4.1 | POST upload chỉ lưu file + quality (chưa parse) | `cv-import.php` | redirect choose |
+| F4.2 | Màn 2 card Text-base / Chuẩn GPT | `cv-import-choose.php` | noisy → banner VIP |
+| F4.3 | POST chọn engine → parse → builder | choose + service | meta.parse_mode |
+| F4.4 | VIP stub: auto GPT, skip choose | `cv_import_vip.php` stub | false = thường |
+| F4.5 | Banner parse_mode | `cv-builder.php` | Groq vs GPT label |
 
-**Pass F4:** Upload + chọn mode → builder banner đúng.
+**Pass F4:** Upload → thấy 2 lựa chọn; chọn text → builder; noisy PDF → cảnh báo GPT.
 
 ---
 
-## F5 — Rate limit GPT (~0.25 ngày)
+## F5 — Quota GPT + chống spam (~0.5 ngày)
 
 | # | Làm gì | File | Verify |
 |---|--------|------|--------|
-| F5.1 | Max 3 GPT vision / user / giờ | `cv_import_rules.php` | lần 4 bị chặn |
-| F5.2 | Text path vẫn 5/h (CV-E) | rules | không regression |
+| F5.1 | Quota GPT: 5/tổng đời user thường | `cv_import_rules.php` | lần 6 bị chặn |
+| F5.2 | VIP: bypass quota (stub) | `cv_user_import_is_vip()` | |
+| F5.3 | Text-base: rate limit spam nhẹ (giữ hoặc nới) | rules | không regression |
 
-**Pass F5:** Spam GPT import → SweetAlert rate limit.
+**Pass F5:** User thường hết quota GPT → SweetAlert + gợi ý VIP.
 
 ---
 
@@ -169,4 +172,5 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 |------|---------|
 | 2026-06-05 | User **`「xác nhận CV-F」`**; nhánh `feature/phase-cv-f-vision` tạo từ `main` |
 | 2026-06-05 | User **`「bắt đầu code CV-F」`** → F0 code xong |
-| 2026-06-05 | Fix ShopAIKey `base_url`; user **`「F0 pass」`** + commit |
+| 2026-06-05 | User **`「F0 pass」`** + commit F0 |
+| 2026-06-05 | User **`「F1 pass」`** — quota GPT chốt **5/tổng đời** |

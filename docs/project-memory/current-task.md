@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-D | ✅ merged / pass |
 | **CV-E** | ✅ pass — merged `main` (PR #12) |
-| **CV-F** | ✅ **F0 pass** — chờ code **F1** |
+| **CV-F** | ✅ **F1 pass** — chờ **F2** (GPT vision parser) |
 
 ---
 
@@ -28,7 +28,8 @@
 - [x] OpenAI/ShopAIKey key trong `ai.local.php` (block `openai`)
 - [x] **`「F0 pass」`** — `_test-openai-config.php` OK
 - [ ] Chuẩn bị 4 PDF test — có sẵn trong `uploads/cv/` và `uploads/cv/import/`
-- [ ] Chờ AI làm **F1** (smart router)
+- [x] **`「F1 pass」`** — router + quota GPT **5/tổng đời** (implement F5)
+- [ ] Chờ **F2** GPT vision parser
 
 ### Quy trình (giống CV-E)
 
@@ -36,7 +37,7 @@
 F0 → test → 「F0 pass」 → (commit nếu yêu cầu) → F1 → … → F8 → 「CV-F pass」 → PR
 ```
 
-F0 đã commit; khối tiếp theo **F1**.
+F0 + F1 committed; UX chọn engine sau upload (F4); quota GPT **5/tổng đời**.
 
 ---
 

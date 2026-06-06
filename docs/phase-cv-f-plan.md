@@ -144,33 +144,109 @@ Schema mirror `cv_parse_prompt.php` — snake_case, arrays capped (max 5 items/s
 
 ---
 
-## 4. Luồng nghiệp vụ (UX)
+## 4. Luồng nghiệp vụ (UX) — đã chốt với user (2026-06)
+
+### 4.1 Quản lý CV — 2 cách tạo
+
+| Cách | Trang | Ghi chú |
+|------|-------|---------|
+| **Tự nhập** | `cv-builder.php` | Form thủ công, không đổi |
+| **Tạo từ PDF** | `cv-import.php` → (bước 2 chọn engine) | Upload trước, chọn cách phân tích sau |
+
+**Không** bắt user chọn loại file (text vs scan). User chỉ upload **một PDF**; router phân tích chất lượng rồi **gợi ý 2 lựa chọn**.
+
+### 4.2 Luồng 2 bước (thường + VIP)
 
 ```text
-cv-manage → cv-import.php
+cv-manage
+  [Tạo CV mới]        → cv-builder (thủ công)
+  [Tạo CV từ PDF]     → cv-import.php
 
-GET:
-  - Radio / toggle:
-      ○ Tự động (khuyến nghị) — router chọn Groq hoặc GPT
-      ○ Nhanh (chỉ text) — luôn CV-E
-      ○ Chuẩn (GPT scan) — luôn CV-F
-  - Ghi chú: "PDF scan hoặc thiết kế đẹp → chọn Chuẩn (GPT)"
-  - Cảnh báo thiếu `openai_api_key` → chỉ Tự động/Nhanh
+Bước 1 — Upload (POST cv-import.php)
+  - Chọn file PDF (max 5MB)
+  - Lưu file tạm uploads/cv/import/{user}_{ts}.pdf
+  - PdfTextExtractor + cv_import_analyze_pdf_quality() — CHƯA gọi AI parse
+  - Session: cv_import_pending = { path, quality, uploaded_at, user_id }
 
-POST:
-  1. upload_validate (PDF, 5MB — giữ CV-E)
-  2. CvParseService::importFromPdfPath($path, ['parse_mode' => ...])
-  3. session draft + meta.parse_mode + meta.provider
-  4. redirect cv-builder?from_import=1
+Bước 2 — Chọn cách phân tích (GET cv-import-choose.php)  ← F4 mới
+  Router đã có quality → hiển thị 2 card:
 
-Builder banner (mở rộng):
-  - "Đã phân tích bằng GPT Vision" / "Phân tích text nhanh (Groq)"
-  - Link PDF gốc (giữ CV-E)
+  ┌─────────────────────────────────────────────────────────────┐
+  │ Card A: Text-base (Groq)     │ Card B: Chuẩn GPT (vision)   │
+  │ • Khuyến nghị PDF text sạch  │ • Canva / scan / layout phức tạp│
+  │ • Thường: KHÔNG giới hạn*    │ • Thường: tối đa 5 lần**      │
+  │ • Nhanh ~10–20s              │ • Chậm hơn ~30–45s            │
+  └─────────────────────────────────────────────────────────────┘
+
+  * Giữ rate limit chống spam (VD 20 lần/giờ) — không phải quota VIP.
+  ** Quota GPT Chuẩn — user thường; VIP: không giới hạn (xem 4.3).
+
+  Nếu quality = noisy / likely_scan:
+  - Banner vàng: "PDF text nhiễu hoặc scan — Text-base có thể thiếu field.
+    Nên dùng Chuẩn GPT (VIP không giới hạn)."
+  - Card Text-base: disabled hoặc [Dùng thử] + cảnh báo mạnh
+  - Card GPT: highlighted "Khuyến nghị"
+
+  User bấm [Phân tích với Text-base] hoặc [Phân tích Chuẩn GPT]
+    → POST parse_mode=text | vision
+    → CvParseService::importFromPdfPath($path, ['parse_mode' => ...])
+    → session cv_import_draft → redirect cv-builder?from_import=1
+
+Bước 3 — Builder review → Lưu (giữ CV-E)
 ```
 
-**DOCX (F7 — P2 trong phase):** OpenAI API extract text `.docx` native — có thể thêm kind `cv_docx_import` sau khi PDF vision ổn.
+```mermaid
+flowchart TD
+    M[cv-manage] --> A[Tạo CV mới]
+    M --> B[Tạo từ PDF]
+    A --> Builder[cv-builder thủ công]
+    B --> U[Upload PDF]
+    U --> Q{VIP?}
+    Q -->|Có| GPT[Auto Chuẩn GPT]
+    Q -->|Không| Choose[2 gợi ý Text / GPT]
+    Choose --> T[Text-base Groq]
+    Choose --> G[Chuẩn GPT]
+    GPT --> P[Parse + pre-fill]
+    T --> P
+    G --> P
+    P --> Builder2[cv-builder review]
+    Builder2 --> Save[Lưu CV + attachment]
+```
 
-**Queue async:** Defer — XAMPP sync + timeout 60s đủ MVP.
+### 4.3 VIP (defer implementation, thiết kế sẵn hook)
+
+| Vai trò | Text-base | Chuẩn GPT |
+|---------|-----------|-----------|
+| **Thường** | Không giới hạn quota* | **Tối đa 5 lần / tổng đời tài khoản** |
+| **VIP** | Không giới hạn | **Không giới hạn** + **bỏ qua màn chọn** → auto GPT sau upload |
+
+Hook code (F4/F5):
+- `cv_user_import_is_vip(int $userId): bool` — MVP return `false`; sau gắn bảng/plan VIP
+- `cv_import_gpt_quota_check($userId): array{ok, remaining, message}` — thường ≤5 **tổng đời**
+- `cv_import_gpt_quota_record($userId)` — sau parse vision thành công
+- Rate limit import chung (5/giờ CV-E) → tách: text nhẹ hơn, GPT quota riêng
+
+**Copy UI gợi ý VIP (PDF nhiễu):**
+> "File PDF thiết kế hoặc scan — bản text có thể lộn xộn. **Chuẩn GPT** đọc layout chính xác hơn.  
+> Bạn còn **X/5** lần Chuẩn GPT (còn lại trên tài khoản). **Nâng cấp VIP** để không giới hạn.
+
+### 4.4 Thay đổi so với plan cũ (radio trước upload)
+
+| Cũ (plan draft) | Mới (user chốt) |
+|-----------------|-----------------|
+| 3 radio trước upload: auto / text / vision | Upload trước → **màn chọn 2 card** sau router |
+| Auto router quyết luôn | Router **chỉ gợi ý**; user (hoặc VIP) quyết |
+| Rate limit GPT 3/h | GPT quota **5/tổng đời** thường; VIP unlimited |
+
+F1 router (`cv_import_analyze_pdf_quality`, `parse_mode`) **giữ nguyên** — dùng cho gợi ý UI + khi user/VIP chọn engine.
+
+### 4.5 Builder banner (giữ)
+
+- "Phân tích Text-base (Groq)" / "Phân tích Chuẩn GPT"
+- Link PDF gốc; warnings từ meta
+- VIP: badge nhỏ (tuỳ chọn sau)
+
+**DOCX (F7 — defer)** | **Queue async — defer**
 
 ---
 
