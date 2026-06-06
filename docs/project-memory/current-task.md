@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-D | ✅ merged / pass |
 | **CV-E** | ✅ pass — merged `main` (PR #12) |
-| **CV-F** | ✅ **F2 pass** — chờ **F3/F4** |
+| **CV-F** | ✅ **F4 pass** — chờ **F5** |
 
 ---
 
@@ -29,7 +29,9 @@
 - [x] **`「F0 pass」`** — `_test-openai-config.php` OK
 - [ ] Chuẩn bị 4 PDF test — có sẵn trong `uploads/cv/` và `uploads/cv/import/`
 - [x] **`「F1 pass」`** — router + quota GPT **5/tổng đời** (implement F5)
-- [ ] User test vision parse → **`「F2 pass」`**
+- [x] **`「F2 pass」`** — GPT vision parser (ShopAIKey responses)
+- [x] **`「F4 pass」`** — màn chọn Text-base / Chuẩn GPT sau upload
+- [ ] **F5** — quota GPT 5/tổng đời (stub file-based đã có trong F4)
 
 ### Quy trình (giống CV-E)
 
@@ -37,7 +39,7 @@
 F0 → test → 「F0 pass」 → (commit nếu yêu cầu) → F1 → … → F8 → 「CV-F pass」 → PR
 ```
 
-F0 + F1 + F2 committed; tiếp F4 (UI 2 card) + F5 (quota).
+F0 + F1 + F2 + F4 committed; tiếp F5 (quota hoàn thiện).
 
 ---
 

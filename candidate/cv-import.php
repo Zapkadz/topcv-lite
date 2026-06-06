@@ -8,8 +8,8 @@ require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/upload_validate.php';
 require_once __DIR__ . '/../includes/cv_import_rules.php';
-require_once __DIR__ . '/../includes/ai_config.php';
-require_once __DIR__ . '/../includes/services/CvParseService.php';
+require_once __DIR__ . '/../includes/cv_import_pdf_quality.php';
+require_once __DIR__ . '/../includes/cv_import_vip.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'candidate') {
     header('Location: ../index.php');
@@ -18,7 +18,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'candidate') {
 
 $userId = (int) $_SESSION['user_id'];
 $schemaReady = cvs_schema_ready($conn);
-$aiReady = ai_config_ready();
 
 if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate('candidate_cv_import_form', $_POST['csrf_token'] ?? '')) {
@@ -35,7 +34,6 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: cv-import.php');
         exit();
     }
-    cv_import_rate_limit_record($userId);
 
     $fileCheck = upload_validate($_FILES['cv_pdf'] ?? [], 'cv_pdf_import');
     if (!$fileCheck['ok']) {
@@ -64,24 +62,17 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    $parseResult = CvParseService::importFromPdfPath($absolutePath);
-    if (!$parseResult['ok']) {
-        @unlink($absolutePath);
-        $_SESSION['swal_icon'] = 'error';
-        $_SESSION['swal_title'] = $parseResult['message'] ?: 'Không phân tích được CV từ PDF.';
-        header('Location: cv-import.php');
-        exit();
+    cv_import_rate_limit_record($userId);
+
+    $originalName = trim((string) ($_FILES['cv_pdf']['name'] ?? 'cv.pdf'));
+    $pending = cv_import_build_pending_from_path($userId, $absolutePath, $relativePath, $originalName);
+    $_SESSION['cv_import_pending'] = $pending;
+
+    if (cv_user_import_is_vip($userId)) {
+        cv_import_run_parse_and_redirect($userId, $absolutePath, $relativePath, 'vision');
     }
 
-    $_SESSION['cv_import_draft'] = [
-        'user_id' => $userId,
-        'profile' => $parseResult['profile'],
-        'children' => $parseResult['children'],
-        'attachment_path' => $relativePath,
-        'meta' => $parseResult['meta'] ?? ['parse_source' => 'unknown', 'warnings' => []],
-    ];
-
-    header('Location: cv-builder.php?from_import=1');
+    header('Location: cv-import-choose.php');
     exit();
 }
 
@@ -92,26 +83,19 @@ include '../includes/header.php';
     <div class="mb-4">
         <a href="cv-manage.php" class="text-success text-decoration-none"><i class="fas fa-arrow-left"></i> Quản lý CV</a>
         <h3 class="fw-bold mt-2 mb-1"><i class="fas fa-file-upload text-success"></i> Tạo CV từ PDF</h3>
-        <p class="text-muted mb-0">Upload CV PDF có chữ (text-based) — hệ thống sẽ gợi ý điền form. Vui lòng kiểm tra trước khi lưu.</p>
+        <p class="text-muted mb-0">Upload PDF — sau đó chọn Text-base (Groq) hoặc Chuẩn GPT (vision).</p>
     </div>
 
     <?php if (!$schemaReady): ?>
         <?= cvs_schema_migration_hint_html() ?>
     <?php else: ?>
-        <?php if (!$aiReady): ?>
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                Chưa cấu hình AI (<code>config/ai.local.php</code>). Hệ thống vẫn thử phân tích bằng fallback cơ bản — kết quả có thể ít field hơn.
-            </div>
-        <?php endif; ?>
-
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <ul class="text-muted small mb-4">
                     <li>Chỉ chấp nhận file <strong>PDF</strong> (tối đa 5MB).</li>
-                    <li>CV nên là file có thể <strong>bôi đen/copy chữ</strong> trong PDF (không phải scan ảnh).</li>
-                    <li>Quá trình phân tích có thể mất <strong>10–30 giây</strong>.</li>
-                    <li>Giới hạn <strong><?= (int) cv_import_rate_limit_max_per_hour() ?> lần import / giờ</strong> trên mỗi tài khoản.</li>
+                    <li>PDF text sạch → <strong>Text-base</strong> (nhanh, không giới hạn).</li>
+                    <li>PDF scan / Canva → <strong>Chuẩn GPT</strong> (tối đa 5 lần/tài khoản; VIP không giới hạn).</li>
+                    <li>Giới hạn <strong><?= (int) cv_import_rate_limit_max_per_hour() ?> lần upload / giờ</strong> trên mỗi tài khoản.</li>
                 </ul>
 
                 <form method="POST" enctype="multipart/form-data" id="cv-import-form">
@@ -122,7 +106,7 @@ include '../includes/header.php';
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <button type="submit" class="btn btn-success fw-bold" id="cv-import-submit">
-                            <i class="fas fa-magic"></i> Phân tích và điền form
+                            <i class="fas fa-upload"></i> Upload và chọn cách phân tích
                         </button>
                         <a href="cv-builder.php" class="btn btn-outline-secondary">Tạo CV thủ công</a>
                     </div>
@@ -141,7 +125,7 @@ include '../includes/header.php';
     }
     form.addEventListener('submit', function () {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang phân tích...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang upload...';
     });
 })();
 </script>

@@ -200,11 +200,84 @@ if (!function_exists('cv_import_parse_mode_label')) {
     function cv_import_parse_mode_label(string $mode): string
     {
         return match ($mode) {
-            'text_fast' => 'Phân tích text nhanh (Groq)',
-            'vision_gpt' => 'GPT vision (tự động)',
-            'vision_gpt_forced' => 'GPT vision (chọn thủ công)',
-            'vision_unavailable' => 'GPT vision (chưa cấu hình)',
+            'text_fast' => 'Text-base (Groq)',
+            'vision_gpt' => 'Chuẩn GPT (vision)',
+            'vision_gpt_forced' => 'Chuẩn GPT (vision)',
+            'vision_unavailable' => 'Chuẩn GPT (chưa cấu hình)',
             default => $mode,
         };
+    }
+}
+
+if (!function_exists('cv_import_build_pending_from_path')) {
+    /**
+     * Phân tích chất lượng PDF sau upload — chưa gọi AI parse.
+     *
+     * @return array<string, mixed>
+     */
+    function cv_import_build_pending_from_path(
+        int $userId,
+        string $absolutePath,
+        string $relativePath,
+        string $originalName = ''
+    ): array {
+        require_once __DIR__ . '/services/PdfTextExtractor.php';
+        require_once __DIR__ . '/cv_import_text_clean.php';
+
+        $extract = PdfTextExtractor::extractLenient($absolutePath);
+        $rawText = (string) ($extract['text'] ?? '');
+        $cleanResult = cv_import_clean_extracted_text($rawText);
+        $quality = cv_import_analyze_pdf_quality($rawText, $cleanResult);
+        $route = cv_import_resolve_parse_mode('auto', $quality, ai_openai_ready());
+
+        return [
+            'user_id' => $userId,
+            'absolute_path' => $absolutePath,
+            'attachment_path' => $relativePath,
+            'original_name' => $originalName !== '' ? $originalName : basename($relativePath),
+            'quality' => $quality,
+            'route_auto' => (string) ($route['mode'] ?? 'text_fast'),
+            'route_reason' => (string) ($route['reason'] ?? ''),
+            'uploaded_at' => time(),
+        ];
+    }
+}
+
+if (!function_exists('cv_import_get_valid_pending')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function cv_import_get_valid_pending(int $userId): ?array
+    {
+        $pending = $_SESSION['cv_import_pending'] ?? null;
+        if (!is_array($pending)) {
+            return null;
+        }
+
+        if ((int) ($pending['user_id'] ?? 0) !== $userId) {
+            return null;
+        }
+
+        $absolutePath = trim((string) ($pending['absolute_path'] ?? ''));
+        if ($absolutePath === '' || !is_file($absolutePath)) {
+            return null;
+        }
+
+        $uploadedAt = (int) ($pending['uploaded_at'] ?? 0);
+        if ($uploadedAt > 0 && (time() - $uploadedAt) > 3600) {
+            return null;
+        }
+
+        return $pending;
+    }
+}
+
+if (!function_exists('cv_import_quality_is_noisy')) {
+    /**
+     * @param array<string, mixed> $quality
+     */
+    function cv_import_quality_is_noisy(array $quality): bool
+    {
+        return !empty($quality['likely_noisy_layout']) || !empty($quality['likely_scan']);
     }
 }

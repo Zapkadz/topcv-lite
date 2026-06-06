@@ -44,9 +44,9 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 |------|------------|------|-----------|--------------|--------|
 | F0 | Config OpenAI + ai_config | ✅ | ✅ | ✅ | ⬜ |
 | F1 | PDF quality router | ✅ | ✅ | ✅ | ✅ |
-| F2 | OpenAiCvVisionParserService + prompt | ✅ | ✅ | ✅ | ⬜ |
+| F2 | OpenAiCvVisionParserService + prompt | ✅ | ✅ | ✅ | ✅ |
 | F3 | CvParseService integrate | ⬜ | ⬜ | ⬜ | ⬜ |
-| F4 | cv-import toggle + builder banner | ⬜ | ⬜ | ⬜ | ⬜ |
+| F4 | cv-import toggle + builder banner | ✅ | ✅ | ✅ | ✅ |
 | F5 | Rate limit GPT | ⬜ | ⬜ | ⬜ | ⬜ |
 | F6 | Test 4 PDF mẫu | ⬜ | ⬜ | ⬜ | ⬜ |
 | F7 | DOCX (optional — defer) | ⏸️ | — | — | — |
@@ -173,4 +173,5 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | 2026-06-05 | User **`「xác nhận CV-F」`**; nhánh `feature/phase-cv-f-vision` tạo từ `main` |
 | 2026-06-05 | User **`「bắt đầu code CV-F」`** → F0 code xong |
 | 2026-06-05 | User **`「F0 pass」`** + commit F0 |
-| 2026-06-05 | User **`「F1 pass」`** — quota GPT chốt **5/tổng đời** |
+| 2026-06-05 | User **`「F2 pass」`** — vision via ShopAIKey `/responses` |
+| 2026-06-05 | User **`「F4 pass」`** — UI 2 card Text-base / Chuẩn GPT sau upload |
