@@ -161,7 +161,7 @@ CV-D  Section đầy đủ + template + polish UX
         ↓
 CV-E  Import PDF → AI điền sẵn form (Mức B, tùy chọn)
         ↓
-CV-F  OCR / DOCX / queue parse (defer)
+CV-F  GPT Vision scan PDF + smart router (Mức C) — ✅ xác nhận, chờ code
 ```
 
 ### Ma trận phụ thuộc
@@ -174,7 +174,7 @@ CV-F  OCR / DOCX / queue parse (defer)
 | CV-C | CV-B | `apply`, `applicants`, `cv-preview`, snapshot |
 | CV-D | CV-C | Bảng section còn lại, template, JS reorder |
 | CV-E | CV-D | Import PDF, AI parse → pre-fill builder, `attachment_path` |
-| CV-F | CV-E hoặc skip | OCR, DOCX, async queue |
+| CV-F | CV-E pass | GPT vision PDF, router, Structured Outputs |
 
 ### Scope đồ án tối thiểu (MVP triển khai)
 
@@ -328,11 +328,30 @@ CV-F  OCR / DOCX / queue parse (defer)
 
 ---
 
-## Nhóm CV-F — Nâng cấp parse (P3, defer)
+## Nhóm CV-F — GPT Vision scan PDF (P3, Mức C)
 
-- OCR (Tesseract) cho PDF scan; import DOC/DOCX
-- Queue async + trạng thái parse; confidence score từng field
-- **Không** bắt buộc nếu CV-E (Mức B) đã đủ demo.
+> **Xác nhận:** User **`「xác nhận CV-F」`** — 2026-06-05  
+> Chi tiết: **`docs/phase-cv-f-plan.md`**, checklist: **`docs/project-memory/phase-cv-f-checklist.md`**  
+> Nhánh: **`feature/phase-cv-f-vision`**
+
+### Phạm vi (MVP)
+- Smart router: text tốt → CV-E (Groq); scan / Canva noisy → **OpenAI GPT-4o PDF vision**
+- Structured Outputs (`json_schema` strict); tái dùng normalize + builder + `attachment_path`
+- UI toggle: Tự động / Nhanh (text) / Chuẩn (GPT)
+- Rate limit GPT riêng (~3/h/user)
+
+### Không làm (defer)
+- Tesseract OCR local; queue async; confidence score từng field
+- DOCX import (F7 optional sau pass)
+
+### Test checklist
+- [ ] PDF scan → form có dữ liệu
+- [ ] Canva 2 cột → ít mục “chỉ có ngày”
+- [ ] Text PDF → auto path Groq (regression CV-E)
+- [ ] Lưu → preview + apply snapshot OK
+
+### Commit gợi ý
+`phase CV: GPT vision scan PDF import (nhóm CV-F, Mức C)`
 
 ---
 
