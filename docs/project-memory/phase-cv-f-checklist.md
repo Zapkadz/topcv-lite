@@ -25,7 +25,7 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | Phase | CV-F — Mức C (GPT-4o PDF vision + smart router) |
 | Nhánh | `feature/phase-cv-f-vision` |
 | User confirm plan | ✅ **`「xác nhận CV-F」`** — 2026-06-05 |
-| **Khối hiện tại** | **F2** — GPT vision parser |
+| **Khối hiện tại** | **F3** — pipeline integrate (hoặc F4 UI) |
 | Phụ thuộc | CV-E merged `main` ✅ |
 | MVP scope | PDF + GPT vision; **DOCX defer F7** (optional sau pass) |
 
@@ -43,8 +43,8 @@ AI làm 1 khối F → báo file + lệnh test → USER test → USER gửi 「F
 | Khối | Mô tả ngắn | Code | User test | User confirm | Commit |
 |------|------------|------|-----------|--------------|--------|
 | F0 | Config OpenAI + ai_config | ✅ | ✅ | ✅ | ⬜ |
-| F1 | PDF quality router | ✅ | ✅ | ✅ | ⬜ |
-| F2 | OpenAiCvVisionParserService + schema + prompt | ⬜ | ⬜ | ⬜ | ⬜ |
+| F1 | PDF quality router | ✅ | ✅ | ✅ | ✅ |
+| F2 | OpenAiCvVisionParserService + prompt | ✅ | ✅ | ✅ | ⬜ |
 | F3 | CvParseService integrate | ⬜ | ⬜ | ⬜ | ⬜ |
 | F4 | cv-import toggle + builder banner | ⬜ | ⬜ | ⬜ | ⬜ |
 | F5 | Rate limit GPT | ⬜ | ⬜ | ⬜ | ⬜ |

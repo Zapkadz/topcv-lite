@@ -48,6 +48,48 @@ if (!class_exists('PdfTextExtractor')) {
 
             return ['ok' => true, 'text' => $text, 'message' => ''];
         }
+
+        /**
+         * Giống extract() nhưng trả ok=true với text rỗng khi PDF scan (cho vision path).
+         *
+         * @return array{ok: bool, text: string, message: string}
+         */
+        public static function extractLenient(string $absolutePath): array
+        {
+            $result = self::extract($absolutePath);
+            if ($result['ok']) {
+                return [
+                    'ok' => true,
+                    'text' => (string) ($result['text'] ?? ''),
+                    'message' => '',
+                ];
+            }
+
+            if (!is_file($absolutePath)) {
+                return ['ok' => false, 'text' => '', 'message' => (string) ($result['message'] ?? 'File không tồn tại.')];
+            }
+
+            if (!class_exists(\Smalot\PdfParser\Parser::class)) {
+                return ['ok' => false, 'text' => '', 'message' => (string) ($result['message'] ?? 'Chưa cài pdfparser.')];
+            }
+
+            try {
+                $parser = new \Smalot\PdfParser\Parser();
+                $pdf = $parser->parseFile($absolutePath);
+                $text = preg_replace('/\s+/u', ' ', trim((string) $pdf->getText()));
+                if (!is_string($text)) {
+                    $text = '';
+                }
+
+                return ['ok' => true, 'text' => $text, 'message' => ''];
+            } catch (\Throwable $e) {
+                return [
+                    'ok' => false,
+                    'text' => '',
+                    'message' => 'Không thể đọc PDF: ' . ($e->getMessage() ?: 'unknown error'),
+                ];
+            }
+        }
     }
 }
 

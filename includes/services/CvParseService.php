@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/PdfTextExtractor.php';
 require_once __DIR__ . '/AiCvParserService.php';
+require_once __DIR__ . '/OpenAiCvVisionParserService.php';
 require_once __DIR__ . '/../ai_config.php';
 require_once __DIR__ . '/../cv_import_rules.php';
 require_once __DIR__ . '/../cv_import_text_clean.php';
@@ -25,7 +26,7 @@ class CvParseService
      */
     public static function importFromPdfPath(string $absolutePath, array $options = []): array
     {
-        $extract = PdfTextExtractor::extract($absolutePath);
+        $extract = PdfTextExtractor::extractLenient($absolutePath);
         if (!$extract['ok']) {
             return self::fail((string) ($extract['message'] ?? 'Không đọc được PDF.'));
         }
@@ -48,6 +49,12 @@ class CvParseService
             return self::importFromPdfVision($absolutePath, $cleanResult, $quality, $route);
         }
 
+        if (mb_strlen(trim((string) ($cleanResult['text'] ?? ''))) < cv_import_min_text_len()) {
+            return self::fail(
+                'PDF không có đủ text layer. Hãy chọn phân tích Chuẩn GPT (vision) khi có sẵn.'
+            );
+        }
+
         return self::importFromText(
             (string) ($cleanResult['text'] ?? ''),
             $cleanResult,
@@ -57,7 +64,7 @@ class CvParseService
     }
 
     /**
-     * GPT vision path — parser thực tế ở khối F2.
+     * GPT vision path (F2).
      *
      * @param array<string, mixed> $cleanResult
      * @param array<string, mixed> $quality
@@ -74,34 +81,80 @@ class CvParseService
             return self::fail('GPT vision chưa sẵn sàng — kiểm tra cấu hình openai.');
         }
 
-        $cleanLen = (int) ($quality['clean_len'] ?? 0);
-        if ($cleanLen >= cv_import_min_text_len()) {
-            $textFallback = self::importFromText(
-                (string) ($cleanResult['text'] ?? ''),
-                $cleanResult,
-                $quality,
-                [
-                    'mode' => 'text_fast',
-                    'reason' => 'vision_pending_f2_not_used',
-                    'requested' => $route['requested'] ?? 'auto',
-                ]
-            );
+        $supplementaryText = (string) ($cleanResult['text'] ?? '');
+        $vision = OpenAiCvVisionParserService::parsePdfToDraft($absolutePath, $supplementaryText);
 
+        $warnings = [];
+        $parseSource = 'vision';
+        $rawDraft = null;
+
+        if ($vision['ok'] && !empty($vision['draft']) && is_array($vision['draft'])) {
+            $rawDraft = $vision['draft'];
+        } else {
+            $warnings[] = 'GPT vision: ' . trim((string) ($vision['message'] ?? 'unknown'));
+        }
+
+        $cleanLen = (int) ($quality['clean_len'] ?? 0);
+        if ($rawDraft === null && $cleanLen >= cv_import_min_text_len()) {
+            $warnings[] = 'Fallback sang phân tích text (Groq) sau khi GPT vision thất bại.';
+            $textFallback = self::importFromText($supplementaryText, $cleanResult, $quality, [
+                'mode' => 'text_fast',
+                'reason' => 'vision_failed_fallback_text',
+                'requested' => $route['requested'] ?? 'auto',
+            ]);
             if ($textFallback['ok']) {
                 $textFallback['meta']['parse_mode'] = $route['mode'];
                 $textFallback['meta']['parse_mode_reason'] = $route['reason'];
-                $textFallback['meta']['vision_deferred'] = true;
-                $textFallback['meta']['warnings'][] =
-                    'Router chọn GPT vision nhưng parser vision (F2) chưa triển khai — tạm dùng text Groq.';
+                $textFallback['meta']['vision_failed'] = true;
+                foreach ($warnings as $w) {
+                    $textFallback['meta']['warnings'][] = $w;
+                }
+
+                return $textFallback;
             }
 
-            return $textFallback;
+            return self::fail(trim((string) ($vision['message'] ?? 'GPT vision parse thất bại.')));
         }
 
-        return self::fail(
-            'PDF có vẻ là file scan (không có text layer). '
-            . 'Cần GPT vision scan (khối F2 — sắp triển khai).'
-        );
+        if ($rawDraft === null) {
+            return self::fail(trim((string) ($vision['message'] ?? 'GPT vision parse thất bại.')));
+        }
+
+        if ($cleanLen >= cv_import_min_text_len()) {
+            $fallback = cv_parse_fallback_from_text($supplementaryText);
+            $merged = self::mergeDrafts($rawDraft, $fallback);
+            if ($merged['filled']) {
+                $parseSource = 'vision+fallback';
+                $warnings[] = 'Đã bổ sung field trống từ fallback regex (text local).';
+            }
+            $rawDraft = $merged['draft'];
+        }
+
+        $normalized = cv_normalize_import_draft($rawDraft);
+        $noiseScore = (float) ($cleanResult['noise_score'] ?? 0.0);
+
+        $normalized['meta'] = [
+            'parse_source' => $parseSource,
+            'warnings' => $warnings,
+            'text_noise_score' => $noiseScore,
+            'text_clean_steps' => $cleanResult['steps'] ?? [],
+            'parse_mode' => (string) ($route['mode'] ?? 'vision_gpt'),
+            'parse_mode_reason' => (string) ($route['reason'] ?? ''),
+            'parse_mode_requested' => (string) ($route['requested'] ?? 'auto'),
+            'text_quality' => (string) ($quality['text_quality'] ?? ''),
+            'text_clean_len' => (int) ($quality['clean_len'] ?? 0),
+            'text_ratio_alnum' => (float) ($quality['ratio_alnum'] ?? 0.0),
+            'vision_method' => (string) ($vision['method'] ?? ''),
+            'vision_provider' => (string) ($vision['provider'] ?? 'openai_vision'),
+        ];
+
+        return [
+            'ok' => true,
+            'message' => '',
+            'profile' => $normalized['profile'],
+            'children' => $normalized['children'],
+            'meta' => $normalized['meta'],
+        ];
     }
 
     /**
