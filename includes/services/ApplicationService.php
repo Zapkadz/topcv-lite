@@ -121,4 +121,65 @@ class ApplicationService
 
         return $row ?: null;
     }
+
+    /**
+     * Số đơn pending trên các tin eligible hub sàng lọc (EMP-A).
+     */
+    public static function countPendingForScreeningHub(PDO $conn, int $companyId): int
+    {
+        if ($companyId <= 0) {
+            return 0;
+        }
+
+        require_once __DIR__ . '/../employer_screening_rules.php';
+
+        $eligible = employer_screening_sql_pending_eligible('j');
+        $stmt = $conn->prepare(
+            "SELECT COUNT(*)
+             FROM applications app
+             INNER JOIN jobs j ON app.job_id = j.id
+             WHERE j.company_id = ?
+               AND app.status = 'pending'
+               AND ({$eligible})"
+        );
+        $stmt->execute([$companyId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Danh sách tin + số UV cho hub sàng lọc.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function listScreeningJobs(PDO $conn, int $companyId, string $section): array
+    {
+        if ($companyId <= 0) {
+            return [];
+        }
+
+        require_once __DIR__ . '/../employer_screening_rules.php';
+
+        $section = $section === 'expired' ? 'expired' : 'active';
+        $whereSection = $section === 'expired'
+            ? employer_screening_sql_expired_with_apps('j')
+            : employer_screening_sql_active('j');
+
+        $order = employer_screening_order_sql();
+        $sql = "SELECT j.id, j.title, j.deadline, j.status, j.created_at,
+                       COUNT(app.id) AS total_apps,
+                       COALESCE(SUM(CASE WHEN app.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_apps
+                FROM jobs j
+                LEFT JOIN applications app ON app.job_id = j.id
+                WHERE j.company_id = ?
+                  AND {$whereSection}
+                GROUP BY j.id, j.title, j.deadline, j.status, j.created_at
+                ORDER BY {$order}";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
 }

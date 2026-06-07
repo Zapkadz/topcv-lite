@@ -1,6 +1,8 @@
 <?php
 // File: employer/dashboard.php
 require_once __DIR__ . '/../includes/job_rules.php';
+require_once __DIR__ . '/../includes/schema_applications_cv.php';
+require_once __DIR__ . '/../includes/services/ApplicationService.php';
 include '../includes/header.php';
 include 'auth_check.php';
 
@@ -51,11 +53,12 @@ $stmt_new_apps = $conn->prepare($sql_new_apps);
 $stmt_new_apps->execute([$company_id]);
 $new_cv = $stmt_new_apps->fetchColumn();
 
-// Tổng lượt xem tin tuyển dụng
-$sql_views = 'SELECT SUM(view_count) FROM jobs WHERE company_id = ? AND deleted_at IS NULL';
-$stmt_views = $conn->prepare($sql_views);
-$stmt_views->execute([$company_id]);
-$total_views = $stmt_views->fetchColumn() ?: 0; // Nếu null thì trả về 0
+$screening_pending = 0;
+if (applications_cv_columns_ready($conn)) {
+    $screening_pending = ApplicationService::countPendingForScreeningHub($conn, (int) $company_id);
+} else {
+    $screening_pending = (int) $new_cv;
+}
 
 ?>
 
@@ -130,19 +133,24 @@ $total_views = $stmt_views->fetchColumn() ?: 0; // Nếu null thì trả về 0
         </div>
 
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small fw-bold text-uppercase">Lượt xem tin</p>
-                            <h2 class="mb-0 fw-bold text-info"><?= number_format($total_views) ?></h2>
+            <a href="candidate_screening.php" class="text-decoration-none d-block h-100">
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-info hover-bg-light">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small fw-bold text-uppercase">Sàng lọc ứng viên</p>
+                                <h2 class="mb-0 fw-bold text-info"><?= (int) $screening_pending ?></h2>
+                            </div>
+                            <div class="bg-light p-3 rounded-circle text-info">
+                                <i class="fas fa-user-check fa-lg"></i>
+                            </div>
                         </div>
-                        <div class="bg-light p-3 rounded-circle text-info">
-                            <i class="fas fa-eye fa-lg"></i>
+                        <div class="mt-2">
+                            <span class="small text-info fw-bold">CV chờ xử lý trên hub <i class="fas fa-arrow-right"></i></span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -167,9 +175,9 @@ $total_views = $stmt_views->fetchColumn() ?: 0; // Nếu null thì trả về 0
                             </a>
                         </div>
                         <div class="col-4">
-                            <a href="applicants.php" class="text-decoration-none text-dark d-block p-3 rounded hover-bg-light border">
-                                <i class="fas fa-users fa-2x text-warning mb-2"></i>
-                                <div class="fw-bold">Tìm ứng viên</div>
+                            <a href="candidate_screening.php" class="text-decoration-none text-dark d-block p-3 rounded hover-bg-light border">
+                                <i class="fas fa-user-check fa-2x text-info mb-2"></i>
+                                <div class="fw-bold">Sàng lọc ứng viên</div>
                             </a>
                         </div>
                     </div>
