@@ -262,6 +262,34 @@ class ApplicationService
     }
 
     /**
+     * Employer AI screening: applications kèm cv_snapshot_text.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function listApplicationsForAiScreening(PDO $conn, int $jobId, int $companyId): array
+    {
+        if (self::getJobOwnedByCompany($conn, $jobId, $companyId) === null) {
+            return [];
+        }
+
+        $stmt = $conn->prepare(
+            'SELECT app.id AS app_id, app.candidate_id, app.cv_snapshot_text, app.status,
+                    app.created_at AS time_apply, u.fullname
+             FROM applications app
+             INNER JOIN jobs j ON app.job_id = j.id
+             INNER JOIN candidates cand ON app.candidate_id = cand.id
+             INNER JOIN users u ON cand.user_id = u.id
+             WHERE app.job_id = ?
+               AND j.company_id = ?
+             ORDER BY app.created_at ASC'
+        );
+        $stmt->execute([$jobId, $companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
      * @return array{ok: bool, message: string}
      */
     public static function updateApplicationStatusForCompany(

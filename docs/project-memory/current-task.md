@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B1 pass** — chờ **`「bắt đầu B2」`** |
+| **EMP-B** | 🔄 **B2 code xong** — chờ test 「B2 pass」 |
 
 ---
 
@@ -18,7 +18,7 @@
 
 - **Plan:** `docs/phase-emp-b-plan.md`
 - **Checklist:** `docs/project-memory/phase-emp-b-checklist.md`
-- **Nhánh B1:** `feature/phase-emp-b-b1-foundation` · base: prep + B0
+- **Nhánh B2:** `feature/phase-emp-b-b2-cli` · base: B1
 - **Integration docs:** `web-cv-jd-input-contract.md`, `php-web-ai-ranking-integration-guide.md`
 
 ### Thiết kế đã chốt
