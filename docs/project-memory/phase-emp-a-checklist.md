@@ -25,7 +25,7 @@ AI làm 1 khối A → báo file + hướng test → USER test → USER gửi �
 | Phase | EMP-A — Employer screening foundation |
 | Nhánh | `feature/phase-emp-a-screening` |
 | User confirm plan | ✅ **`「xác nhận EMP-A」`** — 2026-06-06 |
-| **Khối hiện tại** | **A3 pass** — chờ **`「EMP-A pass」`** → PR |
+| **Khối hiện tại** | ✅ **EMP-A pass** — chờ merge PR |
 | Phụ thuộc | CV-C apply snapshot ✅ · job soft delete ✅ |
 | Defer | AI ranking → **EMP-B** · VIP → sau |
 
@@ -47,7 +47,7 @@ AI làm 1 khối A → báo file + hướng test → USER test → USER gửi �
 | A0 | Plan + checklist + nhánh | ✅ | — | ✅ | ✅ |
 | A1 | Hub screening + dashboard card | ✅ | ✅ | ✅ | ✅ |
 | A2 | job_candidates.php + bảo mật | ✅ | ✅ | ✅ | ✅ |
-| A3 | Link + reuse CV modal + test | ✅ | ✅ | ✅ | ⬜ |
+| A3 | Link + reuse CV modal + test | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -122,6 +122,7 @@ AI làm 1 khối A → báo file + hướng test → USER test → USER gửi �
 | 2026-06-06 | User **`「A1 pass」`** — hub screening + dashboard card |
 | 2026-06-06 | User **`「A2 pass」`** — job_candidates + bảo mật |
 | 2026-06-06 | User **`「A3 pass」`** — breadcrumb, cross-link, applicants regression |
+| 2026-06-06 | User **`「EMP-A pass」`** — phase đóng, mở PR |
 
 ---
 
