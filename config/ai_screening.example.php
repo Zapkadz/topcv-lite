@@ -8,6 +8,7 @@
 return [
     'python_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\.venv\\Scripts\\python.exe',
     'main_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\main.py',
+    'taxonomy_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\data\\taxonomy\\skills.json',
     'runtime_dir' => 'C:\\topcv_ai_runtime',
     'cli_timeout_seconds' => 120,
     'enabled' => true,

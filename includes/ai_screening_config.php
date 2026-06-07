@@ -14,6 +14,7 @@ if (!function_exists('ai_screening_config')) {
         $defaults = [
             'python_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\.venv\\Scripts\\python.exe',
             'main_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\main.py',
+            'taxonomy_path' => 'C:\\SEMANTIC_SKILLS_RESUME\\data\\taxonomy\\skills.json',
             'runtime_dir' => 'C:\\topcv_ai_runtime',
             'cli_timeout_seconds' => 120,
             'enabled' => true,
@@ -37,6 +38,11 @@ if (!function_exists('ai_screening_config')) {
             $defaults['main_path'] = trim($envMain);
         }
 
+        $envTaxonomy = getenv('AI_TAXONOMY_PATH');
+        if (is_string($envTaxonomy) && trim($envTaxonomy) !== '') {
+            $defaults['taxonomy_path'] = trim($envTaxonomy);
+        }
+
         $envRuntime = getenv('AI_RUNTIME_DIR');
         if (is_string($envRuntime) && trim($envRuntime) !== '') {
             $defaults['runtime_dir'] = trim($envRuntime);
@@ -44,6 +50,7 @@ if (!function_exists('ai_screening_config')) {
 
         $defaults['python_path'] = trim((string) ($defaults['python_path'] ?? ''));
         $defaults['main_path'] = trim((string) ($defaults['main_path'] ?? ''));
+        $defaults['taxonomy_path'] = trim((string) ($defaults['taxonomy_path'] ?? ''));
         $defaults['runtime_dir'] = rtrim(trim((string) ($defaults['runtime_dir'] ?? '')), '\\/');
         $defaults['cli_timeout_seconds'] = max(30, (int) ($defaults['cli_timeout_seconds'] ?? 120));
 
