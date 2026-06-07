@@ -25,7 +25,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Phase | EMP-B — AI candidate ranking (CLI) |
 | Nhánh | `feature/phase-emp-b-b2-cli` (prep → B0 → B1 → B2) |
 | User confirm plan | ✅ **`「xác nhận EMP-B」`** — 2026-06-06 |
-| **Khối hiện tại** | **B2 pass** — chờ **`「bắt đầu B3」`** |
+| **Khối hiện tại** | **B3** — code xong, chờ test **`「B3 pass」`** |
 | Phụ thuộc | EMP-A ✅ · cv_snapshot_text prep ✅ |
 | Defer | FastAPI · VIP · AI trên hub screening |
 

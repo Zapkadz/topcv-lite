@@ -8,7 +8,10 @@ require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/employer_screening_rules.php';
 require_once __DIR__ . '/../includes/schema_applications_cv.php';
+require_once __DIR__ . '/../includes/schema_ai_screening.php';
+require_once __DIR__ . '/../includes/ai_screening_config.php';
 require_once __DIR__ . '/../includes/services/ApplicationService.php';
+require_once __DIR__ . '/../includes/repositories/AiScreeningRepository.php';
 include 'auth_check.php';
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
@@ -72,6 +75,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
 }
 
 $apps = ApplicationService::listApplicationsForJob($conn, $jobId, $companyId);
+
+$aiResultsMap = [];
+$aiLatestRunId = null;
+$aiSchemaReady = ai_screening_results_ready($conn);
+$aiConfigReady = ai_screening_config_ready();
+$cvTextReady = applications_cv_snapshot_text_ready($conn);
+$appsWithCvText = 0;
+
+if ($aiSchemaReady && $cvTextReady) {
+    $aiResultsMap = AiScreeningRepository::mapByApplicationForJob($conn, $jobId);
+    $aiLatestRunId = AiScreeningRepository::latestRunIdForJob($conn, $jobId);
+    foreach (ApplicationService::listApplicationsForAiScreening($conn, $jobId, $companyId) as $aiApp) {
+        if (trim((string) ($aiApp['cv_snapshot_text'] ?? '')) !== '') {
+            $appsWithCvText++;
+        }
+    }
+}
+
+if ($aiResultsMap !== []) {
+    $apps = employer_screening_sort_apps_by_ai_rank($apps, $aiResultsMap);
+}
+
+$canRunAi = $aiSchemaReady && $aiConfigReady && $cvTextReady && $apps !== [] && $appsWithCvText > 0;
+$aiPanelHint = '';
+if (!$aiSchemaReady) {
+    $aiPanelHint = 'Chưa có bảng kết quả AI — chạy migration EMP-B.';
+} elseif (!$cvTextReady) {
+    $aiPanelHint = 'Chưa có cột cv_snapshot_text — chạy migration text CV.';
+} elseif (!$aiConfigReady) {
+    $aiPanelHint = ai_screening_config_status_message();
+} elseif ($apps === []) {
+    $aiPanelHint = 'Chưa có ứng viên để xếp hạng.';
+} elseif ($appsWithCvText === 0) {
+    $aiPanelHint = 'Không có hồ sơ nào có CV text — cần apply mới bằng CV online.';
+}
+
 $jobExpired = job_is_expired($job['deadline'] ?? null);
 $jobTitle = (string) ($job['title'] ?? '');
 
@@ -114,10 +153,35 @@ include '../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <div class="alert alert-light border mb-4">
-        <i class="fas fa-robot text-muted"></i>
-        <strong>AI gợi ý xếp hạng ứng viên</strong> — sắp ra mắt (phase EMP-B).
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="fas fa-robot text-primary"></i> AI gợi ý xếp hạng ứng viên</h5>
+                    <p class="text-muted small mb-0">
+                        Phân tích CV text theo JD và gợi ý thứ tự ưu tiên.
+                        <?php if ($aiLatestRunId !== null): ?>
+                            <span class="badge bg-light text-dark border ms-1">Lần chạy: <?= htmlspecialchars($aiLatestRunId) ?></span>
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($aiPanelHint !== ''): ?>
+                        <p class="small text-warning mb-0 mt-2"><i class="fas fa-info-circle"></i> <?= htmlspecialchars($aiPanelHint) ?></p>
+                    <?php endif; ?>
+                </div>
+                <form method="POST" action="run_ai_screening.php" class="mb-0">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_run_ai_screening_form')) ?>">
+                    <input type="hidden" name="job_id" value="<?= (int) $jobId ?>">
+                    <button type="submit" class="btn btn-primary fw-bold" <?= $canRunAi ? '' : 'disabled' ?>>
+                        <i class="fas fa-magic"></i> Chạy AI gợi ý xếp hạng
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <?php if (!$aiSchemaReady): ?>
+        <?= ai_screening_migration_hint_html() ?>
+    <?php endif; ?>
 
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-body p-0">
@@ -130,11 +194,18 @@ include '../includes/header.php';
                                 <th>Hồ sơ</th>
                                 <th>Ngày nộp</th>
                                 <th>Trạng thái</th>
+                                <th class="text-center">AI Rank</th>
+                                <th class="text-center">AI Score</th>
+                                <th>Gợi ý AI</th>
                                 <th class="text-end pe-4">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($apps as $row): ?>
+                                <?php
+                                $appId = (int) ($row['app_id'] ?? 0);
+                                $aiRow = $aiResultsMap[$appId] ?? null;
+                                ?>
                                 <tr>
                                     <td class="ps-4">
                                         <div class="fw-bold text-dark"><?= htmlspecialchars((string) $row['fullname']) ?></div>
@@ -174,6 +245,21 @@ include '../includes/header.php';
                                         <span class="text-muted small"><?= date('H:i d/m/Y', strtotime((string) $row['time_apply'])) ?></span>
                                     </td>
                                     <td><?= employer_application_status_badge_html((string) ($row['status'] ?? '')) ?></td>
+                                    <td class="text-center">
+                                        <?php if ($aiRow !== null && isset($aiRow['ai_rank'])): ?>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">#<?= (int) $aiRow['ai_rank'] ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($aiRow !== null && isset($aiRow['final_score'])): ?>
+                                            <strong class="text-primary"><?= (int) $aiRow['final_score'] ?></strong>
+                                        <?php else: ?>
+                                            <span class="text-muted small">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= employer_ai_recommendation_badge_html(isset($aiRow['recommendation']) ? (string) $aiRow['recommendation'] : null) ?></td>
                                     <td class="text-end pe-4">
                                         <button type="button" class="btn btn-sm btn-primary px-3 rounded-pill"
                                             data-bs-toggle="modal" data-bs-target="#statusModal"

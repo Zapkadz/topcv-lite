@@ -103,3 +103,56 @@ if (!function_exists('employer_application_status_badge_html')) {
         };
     }
 }
+
+if (!function_exists('employer_ai_recommendation_badge_html')) {
+    function employer_ai_recommendation_badge_html(?string $recommendation): string
+    {
+        if ($recommendation === null || trim($recommendation) === '') {
+            return '<span class="text-muted small">—</span>';
+        }
+
+        $label = trim($recommendation);
+        $lower = strtolower($label);
+        $class = match (true) {
+            str_contains($lower, 'strong') => 'bg-success',
+            str_contains($lower, 'review') && !str_contains($lower, 'not') => 'bg-primary',
+            str_contains($lower, 'consider') => 'bg-info text-dark',
+            str_contains($lower, 'not') || str_contains($lower, 'reject') => 'bg-secondary',
+            default => 'bg-light text-dark border',
+        };
+
+        return '<span class="badge rounded-pill ' . $class . '">' . htmlspecialchars($label) . '</span>';
+    }
+}
+
+if (!function_exists('employer_screening_sort_apps_by_ai_rank')) {
+    /**
+     * @param list<array<string, mixed>> $apps
+     * @param array<int, array<string, mixed>> $aiMap
+     * @return list<array<string, mixed>>
+     */
+    function employer_screening_sort_apps_by_ai_rank(array $apps, array $aiMap): array
+    {
+        if ($aiMap === []) {
+            return $apps;
+        }
+
+        usort($apps, static function (array $a, array $b) use ($aiMap): int {
+            $appA = (int) ($a['app_id'] ?? 0);
+            $appB = (int) ($b['app_id'] ?? 0);
+            $rankA = isset($aiMap[$appA]['ai_rank']) ? (int) $aiMap[$appA]['ai_rank'] : PHP_INT_MAX;
+            $rankB = isset($aiMap[$appB]['ai_rank']) ? (int) $aiMap[$appB]['ai_rank'] : PHP_INT_MAX;
+
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $scoreA = isset($aiMap[$appA]['final_score']) ? (int) $aiMap[$appA]['final_score'] : -1;
+            $scoreB = isset($aiMap[$appB]['final_score']) ? (int) $aiMap[$appB]['final_score'] : -1;
+
+            return $scoreB <=> $scoreA;
+        });
+
+        return $apps;
+    }
+}
