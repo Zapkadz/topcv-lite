@@ -90,10 +90,19 @@ if (!function_exists('ai_screening_run_cli')) {
         $cmd = ai_screening_quote_path((string) $cfg['python_path'])
             . ' ' . ai_screening_quote_path((string) $cfg['main_path'])
             . ' --jd ' . ai_screening_quote_path($jdPath)
-            . ' --cv-dir ' . ai_screening_quote_path($cvDir)
-            . ' --output-json ' . ai_screening_quote_path($outputJson);
+            . ' --cv-dir ' . ai_screening_quote_path($cvDir);
+
+        $taxonomyPath = trim((string) ($cfg['taxonomy_path'] ?? ''));
+        if ($taxonomyPath !== '' && is_file($taxonomyPath)) {
+            $cmd .= ' --taxonomy ' . ai_screening_quote_path($taxonomyPath);
+        }
+
+        $cmd .= ' --output-json ' . ai_screening_quote_path($outputJson);
 
         ai_screening_log('CLI: ' . $cmd);
+
+        putenv('PYTHONIOENCODING=utf-8');
+        putenv('PYTHONUTF8=1');
 
         $outputLines = [];
         $exitCode = 1;
