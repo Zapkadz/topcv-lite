@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CvService.php';
 require_once __DIR__ . '/../schema_cvs.php';
 require_once __DIR__ . '/../schema_applications_cv.php';
+require_once __DIR__ . '/../cv_snapshot_text.php';
 require_once __DIR__ . '/../job_rules.php';
 
 class ApplicationService
@@ -50,18 +51,39 @@ class ApplicationService
             return ['ok' => false, 'message' => $snapshot['message']];
         }
 
+        $snapshotJson = $snapshot['snapshot_json'];
+        $snapshotText = cv_snapshot_text_from_json($snapshotJson);
+        if ($snapshotText === null || trim($snapshotText) === '') {
+            return ['ok' => false, 'message' => 'Không thể tạo bản text CV để nộp hồ sơ. Vui lòng cập nhật CV online.'];
+        }
+
         try {
-            $stmt = $conn->prepare(
-                'INSERT INTO applications (job_id, candidate_id, cv_profile_id, cv_snapshot, cv_snapshot_json, cover_letter)
-                 VALUES (?, ?, ?, NULL, ?, ?)'
-            );
-            $stmt->execute([
-                $jobId,
-                $candidateId,
-                $cvProfileId,
-                $snapshot['snapshot_json'],
-                $coverLetter,
-            ]);
+            if (applications_cv_snapshot_text_ready($conn)) {
+                $stmt = $conn->prepare(
+                    'INSERT INTO applications (job_id, candidate_id, cv_profile_id, cv_snapshot, cv_snapshot_json, cv_snapshot_text, cover_letter)
+                     VALUES (?, ?, ?, NULL, ?, ?, ?)'
+                );
+                $stmt->execute([
+                    $jobId,
+                    $candidateId,
+                    $cvProfileId,
+                    $snapshotJson,
+                    $snapshotText,
+                    $coverLetter,
+                ]);
+            } else {
+                $stmt = $conn->prepare(
+                    'INSERT INTO applications (job_id, candidate_id, cv_profile_id, cv_snapshot, cv_snapshot_json, cover_letter)
+                     VALUES (?, ?, ?, NULL, ?, ?)'
+                );
+                $stmt->execute([
+                    $jobId,
+                    $candidateId,
+                    $cvProfileId,
+                    $snapshotJson,
+                    $coverLetter,
+                ]);
+            }
 
             return ['ok' => true, 'message' => 'Ứng tuyển thành công!'];
         } catch (PDOException $e) {

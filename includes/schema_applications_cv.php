@@ -24,6 +24,24 @@ if (!function_exists('applications_cv_columns_ready')) {
     }
 }
 
+if (!function_exists('applications_cv_snapshot_text_ready')) {
+    function applications_cv_snapshot_text_ready(PDO $conn): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $stmt = $conn->query("SHOW COLUMNS FROM applications LIKE 'cv_snapshot_text'");
+            $cached = (bool) $stmt->fetch();
+        } catch (Throwable $e) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
+}
+
 if (!function_exists('applications_cv_migration_hint_html')) {
     function applications_cv_migration_hint_html(): string
     {
