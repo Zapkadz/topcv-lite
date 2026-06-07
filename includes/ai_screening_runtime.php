@@ -111,12 +111,14 @@ if (!function_exists('ai_screening_run_cli')) {
 
         if ($exitCode !== 0) {
             ai_screening_log('CLI failed exit=' . $exitCode . ' output=' . substr($output, 0, 2000));
+            $detail = ai_screening_cli_user_detail($output);
 
             return [
                 'ok' => false,
                 'exit_code' => $exitCode,
                 'output' => $output,
-                'message' => 'Python AI screening thất bại (mã ' . $exitCode . ').',
+                'message' => 'Python AI screening thất bại (mã ' . $exitCode . '). Kiểm tra cấu hình Python hoặc log.',
+                'detail' => $detail !== '' ? $detail : 'Xem chi tiết trong storage/logs/ai_screening.log.',
             ];
         }
 
@@ -126,6 +128,7 @@ if (!function_exists('ai_screening_run_cli')) {
                 'exit_code' => $exitCode,
                 'output' => $output,
                 'message' => 'Không tìm thấy file kết quả JSON sau khi chạy AI.',
+                'detail' => ai_screening_cli_user_detail($output),
             ];
         }
 
@@ -163,5 +166,22 @@ if (!function_exists('ai_screening_parse_ranking_json')) {
         }
 
         throw new RuntimeException('JSON ranking không có mảng candidates.');
+    }
+}
+
+if (!function_exists('ai_screening_cli_user_detail')) {
+    function ai_screening_cli_user_detail(string $output, int $maxLen = 400): string
+    {
+        $lines = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $output) ?: [])));
+        if ($lines === []) {
+            return '';
+        }
+
+        $snippet = implode("\n", array_slice($lines, -6));
+        if (strlen($snippet) > $maxLen) {
+            return substr($snippet, 0, $maxLen) . '…';
+        }
+
+        return $snippet;
     }
 }

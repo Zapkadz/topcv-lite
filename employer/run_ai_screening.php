@@ -46,6 +46,14 @@ $result = AiScreeningService::runForJob($conn, $jobId, $companyId);
 
 $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
 $_SESSION['swal_title'] = $result['message'];
+if (!empty($result['detail'])) {
+    $_SESSION['swal_text'] = (string) $result['detail'];
+}
+if (!$result['ok']) {
+    $_SESSION['swal_persistent'] = true;
+} elseif (!empty($result['skipped_count'])) {
+    $_SESSION['swal_text'] = (string) $result['skipped_count'] . ' UV bỏ qua vì thiếu CV text.';
+}
 
 header('Location: ' . $redirectUrl);
 exit();

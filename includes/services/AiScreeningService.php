@@ -18,7 +18,8 @@ class AiScreeningService
      *   run_id?: string,
      *   ranked_count?: int,
      *   skipped_count?: int,
-     *   runtime_path?: string
+     *   runtime_path?: string,
+     *   detail?: string
      * }
      */
     public static function runForJob(PDO $conn, int $jobId, int $companyId): array
@@ -63,10 +64,16 @@ class AiScreeningService
         }
 
         if ($prepared['written'] === 0) {
+            $skipped = (int) $prepared['skipped'];
+            $detail = $skipped > 0
+                ? 'Các hồ sơ cũ (PDF) hoặc apply trước migration không có cv_snapshot_text.'
+                : null;
+
             return [
                 'ok' => false,
-                'message' => 'Không có ứng viên nào có cv_snapshot_text hợp lệ để chạy AI.',
-                'skipped_count' => $prepared['skipped'],
+                'message' => 'Không có ứng viên nào có CV text hợp lệ để chạy AI.',
+                'detail' => $detail,
+                'skipped_count' => $skipped,
             ];
         }
 
@@ -79,6 +86,7 @@ class AiScreeningService
             return [
                 'ok' => false,
                 'message' => $cli['message'],
+                'detail' => $cli['detail'] ?? ai_screening_cli_user_detail($cli['output'] ?? ''),
                 'run_id' => $prepared['run_id'],
                 'skipped_count' => $prepared['skipped'],
                 'runtime_path' => $prepared['run_path'],
@@ -99,7 +107,19 @@ class AiScreeningService
             return [
                 'ok' => false,
                 'message' => 'AI chạy xong nhưng lưu kết quả thất bại: ' . $e->getMessage(),
+                'detail' => 'Kiểm tra storage/logs/ai_screening.log.',
                 'run_id' => $prepared['run_id'],
+                'runtime_path' => $prepared['run_path'],
+            ];
+        }
+
+        if ($saved === 0) {
+            return [
+                'ok' => false,
+                'message' => 'AI chạy xong nhưng không map được kết quả với ứng viên.',
+                'detail' => 'Kiểm tra tên file CV runtime hoặc log AI.',
+                'run_id' => $prepared['run_id'],
+                'skipped_count' => $prepared['skipped'],
                 'runtime_path' => $prepared['run_path'],
             ];
         }

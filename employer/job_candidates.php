@@ -261,11 +261,30 @@ include '../includes/header.php';
                                     </td>
                                     <td><?= employer_ai_recommendation_badge_html(isset($aiRow['recommendation']) ? (string) $aiRow['recommendation'] : null) ?></td>
                                     <td class="text-end pe-4">
-                                        <button type="button" class="btn btn-sm btn-primary px-3 rounded-pill"
-                                            data-bs-toggle="modal" data-bs-target="#statusModal"
-                                            onclick="setModalData(<?= (int) $row['app_id'] ?>, '<?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?>')">
-                                            <i class="fas fa-cog me-1"></i> Xử lý
-                                        </button>
+                                        <?php
+                                        $reviewCard = $aiRow !== null
+                                            ? employer_ai_review_card_parse((string) ($aiRow['review_card_json'] ?? ''))
+                                            : null;
+                                        ?>
+                                        <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                            <?php if ($reviewCard !== null && employer_ai_review_card_has_content($reviewCard)): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
+                                                    onclick="openAiReviewModal(<?= htmlspecialchars(json_encode([
+                                                        'name' => (string) $row['fullname'],
+                                                        'rank' => $aiRow['ai_rank'] ?? null,
+                                                        'score' => $aiRow['final_score'] ?? null,
+                                                        'recommendation' => $aiRow['recommendation'] ?? null,
+                                                        'card' => $reviewCard,
+                                                    ], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)">
+                                                    <i class="fas fa-robot me-1"></i> AI review
+                                                </button>
+                                            <?php endif; ?>
+                                            <button type="button" class="btn btn-sm btn-primary px-3 rounded-pill"
+                                                data-bs-toggle="modal" data-bs-target="#statusModal"
+                                                onclick="setModalData(<?= (int) $row['app_id'] ?>, '<?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?>')">
+                                                <i class="fas fa-cog me-1"></i> Xử lý
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -290,6 +309,24 @@ include '../includes/header.php';
             </div>
             <div class="modal-body p-0" style="min-height: 400px;">
                 <iframe id="cvSnapshotFrame" title="CV snapshot" class="w-100 border-0" style="min-height: 70vh;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="aiReviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold mb-1" id="aiReviewModalTitle">AI review</h5>
+                    <div class="small text-muted" id="aiReviewModalMeta"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="aiReviewModalBody"></div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>
@@ -340,6 +377,59 @@ include '../includes/header.php';
             confirmButtonText: 'Đóng',
             confirmButtonColor: '#0d6efd'
         });
+    }
+
+    function aiReviewEscape(text) {
+        if (text == null) {
+            return '';
+        }
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function aiReviewListHtml(items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            return '<p class="text-muted small mb-0">' + aiReviewEscape(emptyText) + '</p>';
+        }
+        return '<ul class="mb-0 ps-3">' + items.map(function (item) {
+            return '<li>' + aiReviewEscape(item) + '</li>';
+        }).join('') + '</ul>';
+    }
+
+    function openAiReviewModal(payload) {
+        var card = payload.card || {};
+        var metaParts = [];
+        if (payload.rank != null) {
+            metaParts.push('Hạng #' + payload.rank);
+        }
+        if (payload.score != null) {
+            metaParts.push('Điểm ' + payload.score);
+        }
+        if (payload.recommendation) {
+            metaParts.push(payload.recommendation);
+        }
+
+        document.getElementById('aiReviewModalTitle').textContent = 'AI review — ' + (payload.name || 'Ứng viên');
+        document.getElementById('aiReviewModalMeta').textContent = metaParts.join(' · ');
+
+        var html = '';
+        html += '<section class="mb-4"><h6 class="fw-bold text-success">Tóm tắt</h6>';
+        html += '<p class="mb-0">' + aiReviewEscape(card.summary || 'Chưa có tóm tắt.') + '</p></section>';
+        html += '<section class="mb-4"><h6 class="fw-bold text-success">Điểm mạnh</h6>';
+        html += aiReviewListHtml(card.strengths, 'Chưa ghi nhận điểm mạnh.') + '</section>';
+        html += '<section class="mb-4"><h6 class="fw-bold text-warning">Lưu ý / thiếu sót</h6>';
+        html += aiReviewListHtml(card.concerns, 'Chưa ghi nhận lưu ý.') + '</section>';
+        html += '<section class="mb-4"><h6 class="fw-bold text-primary">Bằng chứng nổi bật</h6>';
+        html += aiReviewListHtml(card.evidence_highlights, 'Chưa có bằng chứng nổi bật.') + '</section>';
+        html += '<section class="mb-0"><h6 class="fw-bold text-info">Gợi ý câu hỏi phỏng vấn</h6>';
+        html += aiReviewListHtml(card.suggested_interview_questions, 'Chưa có gợi ý câu hỏi.') + '</section>';
+
+        document.getElementById('aiReviewModalBody').innerHTML = html;
+        var modal = new bootstrap.Modal(document.getElementById('aiReviewModal'));
+        modal.show();
     }
 
     function openCvSnapshotModal(appId, fullname) {

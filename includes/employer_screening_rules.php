@@ -156,3 +156,44 @@ if (!function_exists('employer_screening_sort_apps_by_ai_rank')) {
         return $apps;
     }
 }
+
+if (!function_exists('employer_ai_review_card_parse')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function employer_ai_review_card_parse(?string $json): ?array
+    {
+        if ($json === null || trim($json) === '') {
+            return null;
+        }
+
+        $data = json_decode($json, true);
+
+        return is_array($data) ? $data : null;
+    }
+}
+
+if (!function_exists('employer_ai_review_card_has_content')) {
+    /**
+     * @param array<string, mixed>|null $card
+     */
+    function employer_ai_review_card_has_content(?array $card): bool
+    {
+        if ($card === null) {
+            return false;
+        }
+
+        if (trim((string) ($card['summary'] ?? '')) !== '') {
+            return true;
+        }
+
+        foreach (['strengths', 'concerns', 'evidence_highlights', 'suggested_interview_questions'] as $key) {
+            $items = $card[$key] ?? null;
+            if (is_array($items) && $items !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
