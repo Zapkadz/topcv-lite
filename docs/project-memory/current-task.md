@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B5** — smoke CLI OK, chờ manual UI + **`「EMP-B pass」`** |
+| **EMP-B** | ✅ **`「EMP-B pass」`** — PR mở trên `main` |
 
 ---
 
@@ -18,7 +18,7 @@
 
 - **Plan:** `docs/phase-emp-b-plan.md`
 - **Checklist:** `docs/project-memory/phase-emp-b-checklist.md`
-- **Nhánh B5:** `feature/phase-emp-b-b5-verify` · base: B4
+- **Nhánh:** `feature/phase-emp-b-b5-verify` (prep → B0 → B5)
 - **Integration docs:** `web-cv-jd-input-contract.md`, `php-web-ai-ranking-integration-guide.md`
 
 ### Thiết kế đã chốt
@@ -40,13 +40,13 @@
 - [x] **`「B2 pass」`** — AiScreeningService + CLI → DB
 - [x] **`「B3 pass」`** — run_ai_screening + UI cột rank
 - [x] **`「B4 pass」`** — review modal + error handling
-- [ ] **B5** — verify script ✅ CLI; manual UI (#4, #7, #8, #9) → **`「EMP-B pass」`**
+- [x] **`「B5 pass」`** — smoke verify + manual checklist
+- [x] **`「EMP-B pass」`** — 2026-06-07 → PR
 
 ### Quy trình
 
 ```text
-B5: chạy _test-ai-screening-b5-verify.php --run (PASS=10).
-Còn 4 mục manual UI → user tick xong gửi 「EMP-B pass」 → PR.
+EMP-B đóng (Prep → B5). Tiếp theo: merge PR → phase tiếp theo (EMP-C defer).
 ```
 
 ---
