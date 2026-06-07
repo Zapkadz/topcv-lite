@@ -1,6 +1,6 @@
 # Current Task — TopCV Lite
 
-> Cập nhật: **2026-06-06**
+> Cập nhật: **2026-06-07**
 
 ---
 
@@ -37,15 +37,15 @@
 - [x] Prep committed + pushed
 - [x] B0 plan + checklist
 - [x] **`「B1 pass」`** — config + build JD + `ai_screening_results`
-- [x] **`「B2 pass」`** — AiScreeningService + CLI → DB (test job 8 / company 2)
-- [ ] **B3** — run_ai_screening + UI
+- [x] **`「B2 pass」`** — AiScreeningService + CLI → DB
+- [x] **`「B3 pass」`** — run_ai_screening + UI cột rank
 - [ ] **B4** — review modal + errors
 - [ ] **B5** — test → **`「EMP-B pass」`**
 
 ### Quy trình
 
 ```text
-B2 pass; tiếp B3 khi user gửi 「bắt đầu B3」.
+B3 pass; tiếp B4 khi user gửi 「bắt đầu B4」.
 ```
 
 ---
