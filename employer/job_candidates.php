@@ -1,106 +1,132 @@
 <?php
-// --- PHẦN 1: LOGIC PHP (Chạy trước khi xuất HTML) ---
-if (session_status() === PHP_SESSION_NONE) session_start();
-include '../config/db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
-require_once __DIR__ . '/../includes/schema_applications_cv.php';
+require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/employer_screening_rules.php';
+require_once __DIR__ . '/../includes/schema_applications_cv.php';
 require_once __DIR__ . '/../includes/services/ApplicationService.php';
 include 'auth_check.php';
 
-$user_id = $_SESSION['user_id'];
+$userId = (int) ($_SESSION['user_id'] ?? 0);
+$jobId = isset($_GET['job_id']) ? (int) $_GET['job_id'] : 0;
 
-// 1. Lấy ID công ty
-$stmt = $conn->prepare("SELECT id FROM companies WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$company = $stmt->fetch();
+$stmt = $conn->prepare('SELECT id, name FROM companies WHERE user_id = ? LIMIT 1');
+$stmt->execute([$userId]);
+$company = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$company) {
-    header("Location: company.php");
+    header('Location: company.php');
     exit();
 }
-$company_id = $company['id'];
 
-// 2. XỬ LÝ POST: Đổi trạng thái hồ sơ
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['app_id'])) {
-    if (!csrf_validate('employer_applicant_status_form', $_POST['csrf_token'] ?? '')) {
+$companyId = (int) $company['id'];
+$schemaReady = applications_cv_columns_ready($conn);
+
+if (!$schemaReady) {
+    include '../includes/header.php';
+    echo '<div class="container py-5">' . applications_cv_migration_hint_html() . '</div>';
+    include '../includes/footer.php';
+    exit();
+}
+
+if ($jobId <= 0) {
+    $_SESSION['swal_icon'] = 'warning';
+    $_SESSION['swal_title'] = 'Thiếu mã tin tuyển dụng.';
+    header('Location: candidate_screening.php');
+    exit();
+}
+
+$job = ApplicationService::getJobOwnedByCompany($conn, $jobId, $companyId);
+if ($job === null) {
+    http_response_code(404);
+    $_SESSION['swal_icon'] = 'error';
+    $_SESSION['swal_title'] = 'Không tìm thấy tin tuyển dụng hoặc bạn không có quyền xem.';
+    header('Location: candidate_screening.php');
+    exit();
+}
+
+$redirectUrl = 'job_candidates.php?job_id=' . $jobId;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
+    if (!csrf_validate('employer_job_candidate_status_form', $_POST['csrf_token'] ?? '')) {
         $_SESSION['swal_icon'] = 'error';
         $_SESSION['swal_title'] = 'Phiên làm việc không hợp lệ, vui lòng thử lại.';
-        header('Location: applicants.php');
+        header('Location: ' . $redirectUrl);
         exit();
     }
-    $status = (string) ($_POST['status'] ?? '');
-    $app_id = (int) $_POST['app_id'];
 
-    $result = ApplicationService::updateApplicationStatusForCompany($conn, $app_id, (int) $company_id, $status);
+    $result = ApplicationService::updateApplicationStatusForCompany(
+        $conn,
+        (int) $_POST['app_id'],
+        $companyId,
+        (string) ($_POST['status'] ?? '')
+    );
     $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
     $_SESSION['swal_title'] = $result['message'];
-
-    header("Location: applicants.php");
+    header('Location: ' . $redirectUrl);
     exit();
 }
 
-// --- PHẦN 2: GIAO DIỆN HTML ---
+$apps = ApplicationService::listApplicationsForJob($conn, $jobId, $companyId);
+$jobExpired = job_is_expired($job['deadline'] ?? null);
+$jobTitle = (string) ($job['title'] ?? '');
+
 include '../includes/header.php';
-
-// 3. SỬA LỖI SQL: Join qua bảng candidates để lấy đúng thông tin User ứng viên
-$sql = "SELECT app.id AS app_id, app.created_at AS time_apply, app.status,
-               app.cv_snapshot, app.cv_snapshot_json, app.cover_letter,
-               u.fullname, u.email, u.phone,
-               j.title AS job_title
-        FROM applications app
-        JOIN jobs j ON app.job_id = j.id
-        JOIN candidates cand ON app.candidate_id = cand.id
-        JOIN users u ON cand.user_id = u.id
-        WHERE j.company_id = ?
-        ORDER BY app.created_at DESC";
-
-$apps = [];
-if (applications_cv_columns_ready($conn)) {
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([$company_id]);
-    $apps = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-}
 ?>
 
 <div class="container py-5">
-    <?php if (!applications_cv_columns_ready($conn)): ?>
-        <?= applications_cv_migration_hint_html() ?>
-    <?php endif; ?>
-
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb small mb-2">
                     <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Bảng tin</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Hộp thư CV</li>
+                    <li class="breadcrumb-item"><a href="candidate_screening.php" class="text-decoration-none">Sàng lọc ứng viên</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($jobTitle) ?></li>
                 </ol>
             </nav>
-            <h3 class="fw-bold text-primary mb-1"><i class="fas fa-inbox"></i> Hộp thư CV</h3>
+            <h3 class="fw-bold text-success mb-1">
+                <i class="fas fa-users"></i> Ứng viên — <?= htmlspecialchars($jobTitle) ?>
+            </h3>
             <p class="text-muted mb-0 small">
-                Danh sách phẳng mọi hồ sơ đã nộp vào công ty.
-                Muốn xử lý theo từng tin? Dùng <a href="candidate_screening.php">Sàng lọc ứng viên</a>.
+                Hạn nộp: <strong><?= employer_screening_format_deadline($job['deadline'] ?? null) ?></strong>
+                · <?= count($apps) ?> hồ sơ
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2">
             <a href="candidate_screening.php" class="btn btn-outline-success btn-sm">
-                <i class="fas fa-user-check"></i> Sàng lọc theo tin
+                <i class="fas fa-arrow-left"></i> Quay lại hub
             </a>
-            <a href="dashboard.php" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Bảng tin
+            <a href="applicants.php" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-inbox"></i> Hộp thư CV (tất cả)
             </a>
         </div>
     </div>
 
+    <?php if ($jobExpired): ?>
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <strong><i class="fas fa-clock"></i> Tin đã hết hạn nộp hồ sơ</strong>
+            (<?= employer_screening_format_deadline($job['deadline'] ?? null) ?>).
+            Bạn vẫn có thể xem và cập nhật trạng thái ứng viên đã nộp.
+        </div>
+    <?php endif; ?>
+
+    <div class="alert alert-light border mb-4">
+        <i class="fas fa-robot text-muted"></i>
+        <strong>AI gợi ý xếp hạng ứng viên</strong> — sắp ra mắt (phase EMP-B).
+    </div>
+
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-body p-0">
-            <?php if (count($apps) > 0): ?>
+            <?php if ($apps !== []): ?>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
                                 <th class="ps-4">Ứng viên</th>
-                                <th>Vị trí ứng tuyển</th>
                                 <th>Hồ sơ</th>
                                 <th>Ngày nộp</th>
                                 <th>Trạng thái</th>
@@ -111,20 +137,13 @@ if (applications_cv_columns_ready($conn)) {
                             <?php foreach ($apps as $row): ?>
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold text-dark"><?= htmlspecialchars($row['fullname']) ?></div>
-
+                                        <div class="fw-bold text-dark"><?= htmlspecialchars((string) $row['fullname']) ?></div>
                                         <div class="small text-muted">
-                                            <i class="fas fa-envelope fa-fw"></i> <?= htmlspecialchars($row['email']) ?>
+                                            <i class="fas fa-envelope fa-fw"></i> <?= htmlspecialchars((string) $row['email']) ?>
                                         </div>
-
                                         <div class="small text-muted">
-                                            <i class="fas fa-phone fa-fw"></i> <?= htmlspecialchars($row['phone'] ?? 'Chưa cập nhật') ?>
+                                            <i class="fas fa-phone fa-fw"></i> <?= htmlspecialchars((string) ($row['phone'] ?? 'Chưa cập nhật')) ?>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-soft-primary text-primary border border-primary-subtle px-2 py-1">
-                                            <?= htmlspecialchars($row['job_title']) ?>
-                                        </span>
                                     </td>
                                     <td>
                                         <div class="d-flex flex-wrap gap-1">
@@ -143,7 +162,7 @@ if (applications_cv_columns_ready($conn)) {
                                             <?php if (empty($row['cv_snapshot_json']) && empty($row['cv_snapshot'])): ?>
                                                 <span class="small text-muted">—</span>
                                             <?php endif; ?>
-                                            <?php if ($row['cover_letter']): ?>
+                                            <?php if (!empty($row['cover_letter'])): ?>
                                                 <button type="button" class="btn btn-sm btn-outline-info shadow-sm"
                                                     onclick="showCoverLetter(<?= htmlspecialchars(json_encode($row['fullname']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($row['cover_letter']), ENT_QUOTES) ?>)">
                                                     <i class="fas fa-envelope-open-text"></i> Thư
@@ -151,12 +170,14 @@ if (applications_cv_columns_ready($conn)) {
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td><span class="text-muted small"><?= date('H:i d/m/Y', strtotime($row['time_apply'])) ?></span></td>
+                                    <td>
+                                        <span class="text-muted small"><?= date('H:i d/m/Y', strtotime((string) $row['time_apply'])) ?></span>
+                                    </td>
                                     <td><?= employer_application_status_badge_html((string) ($row['status'] ?? '')) ?></td>
                                     <td class="text-end pe-4">
-                                        <button class="btn btn-sm btn-primary px-3 rounded-pill"
+                                        <button type="button" class="btn btn-sm btn-primary px-3 rounded-pill"
                                             data-bs-toggle="modal" data-bs-target="#statusModal"
-                                            onclick="setModalData(<?= $row['app_id'] ?>, '<?= $row['status'] ?>')">
+                                            onclick="setModalData(<?= (int) $row['app_id'] ?>, '<?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?>')">
                                             <i class="fas fa-cog me-1"></i> Xử lý
                                         </button>
                                     </td>
@@ -167,8 +188,7 @@ if (applications_cv_columns_ready($conn)) {
                 </div>
             <?php else: ?>
                 <div class="text-center py-5 text-muted">
-                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486754.png" width="80" class="opacity-25 mb-3">
-                    <p>Chưa có hồ sơ ứng tuyển nào được gửi đến.</p>
+                    <p class="mb-0">Chưa có ứng viên nộp hồ sơ cho tin này.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -192,7 +212,7 @@ if (applications_cv_columns_ready($conn)) {
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" class="modal-content shadow-lg border-0">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_applicant_status_form')) ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('employer_job_candidate_status_form')) ?>">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">Cập nhật trạng thái ứng viên</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -249,10 +269,6 @@ if (applications_cv_columns_ready($conn)) {
 </script>
 
 <style>
-    .bg-soft-primary {
-        background-color: #e7f1ff;
-    }
-
     .table thead th {
         font-weight: 600;
         font-size: 0.85rem;

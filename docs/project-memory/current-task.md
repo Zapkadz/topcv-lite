@@ -1,6 +1,6 @@
 # Current Task — TopCV Lite
 
-> Cập nhật: **2026-06-05**
+> Cập nhật: **2026-06-06**
 
 ---
 
@@ -8,45 +8,50 @@
 
 | Phase | Status |
 |-------|--------|
-| CV-A … CV-D | ✅ merged / pass |
-| **CV-E** | ✅ pass — merged `main` (PR #12) |
-| **CV-F** | ✅ **F6 pass** — CV-F done (F7/F8 bỏ qua) → sẵn sàng PR |
+| CV-A … CV-F | ✅ merged `main` (PR #12 CV-E, PR #13 CV-F) |
+| **EMP-A** | ✅ **`「EMP-A pass」`** — PR mở trên `main` |
 
 ---
 
-## Phase CV-F (Mức C — GPT Vision scan PDF)
+## Phase EMP-A (Sàng lọc ứng viên — Employer)
 
-- **Plan:** `docs/phase-cv-f-plan.md`
-- **Checklist:** `docs/project-memory/phase-cv-f-checklist.md`
-- **Setup (mở rộng):** `docs/setup-cv-import.md` (sẽ bổ sung OpenAI khi code F0)
-- **Nhánh:** `feature/phase-cv-f-vision` (đã tạo từ `main`)
-- **Provider vision:** OpenAI `gpt-4o` — `config/ai.local.php` → block `openai` (gitignore)
-- **Provider text (CV-E giữ nguyên):** Groq / Gemini — path nhanh qua router
+- **Plan:** `docs/phase-emp-a-plan.md`
+- **Checklist:** `docs/project-memory/phase-emp-a-checklist.md`
+- **Nhánh:** `feature/phase-emp-a-screening` (từ `main` @ PR #13)
+- **Defer:** AI ranking → EMP-B · VIP → sau
 
-### Trước khi code
+### Thiết kế đã chốt
 
-- [x] OpenAI/ShopAIKey key trong `ai.local.php` (block `openai`)
-- [x] **`「F0 pass」`** — `_test-openai-config.php` OK
-- [x] **`「F1 pass」`** — smart router
-- [x] **`「F2 pass」`** — GPT vision (ShopAIKey)
-- [x] **`「F4 pass」`** — UI chọn Text-base / Chuẩn GPT
-- [x] **`「F5 pass」`** — quota GPT 5/tổng đời (DB)
-- [x] **`「F6 pass」`** — 4 loại PDF CLI + web OK
-- ~~F7 DOCX~~ / ~~F8 docs~~ — **bỏ qua** (user chốt)
+- Hub **`candidate_screening.php`**: Đang tuyển + Hết hạn (còn CV)
+- Chi tiết **`job_candidates.php?job_id=`**
+- **`manage-jobs.php`** không gắn screening
+- **`applicants.php`** giữ làm Hộp thư CV
+- Dashboard: card **Sàng lọc ứng viên** thay Lượt xem tin
+
+### Tiến độ
+
+- [x] **`「xác nhận EMP-A」`** — 2026-06-06
+- [x] Nhánh + plan + checklist (A0)
+- [x] **`「A1 pass」`** — hub screening + dashboard card
+- [x] **`「A2 pass」`** — job_candidates + bảo mật
+- [x] **`「A3 pass」`** — breadcrumb, cross-link, applicants regression
+- [x] **`「EMP-A pass」`** — 2026-06-06 → PR
 
 ### Quy trình
 
 ```text
-F0–F6 pass + commit → 「CV-F pass」 → PR (không F7/F8)
+EMP-A đóng (A0–A3). Tiếp theo: merge PR → EMP-B (AI ranking).
 ```
 
-F0–F6 committed trên nhánh `feature/phase-cv-f-vision`.
+---
+
+## Phase CV-F (đã đóng)
+
+- Merge PR #13 @ `cc6091b`
+- F7 DOCX / F8 docs — bỏ qua (user chốt)
 
 ---
 
 ## Phase CV-E (đã đóng)
 
-- **Plan:** `docs/phase-cv-e-plan.md`
-- **Checklist:** `docs/project-memory/phase-cv-e-checklist.md`
-- **Setup:** `docs/setup-cv-import.md`
-- **Merge:** PR #12 → `main` @ `ca974de`
+- Merge PR #12 @ `ca974de`
