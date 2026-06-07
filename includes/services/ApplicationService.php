@@ -217,7 +217,8 @@ class ApplicationService
         }
 
         $stmt = $conn->prepare(
-            'SELECT j.id, j.title, j.deadline, j.status, j.deleted_at, j.company_id, j.created_at
+            'SELECT j.id, j.title, j.deadline, j.status, j.deleted_at, j.company_id, j.created_at,
+                    j.description, j.requirements, j.benefits, j.experience, j.job_level, j.job_type
              FROM jobs j
              WHERE j.id = ?
                AND j.company_id = ?

@@ -8,61 +8,55 @@
 
 | Phase | Status |
 |-------|--------|
-| CV-A … CV-F | ✅ merged `main` (PR #12 CV-E, PR #13 CV-F) |
-| **EMP-A** | ✅ **`「EMP-A pass」`** — PR mở trên `main` |
-| **EMP-B prep** | 🔄 **`「chốt cv_snapshot_text」`** — migration + apply lưu text |
+| CV-A … CV-F | ✅ merged `main` |
+| **EMP-A** | ✅ merged `main` (PR #14) |
+| **EMP-B** | 🔄 **B1 pass** — chờ **`「bắt đầu B2」`** |
 
 ---
 
-## Phase EMP-B prep — `cv_snapshot_text`
+## Phase EMP-B (AI gợi ý xếp hạng ứng viên)
 
-- **Chốt:** Lúc apply lưu thêm `applications.cv_snapshot_text` (plain text từ `cv_snapshot_json`).
-- **Không dùng:** PDF upload / extract text (apply chỉ CV online).
-- **Migration:** `docs/migrations/migrate-phase-emp-b-cv-snapshot-text.php`
-- **Helper:** `includes/cv_snapshot_text.php`
-- **Tiếp:** EMP-B AI ranking đọc `cv_snapshot_text` trực tiếp.
-
----
-
-## Phase EMP-A (Sàng lọc ứng viên — Employer)
-
-- **Plan:** `docs/phase-emp-a-plan.md`
-- **Checklist:** `docs/project-memory/phase-emp-a-checklist.md`
-- **Nhánh:** `feature/phase-emp-a-screening` (từ `main` @ PR #13)
-- **Defer:** AI ranking → EMP-B · VIP → sau
+- **Plan:** `docs/phase-emp-b-plan.md`
+- **Checklist:** `docs/project-memory/phase-emp-b-checklist.md`
+- **Nhánh B1:** `feature/phase-emp-b-b1-foundation` · base: prep + B0
+- **Integration docs:** `web-cv-jd-input-contract.md`, `php-web-ai-ranking-integration-guide.md`
 
 ### Thiết kế đã chốt
 
-- Hub **`candidate_screening.php`**: Đang tuyển + Hết hạn (còn CV)
-- Chi tiết **`job_candidates.php?job_id=`**
-- **`manage-jobs.php`** không gắn screening
-- **`applicants.php`** giữ làm Hộp thư CV
-- Dashboard: card **Sàng lọc ứng viên** thay Lượt xem tin
+- Apply chỉ **CV online** — không PDF apply / không fallback PDF cũ
+- **`cv_snapshot_json`** → hiển thị CV (modal)
+- **`cv_snapshot_text`** → input AI (lưu lúc apply) ✅ prep `8ed2873`
+- PHP gọi **Python CLI** `C:\SEMANTIC_SKILLS_RESUME\main.py` — chưa HTTP API
+- Kết quả bảng **`ai_screening_results`**
+- UI trên **`job_candidates.php`** — không AI trên hub screening
 
 ### Tiến độ
 
-- [x] **`「xác nhận EMP-A」`** — 2026-06-06
-- [x] Nhánh + plan + checklist (A0)
-- [x] **`「A1 pass」`** — hub screening + dashboard card
-- [x] **`「A2 pass」`** — job_candidates + bảo mật
-- [x] **`「A3 pass」`** — breadcrumb, cross-link, applicants regression
-- [x] **`「EMP-A pass」`** — 2026-06-06 → PR
+- [x] **`「chốt cv_snapshot_text」`** — helper + migration + apply
+- [x] **`「xác nhận EMP-B」`** — 2026-06-06
+- [x] Prep committed + pushed
+- [x] B0 plan + checklist
+- [x] **`「B1 pass」`** — config + build JD + `ai_screening_results`
+- [ ] **B2** — AiScreeningService + CLI
+- [ ] **B3** — run_ai_screening + UI
+- [ ] **B4** — review modal + errors
+- [ ] **B5** — test → **`「EMP-B pass」`**
 
 ### Quy trình
 
 ```text
-EMP-A đóng (A0–A3). Tiếp theo: merge PR → EMP-B (AI ranking).
+B1 pass; tiếp B2 khi user gửi 「bắt đầu B2」.
 ```
+
+---
+
+## Phase EMP-A (đã đóng)
+
+- Merge PR #14 @ `8bd34ab`
+- Plan: `docs/phase-emp-a-plan.md`
 
 ---
 
 ## Phase CV-F (đã đóng)
 
-- Merge PR #13 @ `cc6091b`
-- F7 DOCX / F8 docs — bỏ qua (user chốt)
-
----
-
-## Phase CV-E (đã đóng)
-
-- Merge PR #12 @ `ca974de`
+- Merge PR #13 · F7/F8 bỏ qua
