@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B0 pass** — chờ **`「bắt đầu B1」`** |
+| **EMP-B** | 🔄 **B1 code xong** — chờ test 「B1 pass」 |
 
 ---
 
@@ -36,7 +36,7 @@
 - [x] **`「xác nhận EMP-B」`** — 2026-06-06
 - [x] Prep committed + pushed
 - [x] B0 plan + checklist
-- [ ] **B1** — config + build JD + schema results
+- [ ] **B1** — config + build JD + schema (code xong, chờ test)
 - [ ] **B2** — AiScreeningService + CLI
 - [ ] **B3** — run_ai_screening + UI
 - [ ] **B4** — review modal + errors

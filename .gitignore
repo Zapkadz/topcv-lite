@@ -14,6 +14,7 @@ uploads/logos/*
 /vendor/
 /composer.phar
 config/ai.local.php
+config/ai_screening.local.php
 
 # Báo cáo HTML export local
 Bao_Cao_Phan_Tich_TopCV_Lite.html

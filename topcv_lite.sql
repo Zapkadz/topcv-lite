@@ -51,6 +51,28 @@ INSERT INTO `applications` (`id`, `job_id`, `candidate_id`, `cv_snapshot`, `cove
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `ai_screening_results` (Phase EMP-B)
+--
+
+CREATE TABLE `ai_screening_results` (
+  `id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `application_id` int(11) NOT NULL,
+  `candidate_id` int(11) DEFAULT NULL,
+  `ai_rank` int(11) DEFAULT NULL,
+  `final_score` int(11) DEFAULT NULL,
+  `recommendation` varchar(50) DEFAULT NULL,
+  `scores_json` longtext DEFAULT NULL,
+  `review_card_json` longtext DEFAULT NULL,
+  `raw_result_json` longtext DEFAULT NULL,
+  `run_id` varchar(64) DEFAULT NULL COMMENT 'run-{timestamp}',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `candidates`
 --
 
@@ -417,6 +439,15 @@ ALTER TABLE `applications`
   ADD UNIQUE KEY `uniq_job_candidate` (`job_id`,`candidate_id`);
 
 --
+-- Chỉ mục cho bảng `ai_screening_results`
+--
+ALTER TABLE `ai_screening_results`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_ai_screening_job_application` (`job_id`,`application_id`),
+  ADD KEY `idx_ai_screening_job` (`job_id`),
+  ADD KEY `idx_ai_screening_application` (`application_id`);
+
+--
 -- Chỉ mục cho bảng `candidates`
 --
 ALTER TABLE `candidates`
@@ -540,6 +571,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `applications`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT cho bảng `ai_screening_results`
+--
+ALTER TABLE `ai_screening_results`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `candidates`

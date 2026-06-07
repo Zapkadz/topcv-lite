@@ -25,7 +25,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Phase | EMP-B — AI candidate ranking (CLI) |
 | Nhánh | `feature/phase-emp-b-cv-snapshot-text` |
 | User confirm plan | ✅ **`「xác nhận EMP-B」`** — 2026-06-06 |
-| **Khối hiện tại** | **B0 pass** — chờ **`「bắt đầu B1」`** |
+| **Khối hiện tại** | **B1** — code xong, chờ test **`「B1 pass」`** |
 | Phụ thuộc | EMP-A ✅ · cv_snapshot_text prep ✅ |
 | Defer | FastAPI · VIP · AI trên hub screening |
 
@@ -44,8 +44,8 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Khối | Mô tả ngắn | Code | User test | User confirm | Commit |
 |------|------------|------|-----------|--------------|--------|
 | Prep | cv_snapshot_text + migration | ✅ | — | ✅ | ✅ `8ed2873` |
-| B0 | Plan + checklist + confirm | ✅ | — | ✅ | ⬜ |
-| B1 | Config + build JD + DB results | ⬜ | ⬜ | ⬜ | ⬜ |
+| B0 | Plan + checklist + confirm | ✅ | — | ✅ | ✅ |
+| B1 | Config + build JD + DB results | 🔄 | ⬜ | ⬜ | ⬜ |
 | B2 | AiScreeningService + CLI | ⬜ | ⬜ | ⬜ | ⬜ |
 | B3 | run_ai_screening + UI cột rank | ⬜ | ⬜ | ⬜ | ⬜ |
 | B4 | Review modal + errors | ⬜ | ⬜ | ⬜ | ⬜ |
