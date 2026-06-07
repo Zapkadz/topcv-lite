@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B1 code xong** — chờ test 「B1 pass」 |
+| **EMP-B** | 🔄 **B1 pass** — chờ **`「bắt đầu B2」`** |
 
 ---
 
@@ -18,7 +18,7 @@
 
 - **Plan:** `docs/phase-emp-b-plan.md`
 - **Checklist:** `docs/project-memory/phase-emp-b-checklist.md`
-- **Nhánh:** `feature/phase-emp-b-cv-snapshot-text` (từ `main` @ PR #14)
+- **Nhánh B1:** `feature/phase-emp-b-b1-foundation` · base: prep + B0
 - **Integration docs:** `web-cv-jd-input-contract.md`, `php-web-ai-ranking-integration-guide.md`
 
 ### Thiết kế đã chốt
@@ -36,7 +36,7 @@
 - [x] **`「xác nhận EMP-B」`** — 2026-06-06
 - [x] Prep committed + pushed
 - [x] B0 plan + checklist
-- [ ] **B1** — config + build JD + schema (code xong, chờ test)
+- [x] **`「B1 pass」`** — config + build JD + `ai_screening_results`
 - [ ] **B2** — AiScreeningService + CLI
 - [ ] **B3** — run_ai_screening + UI
 - [ ] **B4** — review modal + errors
@@ -45,7 +45,7 @@
 ### Quy trình
 
 ```text
-B0 xong; tiếp B1 khi user gửi 「bắt đầu B1」.
+B1 pass; tiếp B2 khi user gửi 「bắt đầu B2」.
 ```
 
 ---
