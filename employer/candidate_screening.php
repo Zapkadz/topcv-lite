@@ -103,8 +103,13 @@ include '../includes/header.php';
 
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <a href="dashboard.php" class="text-success text-decoration-none small"><i class="fas fa-arrow-left"></i> Bảng tin</a>
-            <h3 class="fw-bold text-success mt-2 mb-1"><i class="fas fa-user-check"></i> Sàng lọc ứng viên</h3>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-2">
+                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Bảng tin</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Sàng lọc ứng viên</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-success mb-1"><i class="fas fa-user-check"></i> Sàng lọc ứng viên</h3>
             <p class="text-muted mb-0">
                 Chọn tin tuyển dụng để xem và xử lý hồ sơ theo từng vị trí.
                 <?php if ($schemaReady && $pendingHub > 0): ?>

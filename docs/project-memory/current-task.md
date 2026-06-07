@@ -9,7 +9,7 @@
 | Phase | Status |
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` (PR #12 CV-E, PR #13 CV-F) |
-| **EMP-A** | 🔄 **A2 pass** — chờ **A3** |
+| **EMP-A** | 🔄 **A3 pass** — chờ **`「EMP-A pass」`** → PR |
 
 ---
 
@@ -34,12 +34,13 @@
 - [x] Nhánh + plan + checklist (A0)
 - [x] **`「A1 pass」`** — hub screening + dashboard card
 - [x] **`「A2 pass」`** — job_candidates + bảo mật
-- [ ] **A3** — polish + regression
+- [x] **`「A3 pass」`** — breadcrumb, cross-link, applicants regression
+- [ ] **`「EMP-A pass」`** → PR
 
 ### Quy trình
 
 ```text
-A0 + A1 + A2 committed; tiếp A3.
+A0–A3 committed; chờ 「EMP-A pass」 để mở PR.
 ```
 
 ---

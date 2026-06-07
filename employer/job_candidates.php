@@ -79,17 +79,31 @@ include '../includes/header.php';
 ?>
 
 <div class="container py-5">
-    <div class="mb-4">
-        <a href="candidate_screening.php" class="text-success text-decoration-none small">
-            <i class="fas fa-arrow-left"></i> Sàng lọc ứng viên
-        </a>
-        <h3 class="fw-bold text-success mt-2 mb-1">
-            <i class="fas fa-users"></i> Ứng viên — <?= htmlspecialchars($jobTitle) ?>
-        </h3>
-        <p class="text-muted mb-0 small">
-            Hạn nộp: <strong><?= employer_screening_format_deadline($job['deadline'] ?? null) ?></strong>
-            · <?= count($apps) ?> hồ sơ
-        </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-2">
+                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Bảng tin</a></li>
+                    <li class="breadcrumb-item"><a href="candidate_screening.php" class="text-decoration-none">Sàng lọc ứng viên</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($jobTitle) ?></li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-success mb-1">
+                <i class="fas fa-users"></i> Ứng viên — <?= htmlspecialchars($jobTitle) ?>
+            </h3>
+            <p class="text-muted mb-0 small">
+                Hạn nộp: <strong><?= employer_screening_format_deadline($job['deadline'] ?? null) ?></strong>
+                · <?= count($apps) ?> hồ sơ
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="candidate_screening.php" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-arrow-left"></i> Quay lại hub
+            </a>
+            <a href="applicants.php" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-inbox"></i> Hộp thư CV (tất cả)
+            </a>
+        </div>
     </div>
 
     <?php if ($jobExpired): ?>

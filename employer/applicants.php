@@ -4,6 +4,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 include '../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_applications_cv.php';
+require_once __DIR__ . '/../includes/employer_screening_rules.php';
+require_once __DIR__ . '/../includes/services/ApplicationService.php';
 include 'auth_check.php';
 
 $user_id = $_SESSION['user_id'];
@@ -27,14 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['app_id'])) {
         header('Location: applicants.php');
         exit();
     }
-    $status = $_POST['status'];
-    $app_id = $_POST['app_id'];
+    $status = (string) ($_POST['status'] ?? '');
+    $app_id = (int) $_POST['app_id'];
 
-    $stmt = $conn->prepare("UPDATE applications SET status = ? WHERE id = ?");
-    $stmt->execute([$status, $app_id]);
-
-    $_SESSION['swal_icon'] = 'success';
-    $_SESSION['swal_title'] = 'Đã cập nhật trạng thái hồ sơ!';
+    $result = ApplicationService::updateApplicationStatusForCompany($conn, $app_id, (int) $company_id, $status);
+    $_SESSION['swal_icon'] = $result['ok'] ? 'success' : 'error';
+    $_SESSION['swal_title'] = $result['message'];
 
     header("Location: applicants.php");
     exit();
@@ -68,12 +68,28 @@ if (applications_cv_columns_ready($conn)) {
         <?= applications_cv_migration_hint_html() ?>
     <?php endif; ?>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h3 class="fw-bold text-primary"><i class="fas fa-user-tie"></i> Quản lý hồ sơ ứng viên</h3>
-            <p class="text-muted mb-0">Danh sách các ứng viên đã nộp hồ sơ vào công ty của bạn.</p>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-2">
+                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Bảng tin</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Hộp thư CV</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-primary mb-1"><i class="fas fa-inbox"></i> Hộp thư CV</h3>
+            <p class="text-muted mb-0 small">
+                Danh sách phẳng mọi hồ sơ đã nộp vào công ty.
+                Muốn xử lý theo từng tin? Dùng <a href="candidate_screening.php">Sàng lọc ứng viên</a>.
+            </p>
         </div>
-        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="candidate_screening.php" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-user-check"></i> Sàng lọc theo tin
+            </a>
+            <a href="dashboard.php" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Bảng tin
+            </a>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-3">
@@ -136,24 +152,7 @@ if (applications_cv_columns_ready($conn)) {
                                         </div>
                                     </td>
                                     <td><span class="text-muted small"><?= date('H:i d/m/Y', strtotime($row['time_apply'])) ?></span></td>
-                                    <td>
-                                        <?php
-                                        switch ($row['status']) {
-                                            case 'pending':
-                                                echo '<span class="badge rounded-pill bg-warning text-dark">Chờ duyệt</span>';
-                                                break;
-                                            case 'viewed':
-                                                echo '<span class="badge rounded-pill bg-info">Đã xem</span>';
-                                                break;
-                                            case 'interview':
-                                                echo '<span class="badge rounded-pill bg-success">Hẹn PV</span>';
-                                                break;
-                                            case 'rejected':
-                                                echo '<span class="badge rounded-pill bg-secondary">Từ chối</span>';
-                                                break;
-                                        }
-                                        ?>
-                                    </td>
+                                    <td><?= employer_application_status_badge_html((string) ($row['status'] ?? '')) ?></td>
                                     <td class="text-end pe-4">
                                         <button class="btn btn-sm btn-primary px-3 rounded-pill"
                                             data-bs-toggle="modal" data-bs-target="#statusModal"
