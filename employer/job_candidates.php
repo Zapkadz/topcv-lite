@@ -274,7 +274,7 @@ include '../includes/header.php';
                                                         'rank' => $aiRow['ai_rank'] ?? null,
                                                         'score' => $aiRow['final_score'] ?? null,
                                                         'recommendation' => $aiRow['recommendation'] ?? null,
-                                                        'card' => $reviewCard,
+                                                        'card' => employer_ai_review_card_for_ui($reviewCard),
                                                     ], JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)">
                                                     <i class="fas fa-robot me-1"></i> AI review
                                                 </button>

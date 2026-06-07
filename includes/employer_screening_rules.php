@@ -197,3 +197,117 @@ if (!function_exists('employer_ai_review_card_has_content')) {
         return false;
     }
 }
+
+if (!function_exists('employer_ai_review_plain_text')) {
+    function employer_ai_review_plain_text(string $text): string
+    {
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\s+/u', ' ', strip_tags($text));
+
+        return trim($text);
+    }
+}
+
+if (!function_exists('employer_ai_review_expand_item')) {
+    /**
+     * Tách chuỗi AI (có thể nhúng HTML list) thành các dòng plain text.
+     *
+     * @return list<string>
+     */
+    function employer_ai_review_expand_item(string $raw): array
+    {
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if (!preg_match('/<li[\s>]/i', $raw)) {
+            $plain = employer_ai_review_plain_text($raw);
+
+            return $plain !== '' ? [$plain] : [];
+        }
+
+        $prefix = trim(strip_tags((string) preg_replace('/<ul[\s>].*$/is', '', preg_replace('/<li[\s>].*$/is', '', $raw))));
+        $liTexts = [];
+        if (preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $raw, $matches)) {
+            foreach ($matches[1] as $li) {
+                $plain = employer_ai_review_plain_text((string) $li);
+                if ($plain !== '') {
+                    $liTexts[] = $plain;
+                }
+            }
+        }
+
+        if ($liTexts === []) {
+            $plain = employer_ai_review_plain_text($raw);
+
+            return $plain !== '' ? [$plain] : [];
+        }
+
+        $isQuestion = $prefix !== '' && (
+            str_ends_with(rtrim($prefix), '?')
+            || preg_match('/^(how|do|can|what|why|when|where|describe|tell|have you|are you)/i', $prefix) === 1
+        );
+        if ($isQuestion) {
+            $merged = rtrim($prefix, ' :') . ' ' . implode(', ', $liTexts);
+            if (!str_ends_with($merged, '?')) {
+                $merged .= '?';
+            }
+
+            return [$merged];
+        }
+
+        $items = [];
+        if ($prefix !== '') {
+            $items[] = rtrim($prefix, ':') . ':';
+        }
+        foreach ($liTexts as $text) {
+            $items[] = $text;
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('employer_ai_review_normalize_list')) {
+    /**
+     * @param mixed $items
+     * @return list<string>
+     */
+    function employer_ai_review_normalize_list($items): array
+    {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($items as $item) {
+            if (!is_string($item) && !is_numeric($item)) {
+                continue;
+            }
+            foreach (employer_ai_review_expand_item((string) $item) as $line) {
+                $out[] = $line;
+            }
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('employer_ai_review_card_for_ui')) {
+    /**
+     * @param array<string, mixed>|null $card
+     * @return array<string, mixed>|null
+     */
+    function employer_ai_review_card_for_ui(?array $card): ?array
+    {
+        if ($card === null) {
+            return null;
+        }
+
+        $card['summary'] = employer_ai_review_plain_text((string) ($card['summary'] ?? ''));
+
+        foreach (['strengths', 'concerns', 'evidence_highlights', 'suggested_interview_questions'] as $key) {
+            $card[$key] = employer_ai_review_normalize_list($card[$key] ?? []);
+        }
+
+        return $card;
+    }
+}
