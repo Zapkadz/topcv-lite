@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B3 code xong** — chờ test 「B3 pass」 |
+| **EMP-B** | 🔄 **B4 pass** — chờ **`「bắt đầu B5」`** |
 
 ---
 
@@ -18,7 +18,7 @@
 
 - **Plan:** `docs/phase-emp-b-plan.md`
 - **Checklist:** `docs/project-memory/phase-emp-b-checklist.md`
-- **Nhánh B3:** `feature/phase-emp-b-b3-ui` · base: B2
+- **Nhánh B4:** `feature/phase-emp-b-b4-review` · base: B3
 - **Integration docs:** `web-cv-jd-input-contract.md`, `php-web-ai-ranking-integration-guide.md`
 
 ### Thiết kế đã chốt
@@ -39,13 +39,13 @@
 - [x] **`「B1 pass」`** — config + build JD + `ai_screening_results`
 - [x] **`「B2 pass」`** — AiScreeningService + CLI → DB
 - [x] **`「B3 pass」`** — run_ai_screening + UI cột rank
-- [ ] **B4** — review modal + errors
-- [ ] **B5** — test → **`「EMP-B pass」`**
+- [x] **`「B4 pass」`** — review modal + error handling
+- [ ] **B5** — test full → **`「EMP-B pass」`**
 
 ### Quy trình
 
 ```text
-B3 pass; tiếp B4 khi user gửi 「bắt đầu B4」.
+B4 pass; tiếp B5 (test checklist plan §9) khi user gửi 「bắt đầu B5」.
 ```
 
 ---

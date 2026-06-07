@@ -23,9 +23,9 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Mục | Giá trị |
 |-----|---------|
 | Phase | EMP-B — AI candidate ranking (CLI) |
-| Nhánh | `feature/phase-emp-b-b3-ui` (prep → B0 → B1 → B2 → B3) |
+| Nhánh | `feature/phase-emp-b-b4-review` (prep → B0 → B1 → B2 → B3 → B4) |
 | User confirm plan | ✅ **`「xác nhận EMP-B」`** — 2026-06-06 |
-| **Khối hiện tại** | **B3 pass** — chờ **`「bắt đầu B4」`** |
+| **Khối hiện tại** | **B4 pass** — chờ **`「bắt đầu B5」`** |
 | Phụ thuộc | EMP-A ✅ · cv_snapshot_text prep ✅ |
 | Defer | FastAPI · VIP · AI trên hub screening |
 
@@ -48,7 +48,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | B1 | Config + build JD + DB results | ✅ | ✅ | ✅ | ✅ |
 | B2 | AiScreeningService + CLI | ✅ | ✅ | ✅ | ✅ |
 | B3 | run_ai_screening + UI cột rank | ✅ | ✅ | ✅ | ✅ |
-| B4 | Review modal + errors | ⬜ | ⬜ | ⬜ | ⬜ |
+| B4 | Review modal + errors | ✅ | ✅ | ✅ | ✅ |
 | B5 | Test full + regression | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ---
@@ -143,6 +143,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | 2026-06-06 | User **`「B1 pass」`** — config + JD text + ai_screening_results |
 | 2026-06-07 | User **`「B2 pass」`** — CLI → DB (job 8 / company 2) |
 | 2026-06-07 | User **`「B3 pass」`** — run_ai_screening + UI rank/score/rec |
+| 2026-06-07 | User **`「B4 pass」`** — review modal + Swal errors + normalize HTML |
 
 ---
 

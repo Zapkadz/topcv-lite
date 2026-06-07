@@ -40,7 +40,18 @@
     Swal.fire({
         icon: '<?= $_SESSION['swal_icon'] ?>',
         title: '<?= $_SESSION['swal_title'] ?>',
-        showConfirmButton: false, timer: 1500
+        <?php if(isset($_SESSION['swal_text'])): ?>
+        text: <?= json_encode((string) $_SESSION['swal_text'], JSON_UNESCAPED_UNICODE) ?>,
+        <?php unset($_SESSION['swal_text']); ?>
+        <?php endif; ?>
+        <?php if(!empty($_SESSION['swal_persistent'])): ?>
+        showConfirmButton: true,
+        confirmButtonColor: '#0d6efd',
+        <?php unset($_SESSION['swal_persistent']); ?>
+        <?php else: ?>
+        showConfirmButton: false,
+        timer: 2000,
+        <?php endif; ?>
     });
     <?php unset($_SESSION['swal_icon'], $_SESSION['swal_title']); ?>
     <?php endif; ?>
