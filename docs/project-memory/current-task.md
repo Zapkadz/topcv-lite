@@ -10,6 +10,17 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` (PR #12 CV-E, PR #13 CV-F) |
 | **EMP-A** | ✅ **`「EMP-A pass」`** — PR mở trên `main` |
+| **EMP-B prep** | 🔄 **`「chốt cv_snapshot_text」`** — migration + apply lưu text |
+
+---
+
+## Phase EMP-B prep — `cv_snapshot_text`
+
+- **Chốt:** Lúc apply lưu thêm `applications.cv_snapshot_text` (plain text từ `cv_snapshot_json`).
+- **Không dùng:** PDF upload / extract text (apply chỉ CV online).
+- **Migration:** `docs/migrations/migrate-phase-emp-b-cv-snapshot-text.php`
+- **Helper:** `includes/cv_snapshot_text.php`
+- **Tiếp:** EMP-B AI ranking đọc `cv_snapshot_text` trực tiếp.
 
 ---
 

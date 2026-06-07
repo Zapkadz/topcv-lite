@@ -34,6 +34,7 @@ CREATE TABLE `applications` (
   `cv_profile_id` int(11) DEFAULT NULL,
   `cv_snapshot` varchar(255) DEFAULT NULL,
   `cv_snapshot_json` longtext DEFAULT NULL,
+  `cv_snapshot_text` longtext DEFAULT NULL COMMENT 'Plain text CV bất biến lúc apply, cho AI screening',
   `cover_letter` text DEFAULT NULL,
   `status` enum('pending','viewed','interview','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
