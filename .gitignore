@@ -16,6 +16,10 @@ uploads/logos/*
 config/ai.local.php
 config/ai_screening.local.php
 
+# Runtime logs (EMP-B AI screening)
+storage/logs/*.log
+!storage/logs/.gitkeep
+
 # Báo cáo HTML export local
 Bao_Cao_Phan_Tich_TopCV_Lite.html
 Bao_Cao_Phan_Tich_TopCV_Lite_files/

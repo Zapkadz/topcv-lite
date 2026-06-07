@@ -10,7 +10,7 @@
 |-------|--------|
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
-| **EMP-B** | 🔄 **B2 code xong** — chờ test 「B2 pass」 |
+| **EMP-B** | 🔄 **B2 pass** — chờ **`「bắt đầu B3」`** |
 
 ---
 
@@ -37,7 +37,7 @@
 - [x] Prep committed + pushed
 - [x] B0 plan + checklist
 - [x] **`「B1 pass」`** — config + build JD + `ai_screening_results`
-- [ ] **B2** — AiScreeningService + CLI
+- [x] **`「B2 pass」`** — AiScreeningService + CLI → DB (test job 8 / company 2)
 - [ ] **B3** — run_ai_screening + UI
 - [ ] **B4** — review modal + errors
 - [ ] **B5** — test → **`「EMP-B pass」`**
@@ -45,7 +45,7 @@
 ### Quy trình
 
 ```text
-B1 pass; tiếp B2 khi user gửi 「bắt đầu B2」.
+B2 pass; tiếp B3 khi user gửi 「bắt đầu B3」.
 ```
 
 ---
