@@ -23,9 +23,9 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Mục | Giá trị |
 |-----|---------|
 | Phase | EMP-B — AI candidate ranking (CLI) |
-| Nhánh | `feature/phase-emp-b-b4-review` (prep → B0 → B1 → B2 → B3 → B4) |
+| Nhánh | `feature/phase-emp-b-b5-verify` (prep → B0 → … → B5) |
 | User confirm plan | ✅ **`「xác nhận EMP-B」`** — 2026-06-06 |
-| **Khối hiện tại** | **B4 pass** — chờ **`「bắt đầu B5」`** |
+| **Khối hiện tại** | **B5** — smoke CLI OK, chờ manual UI + **`「EMP-B pass」`** |
 | Phụ thuộc | EMP-A ✅ · cv_snapshot_text prep ✅ |
 | Defer | FastAPI · VIP · AI trên hub screening |
 
@@ -49,7 +49,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | B2 | AiScreeningService + CLI | ✅ | ✅ | ✅ | ✅ |
 | B3 | run_ai_screening + UI cột rank | ✅ | ✅ | ✅ | ✅ |
 | B4 | Review modal + errors | ✅ | ✅ | ✅ | ✅ |
-| B5 | Test full + regression | ⬜ | ⬜ | ⬜ | ⬜ |
+| B5 | Test full + regression | 🔄 | 🔲 | ⬜ | ⬜ |
 
 ---
 
@@ -129,6 +129,26 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 
 ## B5 — Hoàn thiện (~0.25 ngày)
 
+| # | Làm gì | Verify |
+|---|--------|--------|
+| B5.1 | Script smoke CLI | `php docs/migrations/_test-ai-screening-b5-verify.php --run` |
+| B5.2 | Manual UI plan §9 | Tick checklist bên dưới |
+| B5.3 | PR EMP-B | User **`「EMP-B pass」`** |
+
+### Checklist manual (plan §9)
+
+| # | Test | Cách verify | Auto |
+|---|------|-------------|------|
+| 1 | Migration `cv_snapshot_text` | Apply mới có text | ✅ B5.1 |
+| 2 | Job ≥1 UV có text → chạy AI | job 17 / company 2 (3 UV) | ✅ `--run` |
+| 3 | Bảng rank / score / rec | `job_candidates.php?job_id=17` | ✅ DB |
+| 4 | Modal review card | Nút **AI review** | 🔲 UI |
+| 5 | Employer B ≠ job A | Wrong company bị từ chối | ✅ B5.6 |
+| 6 | JD thiếu nội dung | Message rõ, không crash | ✅ B5.5 |
+| 7 | UV thiếu text → skip | job 8 (1/2 có text) — Swal skip count | 🔲 UI |
+| 8 | Python path sai | Sửa path sai → Swal + log | 🔲 UI |
+| 9 | Regression EMP-A | Status + CV modal | 🔲 UI |
+
 **Pass B5 / EMP-B:** Plan §9 tick hết → **`「EMP-B pass」`** → PR.
 
 ---
@@ -158,4 +178,12 @@ http://localhost/topcv_lite/employer/job_candidates.php?job_id=1
 
 # Python CLI (verify máy dev)
 C:\SEMANTIC_SKILLS_RESUME\.venv\Scripts\python.exe C:\SEMANTIC_SKILLS_RESUME\main.py --help
+
+# B5 smoke (automated + optional CLI run)
+php docs/migrations/_test-ai-screening-b5-verify.php
+php docs/migrations/_test-ai-screening-b5-verify.php --run
+
+# UI test job gợi ý
+http://localhost/topcv_lite/employer/job_candidates.php?job_id=17
+http://localhost/topcv_lite/employer/job_candidates.php?job_id=8
 ```
