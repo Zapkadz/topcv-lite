@@ -182,4 +182,83 @@ class ApplicationService
 
         return is_array($rows) ? $rows : [];
     }
+
+    /**
+     * Employer: tin thuộc company, approved, chưa xóa mềm (EMP-A).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getJobOwnedByCompany(PDO $conn, int $jobId, int $companyId): ?array
+    {
+        if ($jobId <= 0 || $companyId <= 0) {
+            return null;
+        }
+
+        $stmt = $conn->prepare(
+            'SELECT j.id, j.title, j.deadline, j.status, j.deleted_at, j.company_id, j.created_at
+             FROM jobs j
+             WHERE j.id = ?
+               AND j.company_id = ?
+               AND j.status = \'approved\'
+               AND ' . job_sql_not_deleted('j') . '
+             LIMIT 1'
+        );
+        $stmt->execute([$jobId, $companyId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function listApplicationsForJob(PDO $conn, int $jobId, int $companyId): array
+    {
+        if (self::getJobOwnedByCompany($conn, $jobId, $companyId) === null) {
+            return [];
+        }
+
+        $stmt = $conn->prepare(
+            'SELECT app.id AS app_id, app.created_at AS time_apply, app.status,
+                    app.cv_snapshot, app.cv_snapshot_json, app.cover_letter,
+                    u.fullname, u.email, u.phone
+             FROM applications app
+             INNER JOIN jobs j ON app.job_id = j.id
+             INNER JOIN candidates cand ON app.candidate_id = cand.id
+             INNER JOIN users u ON cand.user_id = u.id
+             WHERE app.job_id = ?
+               AND j.company_id = ?
+             ORDER BY
+               CASE app.status WHEN \'pending\' THEN 0 ELSE 1 END,
+               app.created_at DESC'
+        );
+        $stmt->execute([$jobId, $companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * @return array{ok: bool, message: string}
+     */
+    public static function updateApplicationStatusForCompany(
+        PDO $conn,
+        int $appId,
+        int $companyId,
+        string $status
+    ): array {
+        $allowed = ['pending', 'viewed', 'interview', 'rejected'];
+        if (!in_array($status, $allowed, true)) {
+            return ['ok' => false, 'message' => 'Trạng thái không hợp lệ.'];
+        }
+
+        if (self::getApplicationForCompany($conn, $appId, $companyId) === null) {
+            return ['ok' => false, 'message' => 'Hồ sơ không tồn tại hoặc bạn không có quyền.'];
+        }
+
+        $stmt = $conn->prepare('UPDATE applications SET status = ? WHERE id = ?');
+        $stmt->execute([$status, $appId]);
+
+        return ['ok' => true, 'message' => 'Đã cập nhật trạng thái hồ sơ!'];
+    }
 }

@@ -90,3 +90,16 @@ if (!function_exists('employer_screening_job_badge_html')) {
         return '<span class="badge bg-success">Đang nhận hồ sơ</span>';
     }
 }
+
+if (!function_exists('employer_application_status_badge_html')) {
+    function employer_application_status_badge_html(string $status): string
+    {
+        return match ($status) {
+            'pending' => '<span class="badge rounded-pill bg-warning text-dark">Chờ duyệt</span>',
+            'viewed' => '<span class="badge rounded-pill bg-info">Đã xem</span>',
+            'interview' => '<span class="badge rounded-pill bg-success">Hẹn PV</span>',
+            'rejected' => '<span class="badge rounded-pill bg-secondary">Từ chối</span>',
+            default => '<span class="badge rounded-pill bg-light text-dark border">' . htmlspecialchars($status) . '</span>',
+        };
+    }
+}
