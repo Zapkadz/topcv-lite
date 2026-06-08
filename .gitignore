@@ -15,6 +15,7 @@ uploads/logos/*
 /composer.phar
 config/ai.local.php
 config/ai_screening.local.php
+config/ai_taxonomy.local.php
 
 # Runtime logs (EMP-B AI screening)
 storage/logs/*.log

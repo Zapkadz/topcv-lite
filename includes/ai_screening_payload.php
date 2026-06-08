@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/ai_screening_job_text.php';
+require_once __DIR__ . '/ai_taxonomy_config.php';
 
 if (!function_exists('ai_screening_build_job_payload')) {
     /**
@@ -96,11 +97,18 @@ if (!function_exists('ai_screening_build_screening_payload')) {
             $appMap[$appId] = $app;
         }
 
+        $payload = [
+            'job' => ai_screening_build_job_payload($job),
+            'candidates' => $candidates,
+        ];
+
+        $taxonomyPath = ai_taxonomy_effective_screening_path();
+        if ($taxonomyPath !== '' && is_file($taxonomyPath)) {
+            $payload['taxonomy_path'] = $taxonomyPath;
+        }
+
         return [
-            'payload' => [
-                'job' => ai_screening_build_job_payload($job),
-                'candidates' => $candidates,
-            ],
+            'payload' => $payload,
             'skipped' => $skipped,
             'app_map' => $appMap,
         ];
