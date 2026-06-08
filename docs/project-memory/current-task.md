@@ -11,7 +11,7 @@
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
 | **EMP-B** | ✅ merged `main` (PR #20 + #21 API) |
-| **Profile cleanup** | ✅ **P1 pass** — chờ merge PR / **P2** |
+| **Profile cleanup** | ✅ P1 pass · **P2 code xong** — chờ `「P2 pass」` / merge PR |
 
 ---
 
@@ -25,7 +25,8 @@
 - [x] Phân tích + đề xuất P1/P2
 - [x] **P1** — gỡ upload PDF; hub CV online; banner legacy `cv_path`
 - [x] **`「P1 pass」`** — 2026-06-08
-- [ ] **P2** — migration/deprecate `cv_path` DB (backlog)
+- [x] **P2** — migration `cv_path` → `cv_profiles.attachment_path` (`migrate-phase-profile-cv-path.php`)
+- [ ] **`「P2 pass」`** — checkpoint doc
 - [ ] Merge PR → `main`
 
 ### Quy trình
