@@ -274,7 +274,7 @@ class ApplicationService
 
         $stmt = $conn->prepare(
             'SELECT app.id AS app_id, app.candidate_id, app.cv_snapshot_text, app.status,
-                    app.created_at AS time_apply, u.fullname
+                    app.created_at AS time_apply, u.fullname, u.email, u.phone
              FROM applications app
              INNER JOIN jobs j ON app.job_id = j.id
              INNER JOIN candidates cand ON app.candidate_id = cand.id
