@@ -1,6 +1,6 @@
 # Current Task — TopCV Lite
 
-> Cập nhật: **2026-06-08**
+> Cập nhật: **2026-06-09**
 
 ---
 
@@ -11,7 +11,7 @@
 | CV-A … CV-F | ✅ merged `main` |
 | **EMP-A** | ✅ merged `main` (PR #14) |
 | **EMP-B** | ✅ merged `main` (PR #20 + #21 API) |
-| **Profile cleanup** | ✅ P1 pass · **P2 code xong** — chờ `「P2 pass」` / merge PR |
+| **Profile cleanup** | ✅ **P1 + P2 pass** — chờ merge PR → `main` |
 
 ---
 
@@ -26,14 +26,19 @@
 - [x] **P1** — gỡ upload PDF; hub CV online; banner legacy `cv_path`
 - [x] **`「P1 pass」`** — 2026-06-08
 - [x] **P2** — migration `cv_path` → `cv_profiles.attachment_path` (`migrate-phase-profile-cv-path.php`)
-- [ ] **`「P2 pass」`** — checkpoint doc
+- [x] **`「P2 pass」`** — 2026-06-09
 - [ ] Merge PR → `main`
 
 ### Quy trình
 
 ```text
-P1 pass → merge PR profile-p1-cleanup → (tuỳ chọn) P2 cv_path migration.
+P1 pass → P2 pass → merge PR feature/profile-p1-cleanup → main.
 ```
+
+### P2 đã verify
+
+- Dry-run + migration CLI: 4/4 `cv_path` → `attachment_path`, pending = 0
+- `profile.php`: banner legacy không còn sau migrate
 
 ---
 
