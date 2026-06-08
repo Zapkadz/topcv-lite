@@ -68,7 +68,7 @@ if (!function_exists('ai_screening_log')) {
 
 if (!function_exists('ai_screening_run_cli')) {
     /**
-     * @return array{ok: bool, exit_code: int, output: string, message: string}
+     * @return array{ok: bool, exit_code: int, output: string, message: string, detail?: string}
      */
     function ai_screening_run_cli(string $jdPath, string $cvDir, string $outputJson): array
     {
@@ -82,9 +82,21 @@ if (!function_exists('ai_screening_run_cli')) {
         }
 
         $cfg = ai_screening_config();
-        $timeout = (int) ($cfg['cli_timeout_seconds'] ?? 120);
+        $timeout = (int) ($cfg['cli_timeout_seconds'] ?? 180);
         if ($timeout > 0) {
-            @set_time_limit($timeout + 15);
+            @set_time_limit($timeout + 30);
+        }
+
+        $taxonomyPath = trim((string) ($cfg['taxonomy_path'] ?? ''));
+        if (!empty($cfg['enable_embedding'])) {
+            if ($taxonomyPath === '' || !is_file($taxonomyPath)) {
+                return [
+                    'ok' => false,
+                    'exit_code' => 1,
+                    'output' => '',
+                    'message' => 'Thiếu file taxonomy (đường dẫn tuyệt đối): ' . ($taxonomyPath !== '' ? $taxonomyPath : '(chưa cấu hình)'),
+                ];
+            }
         }
 
         $cmd = ai_screening_quote_path((string) $cfg['python_path'])
@@ -92,15 +104,30 @@ if (!function_exists('ai_screening_run_cli')) {
             . ' --jd ' . ai_screening_quote_path($jdPath)
             . ' --cv-dir ' . ai_screening_quote_path($cvDir);
 
-        $taxonomyPath = trim((string) ($cfg['taxonomy_path'] ?? ''));
         if ($taxonomyPath !== '' && is_file($taxonomyPath)) {
             $cmd .= ' --taxonomy ' . ai_screening_quote_path($taxonomyPath);
         }
 
         $cmd .= ' --output-json ' . ai_screening_quote_path($outputJson);
 
-        ai_screening_log('CLI: ' . $cmd);
+        if (!empty($cfg['enable_embedding'])) {
+            $model = trim((string) ($cfg['embedding_model'] ?? 'BAAI/bge-m3'));
+            $cmd .= ' --enable-embedding';
+            if ($model !== '') {
+                $cmd .= ' --embedding-model ' . ai_screening_quote_path($model);
+            }
+            if (!empty($cfg['embedding_local_only'])) {
+                $cmd .= ' --embedding-local-only';
+            }
+        }
 
+        $cliLogPath = dirname($outputJson) . DIRECTORY_SEPARATOR . 'cli.log';
+        ai_screening_log('CLI: ' . $cmd);
+        ai_screening_log('output_json=' . $outputJson);
+
+        if (!empty($cfg['hf_hub_offline'])) {
+            putenv('HF_HUB_OFFLINE=1');
+        }
         putenv('PYTHONIOENCODING=utf-8');
         putenv('PYTHONUTF8=1');
 
@@ -108,6 +135,9 @@ if (!function_exists('ai_screening_run_cli')) {
         $exitCode = 1;
         exec($cmd . ' 2>&1', $outputLines, $exitCode);
         $output = implode("\n", $outputLines);
+
+        $logBlock = '[' . date('Y-m-d H:i:s') . "] exit={$exitCode}\nCMD: {$cmd}\n--- output ---\n{$output}\n\n";
+        @file_put_contents($cliLogPath, $logBlock, FILE_APPEND | LOCK_EX);
 
         if ($exitCode !== 0) {
             ai_screening_log('CLI failed exit=' . $exitCode . ' output=' . substr($output, 0, 2000));
@@ -117,8 +147,8 @@ if (!function_exists('ai_screening_run_cli')) {
                 'ok' => false,
                 'exit_code' => $exitCode,
                 'output' => $output,
-                'message' => 'Python AI screening thất bại (mã ' . $exitCode . '). Kiểm tra cấu hình Python hoặc log.',
-                'detail' => $detail !== '' ? $detail : 'Xem chi tiết trong storage/logs/ai_screening.log.',
+                'message' => 'AI CLI failed. Please try again later.',
+                'detail' => $detail !== '' ? $detail : 'Xem storage/logs/ai_screening.log và cli.log trong runtime folder.',
             ];
         }
 
@@ -127,8 +157,8 @@ if (!function_exists('ai_screening_run_cli')) {
                 'ok' => false,
                 'exit_code' => $exitCode,
                 'output' => $output,
-                'message' => 'Không tìm thấy file kết quả JSON sau khi chạy AI.',
-                'detail' => ai_screening_cli_user_detail($output),
+                'message' => 'AI CLI failed. Please try again later.',
+                'detail' => 'Không tìm thấy ranking_results.json sau khi chạy CLI.',
             ];
         }
 

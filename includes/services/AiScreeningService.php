@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../ai_screening_config.php';
 require_once __DIR__ . '/../ai_screening_job_text.php';
 require_once __DIR__ . '/../ai_screening_runtime.php';
+require_once __DIR__ . '/../ai_screening_payload.php';
+require_once __DIR__ . '/../ai_screening_api.php';
 require_once __DIR__ . '/../schema_ai_screening.php';
 require_once __DIR__ . '/../schema_applications_cv.php';
 require_once __DIR__ . '/ApplicationService.php';
@@ -49,11 +51,115 @@ class AiScreeningService
             return ['ok' => false, 'message' => $jdError];
         }
 
-        $jdText = ai_screening_build_job_text($job);
         $applications = ApplicationService::listApplicationsForAiScreening($conn, $jobId, $companyId);
         if ($applications === []) {
             return ['ok' => false, 'message' => 'Chưa có ứng viên nào cho tin này.'];
         }
+
+        return ai_screening_driver() === 'api'
+            ? self::runForJobViaApi($conn, $jobId, $job, $applications)
+            : self::runForJobViaCli($conn, $jobId, $job, $applications);
+    }
+
+    /**
+     * @param array<string, mixed> $job
+     * @param list<array<string, mixed>> $applications
+     * @return array{ok: bool, message: string, run_id?: string, ranked_count?: int, skipped_count?: int, detail?: string}
+     */
+    private static function runForJobViaApi(PDO $conn, int $jobId, array $job, array $applications): array
+    {
+        $built = ai_screening_build_screening_payload($job, $applications);
+        $skipped = (int) $built['skipped'];
+        $appMap = $built['app_map'];
+
+        if ($built['payload']['candidates'] === []) {
+            $detail = $skipped > 0
+                ? 'Các hồ sơ cũ (PDF) hoặc apply trước migration không có cv_snapshot_text.'
+                : null;
+
+            return [
+                'ok' => false,
+                'message' => 'Không có ứng viên nào có CV text hợp lệ để chạy AI.',
+                'detail' => $detail,
+                'skipped_count' => $skipped,
+            ];
+        }
+
+        if (!ai_screening_check_api_health()) {
+            ai_screening_log('API health check failed job_id=' . $jobId);
+
+            return [
+                'ok' => false,
+                'message' => 'Không thể kết nối AI service. Vui lòng bật Python API và thử lại.',
+                'detail' => 'Chạy: uvicorn api:app --host 127.0.0.1 --port 8000 trong SEMANTIC_SKILLS_RESUME',
+            ];
+        }
+
+        $api = ai_screening_call_api($built['payload']);
+        if (!$api['ok'] || !is_array($api['data'])) {
+            ai_screening_log(
+                'API screening failed job_id=' . $jobId
+                . ' http=' . ($api['http_code'] ?? 0)
+                . ' err=' . ($api['error'] ?? '')
+                . ' body=' . substr((string) ($api['response_body'] ?? ''), 0, 1500)
+            );
+
+            return [
+                'ok' => false,
+                'message' => 'Không thể chạy AI screening lúc này. Vui lòng kiểm tra AI service hoặc thử lại sau.',
+                'detail' => ai_screening_cli_user_detail((string) ($api['response_body'] ?? $api['error'] ?? '')),
+                'skipped_count' => $skipped,
+            ];
+        }
+
+        $runId = 'api-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+
+        try {
+            $saved = self::saveResultsFromApiData($conn, $jobId, $api['data'], $runId, $appMap);
+        } catch (Throwable $e) {
+            ai_screening_log('saveResults API: ' . $e->getMessage());
+
+            return [
+                'ok' => false,
+                'message' => 'Không thể chạy AI screening lúc này. Vui lòng kiểm tra AI service hoặc thử lại sau.',
+                'detail' => 'Lưu kết quả thất bại — xem storage/logs/ai_screening.log.',
+                'run_id' => $runId,
+                'skipped_count' => $skipped,
+            ];
+        }
+
+        if ($saved === 0) {
+            return [
+                'ok' => false,
+                'message' => 'Không thể chạy AI screening lúc này. Vui lòng kiểm tra AI service hoặc thử lại sau.',
+                'detail' => 'API trả về nhưng không map được application_id.',
+                'run_id' => $runId,
+                'skipped_count' => $skipped,
+            ];
+        }
+
+        $msg = 'Đã xếp hạng ' . $saved . ' ứng viên bằng AI.';
+        if ($skipped > 0) {
+            $msg .= ' (' . $skipped . ' UV bỏ qua vì thiếu CV text)';
+        }
+
+        return [
+            'ok' => true,
+            'message' => $msg,
+            'run_id' => $runId,
+            'ranked_count' => $saved,
+            'skipped_count' => $skipped,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $job
+     * @param list<array<string, mixed>> $applications
+     * @return array{ok: bool, message: string, run_id?: string, ranked_count?: int, skipped_count?: int, runtime_path?: string, detail?: string}
+     */
+    private static function runForJobViaCli(PDO $conn, int $jobId, array $job, array $applications): array
+    {
+        $jdText = ai_screening_build_job_text($job);
 
         try {
             $prepared = self::prepareRuntimeFiles($jobId, $jdText, $applications);
@@ -102,7 +208,7 @@ class AiScreeningService
                 $prepared['app_map']
             );
         } catch (Throwable $e) {
-            ai_screening_log('saveResults: ' . $e->getMessage());
+            ai_screening_log('saveResults CLI: ' . $e->getMessage());
 
             return [
                 'ok' => false,
@@ -140,6 +246,60 @@ class AiScreeningService
     }
 
     /**
+     * @param array<int, array<string, mixed>> $appMap
+     */
+    public static function saveResultsFromApiData(
+        PDO $conn,
+        int $jobId,
+        array $apiData,
+        string $runId,
+        array $appMap
+    ): int {
+        $candidates = $apiData['candidates'] ?? [];
+        if (!is_array($candidates)) {
+            throw new RuntimeException('API response thiếu mảng candidates.');
+        }
+
+        $saved = 0;
+
+        foreach ($candidates as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+
+            $appId = (int) ($candidate['application_id'] ?? 0);
+            if ($appId <= 0 || !isset($appMap[$appId])) {
+                ai_screening_log('Skip API result — missing application_id: ' . json_encode($candidate, JSON_UNESCAPED_UNICODE));
+                continue;
+            }
+
+            $app = $appMap[$appId];
+            $scores = $candidate['scores'] ?? null;
+            $reviewCard = $candidate['review_card'] ?? null;
+
+            AiScreeningRepository::upsert($conn, [
+                'job_id' => $jobId,
+                'application_id' => $appId,
+                'candidate_id' => (int) ($candidate['candidate_id'] ?? $app['candidate_id'] ?? 0),
+                'ai_rank' => isset($candidate['rank']) ? (int) $candidate['rank'] : null,
+                'final_score' => isset($candidate['final_score']) ? (int) round((float) $candidate['final_score']) : null,
+                'recommendation' => isset($candidate['recommendation']) ? (string) $candidate['recommendation'] : null,
+                'scores_json' => is_array($scores)
+                    ? json_encode($scores, JSON_UNESCAPED_UNICODE)
+                    : null,
+                'review_card_json' => is_array($reviewCard)
+                    ? json_encode($reviewCard, JSON_UNESCAPED_UNICODE)
+                    : null,
+                'raw_result_json' => json_encode($candidate, JSON_UNESCAPED_UNICODE),
+                'run_id' => $runId,
+            ]);
+            $saved++;
+        }
+
+        return $saved;
+    }
+
+    /**
      * @param list<array<string, mixed>> $applications
      * @return array{
      *   run_id: string,
@@ -160,7 +320,7 @@ class AiScreeningService
         $jdPath = $runPath . DIRECTORY_SEPARATOR . 'jd.txt';
         $outputJson = $runPath . DIRECTORY_SEPARATOR . 'ranking_results.json';
 
-        if (file_put_contents($jdPath, $jdText) === false) {
+        if (file_put_contents($jdPath, $jdText, LOCK_EX) === false) {
             throw new RuntimeException('Không ghi được jd.txt');
         }
 
@@ -180,7 +340,7 @@ class AiScreeningService
 
             $filename = ai_screening_cv_filename($appId, $candidateId);
             $filePath = $cvDir . DIRECTORY_SEPARATOR . $filename;
-            if (file_put_contents($filePath, $cvText) === false) {
+            if (file_put_contents($filePath, $cvText, LOCK_EX) === false) {
                 $skipped++;
                 continue;
             }
