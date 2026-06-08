@@ -159,6 +159,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <a href="moderation-log.php" class="nav-link <?= $current_page == 'moderation-log.php' ? 'active' : '' ?>">
                 <i class="fas fa-clipboard-list"></i> Nhật ký duyệt
             </a>
+            <?php
+            $taxonomyNavPages = ['ai_taxonomy_suggestions.php', 'ai_taxonomy_suggestion_import.php', 'ai_taxonomy_suggestion_review.php'];
+            $taxonomyNavActive = in_array($current_page, $taxonomyNavPages, true);
+            ?>
+            <a href="ai_taxonomy_suggestions.php" class="nav-link <?= $taxonomyNavActive ? 'active' : '' ?>">
+                <i class="fas fa-tags"></i> Taxonomy AI
+            </a>
             <a href="../logout.php" class="nav-link text-danger mt-4">
                 <i class="fas fa-sign-out-alt"></i> Đăng xuất
             </a>

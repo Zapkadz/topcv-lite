@@ -87,7 +87,13 @@ if (!function_exists('ai_screening_run_cli')) {
             @set_time_limit($timeout + 30);
         }
 
-        $taxonomyPath = trim((string) ($cfg['taxonomy_path'] ?? ''));
+        if (!function_exists('ai_taxonomy_effective_screening_path')) {
+            require_once __DIR__ . '/ai_taxonomy_config.php';
+        }
+        $taxonomyPath = ai_taxonomy_effective_screening_path();
+        if ($taxonomyPath === '') {
+            $taxonomyPath = trim((string) ($cfg['taxonomy_path'] ?? ''));
+        }
         if (!empty($cfg['enable_embedding'])) {
             if ($taxonomyPath === '' || !is_file($taxonomyPath)) {
                 return [
