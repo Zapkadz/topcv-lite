@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . '/cv_rules.php';
 require_once __DIR__ . '/ai_config.php';
 require_once __DIR__ . '/cv_import_rules.php';
 require_once __DIR__ . '/services/CvParseService.php';
@@ -69,7 +70,7 @@ if (!function_exists('cv_import_run_parse_and_redirect')) {
         }
 
         cv_import_commit_draft_from_parse($userId, $relativePath, $parseResult);
-        header('Location: cv-builder.php?from_import=1');
+        header('Location: ' . cv_template_picker_url(['from_import' => '1']));
         exit();
     }
 }

@@ -169,7 +169,7 @@ include '../includes/header.php';
     </div>
 
     <p class="text-muted small mt-4 mb-0 text-center">
-        Sau khi chọn, hệ thống sẽ phân tích PDF (có thể mất 10–30 giây) rồi chuyển sang màn chỉnh sửa CV.
+        Sau khi chọn, hệ thống sẽ phân tích PDF (có thể mất 10–30 giây) rồi chuyển sang chọn mẫu CV.
     </p>
 </div>
 

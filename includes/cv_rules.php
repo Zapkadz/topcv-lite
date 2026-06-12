@@ -103,6 +103,52 @@ if (!function_exists('cv_normalize_template_key')) {
     }
 }
 
+if (!function_exists('cv_template_page_url')) {
+    /**
+     * @param array<string, scalar|null> $query
+     */
+    function cv_template_page_url(string $page, array $query = []): string
+    {
+        $parts = [];
+        foreach ($query as $name => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $parts[] = rawurlencode((string) $name) . '=' . rawurlencode((string) $value);
+        }
+
+        return $page . ($parts !== [] ? '?' . implode('&', $parts) : '');
+    }
+}
+
+if (!function_exists('cv_template_picker_url')) {
+    /**
+     * @param array<string, scalar|null> $query
+     */
+    function cv_template_picker_url(array $query = []): string
+    {
+        return cv_template_page_url('cv-templates.php', $query);
+    }
+}
+
+if (!function_exists('cv_builder_resolve_initial_template_key')) {
+    function cv_builder_resolve_initial_template_key(
+        bool $isEdit,
+        ?string $requestedTemplate,
+        ?string $profileTemplate
+    ): string {
+        if ($isEdit) {
+            return cv_normalize_template_key((string) ($profileTemplate ?: 'classic'));
+        }
+        if ($requestedTemplate !== null && trim($requestedTemplate) !== '') {
+            return cv_normalize_template_key($requestedTemplate);
+        }
+        $stored = trim((string) ($profileTemplate ?? ''));
+
+        return $stored !== '' ? cv_normalize_template_key($stored) : 'classic';
+    }
+}
+
 if (!function_exists('cv_row_single_month_year')) {
     /**
      * @param array<string, mixed> $row
