@@ -1,19 +1,62 @@
 <?php
 
+if (!function_exists('ai_screening_html_to_plain_text')) {
+    /**
+     * Chuyển HTML từ CKEditor (jobs.description/requirements/benefits) sang plain text có xuống dòng.
+     * Giữ nội dung chữ; mỗi <li>, <p>, heading thành dòng riêng để AI parse requirements.
+     */
+    function ai_screening_html_to_plain_text(?string $html): string
+    {
+        if ($html === null || trim($html) === '') {
+            return '';
+        }
+
+        $text = (string) $html;
+        if (!preg_match('/<[^>]+>/', $text)) {
+            return trim(str_replace(["\r\n", "\r"], "\n", $text));
+        }
+
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+
+        // Block / list boundaries → newline trước khi strip tags.
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $text) ?? $text;
+        $text = preg_replace('/<\/(p|div|li|h[1-6]|tr|blockquote)>/i', "\n", $text) ?? $text;
+        $text = preg_replace('/<\/(ul|ol|table|thead|tbody)>/i', "\n", $text) ?? $text;
+        $text = preg_replace('/<li[^>]*>/i', "\n", $text) ?? $text;
+
+        $text = strip_tags($text);
+        $text = str_replace("\xc2\xa0", ' ', $text); // nbsp sau decode
+
+        $lines = preg_split('/\n+/', $text) ?: [];
+        $out = [];
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+            $line = preg_replace('/\s+/u', ' ', $line) ?? $line;
+            if ($line !== '') {
+                $out[] = $line;
+            }
+        }
+
+        return implode("\n", $out);
+    }
+}
+
 if (!function_exists('ai_screening_split_text_lines')) {
     /**
      * Tách block text thành các dòng bullet (bỏ rỗng, trim).
+     * Tự làm sạch HTML từ DB trước khi tách.
      *
      * @return list<string>
      */
     function ai_screening_split_text_lines(?string $text): array
     {
-        if ($text === null || trim($text) === '') {
+        $plain = ai_screening_html_to_plain_text($text);
+        if ($plain === '') {
             return [];
         }
 
-        $normalized = str_replace(["\r\n", "\r"], "\n", $text);
-        $parts = preg_split('/\n+/', $normalized) ?: [];
+        $parts = preg_split('/\n+/', $plain) ?: [];
         $lines = [];
 
         foreach ($parts as $part) {

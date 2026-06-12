@@ -34,7 +34,7 @@ if (!function_exists('ai_screening_build_job_payload')) {
             'nice_to_have' => ai_screening_split_text_lines($job['benefits'] ?? null),
             'responsibilities' => ai_screening_split_text_lines($job['description'] ?? null),
             'minimum_experience_years' => null,
-            'description' => trim((string) ($job['description'] ?? '')),
+            'description' => ai_screening_html_to_plain_text($job['description'] ?? null),
         ];
     }
 }
