@@ -64,7 +64,7 @@ include '../includes/header.php';
         </div>
         <?php if ($schemaReady): ?>
             <div class="d-flex flex-wrap gap-2">
-                <a href="cv-builder.php" class="btn btn-success fw-bold">
+                <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-success fw-bold">
                     <i class="fas fa-plus"></i> Tạo CV mới
                 </a>
                 <a href="cv-import.php" class="btn btn-outline-success fw-bold">
@@ -83,7 +83,7 @@ include '../includes/header.php';
                 <h5 class="fw-bold">Chưa có CV online</h5>
                 <p class="text-muted">Tạo CV đầu tiên để nhà tuyển dụng đọc trực tiếp trên web.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <a href="cv-builder.php" class="btn btn-success fw-bold">Tạo CV thủ công</a>
+                    <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-success fw-bold">Tạo CV thủ công</a>
                     <a href="cv-import.php" class="btn btn-outline-success fw-bold">Tạo CV từ PDF</a>
                 </div>
             </div>

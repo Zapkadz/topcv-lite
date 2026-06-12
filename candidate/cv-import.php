@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/schema_cvs.php';
+require_once __DIR__ . '/../includes/cv_rules.php';
 require_once __DIR__ . '/../includes/upload_validate.php';
 require_once __DIR__ . '/../includes/cv_import_rules.php';
 require_once __DIR__ . '/../includes/cv_import_pdf_quality.php';
@@ -108,7 +109,7 @@ include '../includes/header.php';
                         <button type="submit" class="btn btn-success fw-bold" id="cv-import-submit">
                             <i class="fas fa-upload"></i> Upload và chọn cách phân tích
                         </button>
-                        <a href="cv-builder.php" class="btn btn-outline-secondary">Tạo CV thủ công</a>
+                        <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-outline-secondary">Tạo CV thủ công</a>
                     </div>
                 </form>
             </div>

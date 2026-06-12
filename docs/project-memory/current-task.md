@@ -12,13 +12,23 @@
 | **EMP-A** | ✅ merged `main` (PR #14) |
 | **EMP-B** | ✅ merged `main` (PR #20 + #21 API) |
 | **Profile cleanup** | ✅ merged `main` (PR #22) |
-| **Admin Taxonomy** | ✅ **T pass** — chờ merge PR → `main` |
+| **Admin Taxonomy** | ✅ merged `main` (PR #23) |
+| **CV-G** | ✅ Refactor xong — chờ test lại / commit |
 
 ---
 
-## Admin Taxonomy Suggestions (Phase 15 web)
+## CV-G — Template picker trước CV builder
 
-- **Nhánh:** `feature/admin-taxonomy-suggestions`
+- **Plan:** `docs/phase-cv-g-plan.md`
+- **Refactor plan:** `docs/refactoring/phase-CV-G-refactoring-plan.md` (đã refactor)
+- **Nhánh:** `feature/cv-g-template-picker`
+- **Trạng thái:** Test pass + refactor xong — chờ test smoke / commit
+
+---
+
+## Admin Taxonomy Suggestions (đã đóng)
+
+- **Merge:** PR #23 @ `7a4db0a`
 - **Prompt:** `docs/cursor-prompt-topcv-lite-admin-taxonomy-suggestions.md`
 - **Mục tiêu:** Admin import/duyệt taxonomy suggestions → DB → export `skills_merged.json` → AI screening dùng merged path
 
@@ -30,7 +40,7 @@
 - [x] **T3** — AI screening: `taxonomy_path` trong API payload + CLI fallback merged path
 - [x] Test manual — migration, export merged 57 skills, schema OK
 - [x] **`「T pass」`** — 2026-06-09
-- [ ] Merge PR → `main`
+- [x] Merge PR #23 → `main` @ `7a4db0a`
 
 ### File chính
 

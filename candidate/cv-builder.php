@@ -23,6 +23,10 @@ $isEdit = $cvId > 0;
 $fromImport = !$isEdit
     && isset($_GET['from_import'])
     && (string) $_GET['from_import'] === '1';
+$requestedTemplate = null;
+if (!$isEdit && isset($_GET['template']) && trim((string) $_GET['template']) !== '') {
+    $requestedTemplate = cv_normalize_template_key((string) $_GET['template']);
+}
 $schemaReady = cvs_schema_ready($conn);
 $importAttachmentPath = '';
 $importMeta = ['parse_source' => '', 'warnings' => []];
@@ -155,9 +159,11 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $profile['phone'] = cv_normalize_phone((string) ($profile['phone'] ?? ''));
-    if (empty($profile['template_key'])) {
-        $profile['template_key'] = 'classic';
-    }
+    $profile['template_key'] = cv_builder_resolve_initial_template_key(
+        $isEdit,
+        $requestedTemplate,
+        $profile['template_key'] ?? null
+    );
 
     $stmt = $conn->prepare('SELECT fullname, email, phone FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$userId]);
@@ -186,6 +192,11 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $references = is_array($draftChildren['references'] ?? null) ? $draftChildren['references'] : [];
     $projects = is_array($draftChildren['projects'] ?? null) ? $draftChildren['projects'] : [];
 } elseif ($schemaReady && !$isEdit && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $profile['template_key'] = cv_builder_resolve_initial_template_key(
+        $isEdit,
+        $requestedTemplate,
+        $profile['template_key'] ?? null
+    );
     $stmt = $conn->prepare('SELECT fullname, email, phone FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$userId]);
     $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -690,6 +701,9 @@ include '../includes/header.php';
                             <option value="classic" <?= $currentTemplate === 'classic' ? 'selected' : '' ?>>Classic — tiêu đề xanh, bố cục dọc</option>
                             <option value="modern" <?= $currentTemplate === 'modern' ? 'selected' : '' ?>>Modern — sidebar xanh, nội dung trắng</option>
                         </select>
+                        <?php if (!$isEdit && $requestedTemplate !== null): ?>
+                            <small class="text-muted">Đã chọn mẫu ở bước trước — bạn vẫn có thể đổi tại đây.</small>
+                        <?php endif; ?>
                     </div>
                 </div>
 

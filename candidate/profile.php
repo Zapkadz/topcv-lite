@@ -101,7 +101,7 @@ include '../includes/header.php';
                     <?php if ($primaryCv === null): ?>
                         <p class="text-muted mb-3">Chưa có CV online. Tạo CV có cấu trúc để ứng tuyển và được AI đánh giá chính xác hơn.</p>
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="cv-builder.php" class="btn btn-success btn-sm fw-bold">
+                            <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-success btn-sm fw-bold">
                                 <i class="fas fa-plus"></i> Tạo CV mới
                             </a>
                             <a href="cv-import.php" class="btn btn-outline-success btn-sm fw-bold">
@@ -140,7 +140,7 @@ include '../includes/header.php';
                         <div class="d-flex flex-wrap gap-2 mb-3">
                             <a href="cv-builder.php?id=<?= $primaryId ?>" class="btn btn-success btn-sm fw-bold">Sửa CV</a>
                             <a href="cv-manage.php" class="btn btn-outline-success btn-sm">Tất cả CV (<?= count($onlineCvs) ?>)</a>
-                            <a href="cv-builder.php" class="btn btn-outline-secondary btn-sm">Tạo CV mới</a>
+                            <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-outline-secondary btn-sm">Tạo CV mới</a>
                         </div>
                         <?php if (count($onlineCvs) > 1): ?>
                             <ul class="list-group list-group-flush small">
