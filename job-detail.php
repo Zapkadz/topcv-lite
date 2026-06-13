@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/services/SavedJobService.php';
 require_once __DIR__ . '/includes/schema_cvs.php';
 require_once __DIR__ . '/includes/schema_applications_cv.php';
 require_once __DIR__ . '/includes/services/CvService.php';
+require_once __DIR__ . '/includes/services/ApplicationService.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: index.php");
@@ -34,6 +35,14 @@ if ($job && !isset($_SESSION['viewed_job_' . $job_id])) {
 
 $job_expired = $job ? job_is_expired($job['deadline']) : false;
 $job_open_for_apply = $job ? job_is_open_for_apply($job) : false;
+$applicant_count = $job ? ApplicationService::countForJob($conn, $job_id) : 0;
+if ($applicant_count === 0) {
+    $applicant_count_label = 'Chưa có ứng viên';
+} elseif ($applicant_count === 1) {
+    $applicant_count_label = '1 ứng viên đã ứng tuyển';
+} else {
+    $applicant_count_label = $applicant_count . ' ứng viên đã ứng tuyển';
+}
 
 if (!$job) {
     echo "<div class='container py-5 text-center'>
@@ -127,6 +136,7 @@ include 'includes/header.php';
                     <span><i class="fas fa-map-marker-alt me-1"></i> <?= htmlspecialchars($job['city']) ?></span>
                     <span><i class="fas fa-clock me-1"></i> Hạn nộp: <?= date('d/m/Y', strtotime($job['deadline'])) ?></span>
                     <span><i class="fas fa-eye me-1"></i> <?= $job['view_count'] ?> lượt xem</span>
+                    <span><i class="fas fa-users me-1"></i> <?= htmlspecialchars($applicant_count_label) ?></span>
                 </div>
             </div>
             <div class="col-md-auto mt-3 mt-md-0">

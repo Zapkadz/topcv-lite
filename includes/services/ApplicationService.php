@@ -96,6 +96,18 @@ class ApplicationService
         }
     }
 
+    public static function countForJob(PDO $conn, int $jobId): int
+    {
+        if ($jobId <= 0) {
+            return 0;
+        }
+
+        $stmt = $conn->prepare('SELECT COUNT(*) FROM applications WHERE job_id = ?');
+        $stmt->execute([$jobId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /**
      * Employer: lấy application thuộc company.
      *
