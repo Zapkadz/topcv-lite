@@ -19,11 +19,11 @@ if (!function_exists('ai_screening_html_to_plain_text')) {
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $text = str_replace(["\r\n", "\r"], "\n", $text);
 
-        // Block / list boundaries → newline trước khi strip tags.
+        // Block / list boundaries → newline trước khi strip tags; <li> → "- " (literal rule).
         $text = preg_replace('/<br\s*\/?>/i', "\n", $text) ?? $text;
         $text = preg_replace('/<\/(p|div|li|h[1-6]|tr|blockquote)>/i', "\n", $text) ?? $text;
         $text = preg_replace('/<\/(ul|ol|table|thead|tbody)>/i', "\n", $text) ?? $text;
-        $text = preg_replace('/<li[^>]*>/i', "\n", $text) ?? $text;
+        $text = preg_replace('/<li[^>]*>/i', '- ', $text) ?? $text;
 
         $text = strip_tags($text);
         $text = str_replace("\xc2\xa0", ' ', $text); // nbsp sau decode
