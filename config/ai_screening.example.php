@@ -23,4 +23,8 @@ return [
     'enable_embedding' => true,
     'embedding_model' => 'BAAI/bge-m3',
     'embedding_local_only' => true,
+
+    // Debug API payload/response (chỉ bật trên local — không bật production)
+    // 'debug_api_payload' => true,
+    // 'debug_api_dir' => 'C:\\topcv_ai_runtime\\api-debug',
 ];

@@ -37,6 +37,8 @@ if (!function_exists('ai_screening_config')) {
             'enable_embedding' => true,
             'embedding_model' => 'BAAI/bge-m3',
             'embedding_local_only' => true,
+            'debug_api_payload' => false,
+            'debug_api_dir' => 'C:\\topcv_ai_runtime\\api-debug',
         ];
 
         $localPath = __DIR__ . '/../config/ai_screening.local.php';
@@ -100,6 +102,11 @@ if (!function_exists('ai_screening_config')) {
         $defaults['embedding_local_only'] = !empty($defaults['embedding_local_only']);
         $defaults['hf_hub_offline'] = !empty($defaults['hf_hub_offline']);
         $defaults['embedding_model'] = trim((string) ($defaults['embedding_model'] ?? 'BAAI/bge-m3'));
+        $defaults['debug_api_payload'] = !empty($defaults['debug_api_payload']);
+        $defaults['debug_api_dir'] = rtrim(trim((string) ($defaults['debug_api_dir'] ?? '')), '\\/');
+        if ($defaults['debug_api_dir'] === '') {
+            $defaults['debug_api_dir'] = rtrim((string) ($defaults['runtime_dir'] ?? ''), '\\/') . '\\api-debug';
+        }
 
         if ($defaults['taxonomy_path'] !== '' && !preg_match('/^[a-zA-Z]:[\\\\\\/]/', $defaults['taxonomy_path'])) {
             $aiRoot = dirname($defaults['main_path']);
