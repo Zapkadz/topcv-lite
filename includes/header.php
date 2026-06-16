@@ -116,6 +116,9 @@ if (!defined('BASE_URL')) {
                                 <li><a class="dropdown-item" href="<?= $base_url ?>candidate/cv-manage.php">
                                     <i class="fas fa-file-alt me-2"></i> Quản lý CV online
                                 </a></li>
+                                <li><a class="dropdown-item" href="<?= $base_url ?>candidate/job-recommendations.php">
+                                    <i class="fas fa-robot me-2"></i> AI gợi ý việc làm
+                                </a></li>
                                 <li><a class="dropdown-item" href="<?= $base_url ?>candidate/my-jobs.php">
                                     <i class="fas fa-history me-2"></i> Việc đã nộp
                                 </a></li>

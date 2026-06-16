@@ -27,4 +27,10 @@ return [
     // Debug API payload/response (chỉ bật trên local — không bật production)
     // 'debug_api_payload' => true,
     // 'debug_api_dir' => 'C:\\topcv_ai_runtime\\api-debug',
+
+    // Candidate-side job recommendation (Phase 23)
+    // 'recommend_jobs_api_url' => 'http://127.0.0.1:8000/recommend-jobs',
+    // 'recommend_top_k' => 10,
+    // 'recommend_retrieval_top_n' => 50,
+    // 'recommend_min_cv_text_length' => 150,
 ];

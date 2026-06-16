@@ -89,6 +89,17 @@ include '../includes/header.php';
             </div>
         </div>
     <?php else: ?>
+        <div class="card border-0 shadow-sm mb-4 border-start border-4 border-success">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="fas fa-robot text-success"></i> AI gợi ý việc làm phù hợp</h5>
+                    <p class="text-muted small mb-0">Phân tích CV và gợi ý top công việc phù hợp cùng điểm cần cải thiện.</p>
+                </div>
+                <a href="job-recommendations.php" class="btn btn-success fw-bold">
+                    <i class="fas fa-magic"></i> Chạy AI gợi ý
+                </a>
+            </div>
+        </div>
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">

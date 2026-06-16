@@ -95,4 +95,42 @@ class JobRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Tin public còn hạn — dùng cho AI gợi ý việc làm (Phase 23).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function listOpenForRecommendation(PDO $conn): array
+    {
+        $today = job_today_date();
+        $sql = "SELECT j.*, c.name AS company_name, c.logo, l.name AS city
+                FROM jobs j
+                JOIN companies c ON j.company_id = c.id
+                JOIN locations l ON j.location_id = l.id
+                WHERE j.status = 'approved'
+                  AND (j.deadline IS NULL OR j.deadline >= ?)
+                  AND " . job_sql_not_deleted('j') . '
+                ORDER BY j.created_at DESC';
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$today]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public static function countOpenForRecommendation(PDO $conn): int
+    {
+        $today = job_today_date();
+        $sql = 'SELECT COUNT(*)
+                FROM jobs j
+                WHERE j.status = \'approved\'
+                  AND (j.deadline IS NULL OR j.deadline >= ?)
+                  AND ' . job_sql_not_deleted('j');
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$today]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }
