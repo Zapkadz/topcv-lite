@@ -39,6 +39,10 @@ if (!function_exists('ai_screening_config')) {
             'embedding_local_only' => true,
             'debug_api_payload' => false,
             'debug_api_dir' => 'C:\\topcv_ai_runtime\\api-debug',
+            'recommend_jobs_api_url' => 'http://127.0.0.1:8000/recommend-jobs',
+            'recommend_top_k' => 10,
+            'recommend_retrieval_top_n' => 50,
+            'recommend_min_cv_text_length' => 150,
         ];
 
         $localPath = __DIR__ . '/../config/ai_screening.local.php';
@@ -107,6 +111,15 @@ if (!function_exists('ai_screening_config')) {
         if ($defaults['debug_api_dir'] === '') {
             $defaults['debug_api_dir'] = rtrim((string) ($defaults['runtime_dir'] ?? ''), '\\/') . '\\api-debug';
         }
+
+        $defaults['recommend_jobs_api_url'] = trim((string) ($defaults['recommend_jobs_api_url'] ?? ''));
+        if ($defaults['recommend_jobs_api_url'] === '' && $defaults['api_url'] !== '') {
+            $defaults['recommend_jobs_api_url'] = preg_replace('#/screening/?$#', '/recommend-jobs', $defaults['api_url'])
+                ?: rtrim($defaults['api_url'], '/') . '/recommend-jobs';
+        }
+        $defaults['recommend_top_k'] = max(1, min(50, (int) ($defaults['recommend_top_k'] ?? 10)));
+        $defaults['recommend_retrieval_top_n'] = max(1, (int) ($defaults['recommend_retrieval_top_n'] ?? 50));
+        $defaults['recommend_min_cv_text_length'] = max(50, (int) ($defaults['recommend_min_cv_text_length'] ?? 150));
 
         if ($defaults['taxonomy_path'] !== '' && !preg_match('/^[a-zA-Z]:[\\\\\\/]/', $defaults['taxonomy_path'])) {
             $aiRoot = dirname($defaults['main_path']);

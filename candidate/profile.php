@@ -139,6 +139,9 @@ include '../includes/header.php';
                         </div>
                         <div class="d-flex flex-wrap gap-2 mb-3">
                             <a href="cv-builder.php?id=<?= $primaryId ?>" class="btn btn-success btn-sm fw-bold">Sửa CV</a>
+                            <a href="job-recommendations.php?cv_id=<?= $primaryId ?>" class="btn btn-outline-success btn-sm fw-bold">
+                                <i class="fas fa-robot"></i> AI gợi ý việc làm
+                            </a>
                             <a href="cv-manage.php" class="btn btn-outline-success btn-sm">Tất cả CV (<?= count($onlineCvs) ?>)</a>
                             <a href="<?= htmlspecialchars(cv_template_picker_url()) ?>" class="btn btn-outline-secondary btn-sm">Tạo CV mới</a>
                         </div>
