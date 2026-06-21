@@ -146,6 +146,11 @@ include '../includes/header.php';
                                 <span class="badge bg-light text-dark border">
                                     <i class="fas fa-clock"></i> Lần chạy: <?= date('d/m/Y H:i', (int) $sessionResult['ran_at']) ?>
                                 </span>
+                                <?php if (!empty($sessionResult['trace_id'])): ?>
+                                    <span class="badge bg-light text-dark border">
+                                        Trace: <?= htmlspecialchars((string) $sessionResult['trace_id']) ?>
+                                    </span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                         <?php if ($panelHint !== ''): ?>

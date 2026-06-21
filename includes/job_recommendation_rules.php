@@ -98,11 +98,11 @@ if (!function_exists('job_recommendation_session_key')) {
 
 if (!function_exists('job_recommendation_session_schema_version')) {
     /**
-     * Bump when response shape changes (Phase 24 adds excluded_jobs, job_quality_stats).
+     * Bump when response shape changes.
      */
     function job_recommendation_session_schema_version(): int
     {
-        return 2;
+        return 3;
     }
 }
 

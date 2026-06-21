@@ -311,3 +311,34 @@ if (!function_exists('employer_ai_review_card_for_ui')) {
         return $card;
     }
 }
+
+if (!function_exists('employer_screening_diag_session_key')) {
+    function employer_screening_diag_session_key(int $jobId): string
+    {
+        return 'employer_screening_diag_job_' . max(0, $jobId);
+    }
+}
+
+if (!function_exists('employer_screening_save_diag_flash')) {
+    /**
+     * @param array<string, mixed> $diag
+     */
+    function employer_screening_save_diag_flash(int $jobId, array $diag): void
+    {
+        $_SESSION[employer_screening_diag_session_key($jobId)] = $diag;
+    }
+}
+
+if (!function_exists('employer_screening_take_diag_flash')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function employer_screening_take_diag_flash(int $jobId): ?array
+    {
+        $key = employer_screening_diag_session_key($jobId);
+        $value = $_SESSION[$key] ?? null;
+        unset($_SESSION[$key]);
+
+        return is_array($value) ? $value : null;
+    }
+}
