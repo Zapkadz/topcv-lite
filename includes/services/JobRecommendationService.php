@@ -62,6 +62,8 @@ class JobRecommendationService
      *   ok: bool,
      *   message: string,
      *   detail?: string,
+     *   trace_id?: string,
+     *   diagnostics?: array<string, mixed>,
      *   top_jobs?: list<array<string, mixed>>,
      *   retrieval_stats?: array<string, mixed>
      * }
@@ -136,6 +138,21 @@ class JobRecommendationService
         $excludedJobs = is_array($api['data']['excluded_jobs'] ?? null) ? $api['data']['excluded_jobs'] : [];
         $jobQualityStats = is_array($api['data']['job_quality_stats'] ?? null) ? $api['data']['job_quality_stats'] : [];
         $warnings = is_array($api['data']['warnings'] ?? null) ? $api['data']['warnings'] : [];
+        $traceId = trim((string) ($api['data']['trace_id'] ?? ''));
+        $diagnostics = is_array($api['data']['diagnostics'] ?? null) ? $api['data']['diagnostics'] : [];
+        $diagPayload = is_array($diagnostics['payload'] ?? null) ? $diagnostics['payload'] : [];
+        $diagCandidate = is_array($diagPayload['candidate'] ?? null) ? $diagPayload['candidate'] : [];
+        $diagJobs = is_array($diagPayload['jobs'] ?? null) ? $diagPayload['jobs'] : [];
+        $diagCandidateFlags = is_array($diagCandidate['flags'] ?? null) ? $diagCandidate['flags'] : [];
+        $diagJobsWarnings = is_array($diagJobs['warnings'] ?? null) ? $diagJobs['warnings'] : [];
+
+        foreach (array_merge($diagCandidateFlags, $diagJobsWarnings) as $warning) {
+            if (!is_string($warning) || trim($warning) === '') {
+                continue;
+            }
+            $warnings[] = trim($warning);
+        }
+        $warnings = array_values(array_unique($warnings));
 
         $enrichedTop = self::enrichJobRows($topJobs, $jobs);
         $enrichedExcluded = self::enrichJobRows($excludedJobs, $jobs);
@@ -156,6 +173,7 @@ class JobRecommendationService
         self::saveSessionResult([
             'schema_version' => job_recommendation_session_schema_version(),
             'ran_at' => time(),
+            'trace_id' => $traceId,
             'cv_profile_id' => $cvProfileId,
             'cv_title' => trim((string) ($profile['title'] ?? 'CV')),
             'jobs_received' => $receivedCount,
@@ -163,6 +181,7 @@ class JobRecommendationService
             'excluded_jobs' => $enrichedExcluded,
             'job_quality_stats' => $jobQualityStats,
             'warnings' => $warnings,
+            'diagnostics' => $diagnostics,
             'retrieval_stats' => is_array($api['data']['retrieval_stats'] ?? null)
                 ? $api['data']['retrieval_stats']
                 : [],
@@ -182,10 +201,12 @@ class JobRecommendationService
         return [
             'ok' => true,
             'message' => $msg,
+            'trace_id' => $traceId,
             'top_jobs' => $enrichedTop,
             'excluded_jobs' => $enrichedExcluded,
             'job_quality_stats' => $jobQualityStats,
             'warnings' => $warnings,
+            'diagnostics' => $diagnostics,
             'retrieval_stats' => is_array($api['data']['retrieval_stats'] ?? null)
                 ? $api['data']['retrieval_stats']
                 : [],

@@ -1,6 +1,6 @@
 <?php
 /**
- * Debug Phase 24 candidate-side recommendation — read-only audit.
+ * Debug Phase 25 candidate-side recommendation — read-only audit.
  *
  * Usage: php docs/migrations/_debug-recommend-phase24.php
  */
@@ -37,8 +37,8 @@ if ($healthUrl !== '' && function_exists('curl_init')) {
             $service = (string) ($decoded['service'] ?? '');
             echo 'phase=' . $phase . "\n";
             echo 'service=' . $service . "\n";
-            $expected = 'Phase 24 - JD Quality Gate and Recommendation Eligibility';
-            echo 'phase24_expected=' . ($phase === $expected ? 'yes' : 'NO — got: ' . $phase) . "\n";
+            $expected = 'Phase 25 - Web Payload Quality Hardening and Runtime Diagnostics';
+            echo 'phase25_expected=' . ($phase === $expected ? 'yes' : 'NO — got: ' . $phase) . "\n";
         } else {
             echo "health_body_invalid_json\n";
         }
@@ -77,10 +77,14 @@ $top = is_array($data['top_jobs'] ?? null) ? $data['top_jobs'] : [];
 $excluded = is_array($data['excluded_jobs'] ?? null) ? $data['excluded_jobs'] : [];
 $warnings = is_array($data['warnings'] ?? null) ? $data['warnings'] : [];
 $qStats = is_array($data['job_quality_stats'] ?? null) ? $data['job_quality_stats'] : [];
+$traceId = (string) ($data['trace_id'] ?? '');
+$diagnostics = is_array($data['diagnostics'] ?? null) ? $data['diagnostics'] : [];
 
 echo 'top_jobs_count=' . count($top) . "\n";
 echo 'excluded_jobs_count=' . count($excluded) . "\n";
 echo 'warnings_count=' . count($warnings) . "\n";
+echo 'trace_id=' . ($traceId !== '' ? $traceId : 'none') . "\n";
+echo 'has_diagnostics=' . ($diagnostics !== [] ? 'yes' : 'no') . "\n";
 echo 'has_job_quality_stats=' . ($qStats !== [] ? 'yes' : 'no') . "\n";
 if ($qStats !== []) {
     echo sprintf(

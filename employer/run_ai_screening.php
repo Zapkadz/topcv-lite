@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/employer_screening_rules.php';
 require_once __DIR__ . '/../includes/services/ApplicationService.php';
 require_once __DIR__ . '/../includes/services/AiScreeningService.php';
 include 'auth_check.php';
@@ -53,6 +54,14 @@ if (!$result['ok']) {
     $_SESSION['swal_persistent'] = true;
 } elseif (!empty($result['skipped_count'])) {
     $_SESSION['swal_text'] = (string) $result['skipped_count'] . ' UV bỏ qua vì thiếu CV text.';
+}
+
+if (!empty($result['trace_id']) || is_array($result['diagnostics'] ?? null)) {
+    employer_screening_save_diag_flash($jobId, [
+        'trace_id' => (string) ($result['trace_id'] ?? ''),
+        'diagnostics' => is_array($result['diagnostics'] ?? null) ? $result['diagnostics'] : [],
+        'ran_at' => time(),
+    ]);
 }
 
 header('Location: ' . $redirectUrl);

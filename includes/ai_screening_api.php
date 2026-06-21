@@ -97,6 +97,28 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
      */
     function ai_screening_log_api_response_metadata(array $payload, array $result): void
     {
+        $health = ai_screening_fetch_api_health_meta();
+        $phase = $health['phase'] !== '' ? $health['phase'] : 'unknown';
+        $traceId = trim((string) ($result['trace_id'] ?? ''));
+        $diagnostics = is_array($result['diagnostics'] ?? null) ? $result['diagnostics'] : [];
+        $diagPayload = is_array($diagnostics['payload'] ?? null) ? $diagnostics['payload'] : [];
+        $diagRuntime = is_array($diagnostics['runtime'] ?? null) ? $diagnostics['runtime'] : [];
+        $diagJob = is_array($diagPayload['job'] ?? null) ? $diagPayload['job'] : [];
+        $diagCandidates = is_array($diagPayload['candidates'] ?? null) ? $diagPayload['candidates'] : [];
+        $jobFlags = is_array($diagJob['flags'] ?? null) ? $diagJob['flags'] : [];
+        $candidateFlaggedCount = (int) ($diagCandidates['flagged_count'] ?? 0);
+        $rankedCandidateCount = (int) ($diagRuntime['ranked_candidate_count'] ?? 0);
+
+        if ($health['ok'] && !str_contains($phase, 'Phase 25')) {
+            ai_screening_log('Screening API WARN: health phase is not Phase 25: ' . $phase);
+        }
+        if ($health['ok'] && str_contains($phase, 'Phase 25') && $traceId === '') {
+            ai_screening_log('Screening API WARN: missing trace_id in response while health phase is Phase 25');
+        }
+        if ($health['ok'] && str_contains($phase, 'Phase 25') && $diagnostics === []) {
+            ai_screening_log('Screening API WARN: missing diagnostics in response while health phase is Phase 25');
+        }
+
         $jobId = (int) ($payload['job']['job_id'] ?? ($result['job']['job_id'] ?? 0));
         $candidateCount = is_array($payload['candidates'] ?? null) ? count($payload['candidates']) : 0;
 
@@ -144,13 +166,64 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
 
         ai_screening_log(
             'API response metadata'
+            . ' endpoint=screening'
+            . ' trace_id=' . ($traceId !== '' ? $traceId : 'none')
+            . ' health_phase=' . $phase
             . ' job_id=' . $jobId
             . ' candidate_count=' . $candidateCount
+            . ' job_payload_flags=' . ($jobFlags !== [] ? implode(',', array_map('strval', $jobFlags)) : 'none')
+            . ' candidate_flagged_count=' . $candidateFlaggedCount
+            . ' ranked_candidate_count=' . $rankedCandidateCount
             . ' response_job_title=' . $responseJobTitle
             . ' response_open_set_count=' . $openSetCount
             . ' response_embedding_enabled=' . $embeddingLabel
             . ' ' . $topLine
         );
+    }
+}
+
+if (!function_exists('ai_screening_fetch_api_health_meta')) {
+    /**
+     * @return array{ok: bool, phase: string, service: string, http_code: int}
+     */
+    function ai_screening_fetch_api_health_meta(): array
+    {
+        $empty = ['ok' => false, 'phase' => '', 'service' => '', 'http_code' => 0];
+        if (!function_exists('curl_init')) {
+            return $empty;
+        }
+
+        $cfg = ai_screening_config();
+        $healthUrl = trim((string) ($cfg['health_url'] ?? ''));
+        if ($healthUrl === '') {
+            return $empty;
+        }
+
+        $ch = curl_init($healthUrl);
+        if ($ch === false) {
+            return $empty;
+        }
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, max(1, (int) ($cfg['connect_timeout_seconds'] ?? 5)));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response === false || $httpCode < 200 || $httpCode >= 300) {
+            return ['ok' => false, 'phase' => '', 'service' => '', 'http_code' => $httpCode];
+        }
+
+        $decoded = json_decode((string) $response, true);
+
+        return [
+            'ok' => true,
+            'phase' => is_array($decoded) ? trim((string) ($decoded['phase'] ?? '')) : '',
+            'service' => is_array($decoded) ? trim((string) ($decoded['service'] ?? '')) : '',
+            'http_code' => $httpCode,
+        ];
     }
 }
 
@@ -232,7 +305,15 @@ if (!function_exists('ai_screening_call_api')) {
 
         $candidateCount = is_array($payload['candidates'] ?? null) ? count($payload['candidates']) : 0;
         $jobId = (int) ($payload['job']['job_id'] ?? 0);
-        ai_screening_log("API POST {$apiUrl} job_id={$jobId} candidates={$candidateCount}");
+        $health = ai_screening_fetch_api_health_meta();
+        $phase = $health['phase'] !== '' ? $health['phase'] : 'unknown';
+        if ($health['ok'] && !str_contains($phase, 'Phase 25')) {
+            ai_screening_log('Screening API WARN: health phase is not Phase 25: ' . $phase);
+        }
+        ai_screening_log(
+            "API POST {$apiUrl} job_id={$jobId} candidates={$candidateCount}"
+            . ' endpoint=screening health_phase=' . $phase
+        );
 
         $debugPrefix = null;
         if (ai_screening_debug_api_enabled()) {

@@ -18,6 +18,8 @@ class AiScreeningService
      *   ok: bool,
      *   message: string,
      *   run_id?: string,
+     *   trace_id?: string,
+     *   diagnostics?: array<string, mixed>,
      *   ranked_count?: int,
      *   skipped_count?: int,
      *   runtime_path?: string,
@@ -64,7 +66,16 @@ class AiScreeningService
     /**
      * @param array<string, mixed> $job
      * @param list<array<string, mixed>> $applications
-     * @return array{ok: bool, message: string, run_id?: string, ranked_count?: int, skipped_count?: int, detail?: string}
+     * @return array{
+     *   ok: bool,
+     *   message: string,
+     *   run_id?: string,
+     *   trace_id?: string,
+     *   diagnostics?: array<string, mixed>,
+     *   ranked_count?: int,
+     *   skipped_count?: int,
+     *   detail?: string
+     * }
      */
     private static function runForJobViaApi(PDO $conn, int $jobId, array $job, array $applications): array
     {
@@ -113,6 +124,20 @@ class AiScreeningService
         }
 
         $runId = 'api-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+        $traceId = trim((string) ($api['data']['trace_id'] ?? ''));
+        $diagnostics = is_array($api['data']['diagnostics'] ?? null) ? $api['data']['diagnostics'] : [];
+        $diagPayload = is_array($diagnostics['payload'] ?? null) ? $diagnostics['payload'] : [];
+        $diagJob = is_array($diagPayload['job'] ?? null) ? $diagPayload['job'] : [];
+        $diagCandidates = is_array($diagPayload['candidates'] ?? null) ? $diagPayload['candidates'] : [];
+        $jobFlags = is_array($diagJob['flags'] ?? null) ? $diagJob['flags'] : [];
+        $candidateFlaggedCount = (int) ($diagCandidates['flagged_count'] ?? 0);
+        ai_screening_log(
+            'Screening service summary'
+            . ' trace_id=' . ($traceId !== '' ? $traceId : 'none')
+            . ' endpoint=screening'
+            . ' job_payload_flags=' . ($jobFlags !== [] ? implode(',', array_map('strval', $jobFlags)) : 'none')
+            . ' candidate_flagged_count=' . $candidateFlaggedCount
+        );
 
         try {
             $saved = self::saveResultsFromApiData($conn, $jobId, $api['data'], $runId, $appMap);
@@ -147,6 +172,8 @@ class AiScreeningService
             'ok' => true,
             'message' => $msg,
             'run_id' => $runId,
+            'trace_id' => $traceId,
+            'diagnostics' => $diagnostics,
             'ranked_count' => $saved,
             'skipped_count' => $skipped,
         ];
