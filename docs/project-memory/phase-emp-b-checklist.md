@@ -25,7 +25,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | Phase | EMP-B — AI candidate ranking (CLI) |
 | Nhánh | `feature/phase-emp-b-b5-verify` (prep → B0 → … → B5) |
 | User confirm plan | ✅ **`「xác nhận EMP-B」`** — 2026-06-06 |
-| **Khối hiện tại** | **B5** — smoke CLI OK, chờ manual UI + **`「EMP-B pass」`** |
+| **Khối hiện tại** | ✅ **EMP-B pass** — chờ merge PR |
 | Phụ thuộc | EMP-A ✅ · cv_snapshot_text prep ✅ |
 | Defer | FastAPI · VIP · AI trên hub screening |
 
@@ -49,7 +49,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | B2 | AiScreeningService + CLI | ✅ | ✅ | ✅ | ✅ |
 | B3 | run_ai_screening + UI cột rank | ✅ | ✅ | ✅ | ✅ |
 | B4 | Review modal + errors | ✅ | ✅ | ✅ | ✅ |
-| B5 | Test full + regression | 🔄 | 🔲 | ⬜ | ⬜ |
+| B5 | Test full + regression | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -142,12 +142,12 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | 1 | Migration `cv_snapshot_text` | Apply mới có text | ✅ B5.1 |
 | 2 | Job ≥1 UV có text → chạy AI | job 17 / company 2 (3 UV) | ✅ `--run` |
 | 3 | Bảng rank / score / rec | `job_candidates.php?job_id=17` | ✅ DB |
-| 4 | Modal review card | Nút **AI review** | 🔲 UI |
+| 4 | Modal review card | Nút **AI review** | ✅ UI |
 | 5 | Employer B ≠ job A | Wrong company bị từ chối | ✅ B5.6 |
 | 6 | JD thiếu nội dung | Message rõ, không crash | ✅ B5.5 |
-| 7 | UV thiếu text → skip | job 8 (1/2 có text) — Swal skip count | 🔲 UI |
-| 8 | Python path sai | Sửa path sai → Swal + log | 🔲 UI |
-| 9 | Regression EMP-A | Status + CV modal | 🔲 UI |
+| 7 | UV thiếu text → skip | job 8 (1/2 có text) — Swal skip count | ✅ UI |
+| 8 | Python path sai | Sửa path sai → Swal + log | ✅ UI |
+| 9 | Regression EMP-A | Status + CV modal | ✅ UI |
 
 **Pass B5 / EMP-B:** Plan §9 tick hết → **`「EMP-B pass」`** → PR.
 
@@ -164,6 +164,7 @@ AI làm 1 khối B → báo file + hướng test → USER test → USER gửi �
 | 2026-06-07 | User **`「B2 pass」`** — CLI → DB (job 8 / company 2) |
 | 2026-06-07 | User **`「B3 pass」`** — run_ai_screening + UI rank/score/rec |
 | 2026-06-07 | User **`「B4 pass」`** — review modal + Swal errors + normalize HTML |
+| 2026-06-07 | User **`「EMP-B pass」`** — phase đóng, mở PR |
 
 ---
 

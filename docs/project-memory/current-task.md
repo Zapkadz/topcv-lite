@@ -1,6 +1,6 @@
 # Current Task — TopCV Lite
 
-> Cập nhật: **2026-06-09**
+> Cập nhật: **2026-06-17**
 
 ---
 
@@ -15,6 +15,16 @@
 | **Profile cleanup** | ✅ merged `main` (PR #22) |
 | **Admin Taxonomy** | ✅ merged `main` (PR #23) |
 | **AI screening JD fix** | ✅ merged `main` (PR #24) |
+| **Phase 23–25 AI** | ✅ merged `main` (PR #28 + Phase 25 @ `e338f94`) |
+
+---
+
+## Phase 23–25 — Job recommendation & diagnostics (đã đóng)
+
+- **Phase 23:** `POST /recommend-jobs`, UI gợi ý việc làm cho UV
+- **Phase 24:** `excluded_jobs`, `job_quality_stats`, session schema v2
+- **Phase 25:** `trace_id`, `diagnostics` cho screening + recommend-jobs, session schema v3
+- **Merge:** PR #28 + merge Phase 25 @ `e338f94`
 
 ---
 
