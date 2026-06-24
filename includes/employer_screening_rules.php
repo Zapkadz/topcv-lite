@@ -304,7 +304,7 @@ if (!function_exists('employer_ai_review_card_for_ui')) {
 
         $card['summary'] = employer_ai_review_plain_text((string) ($card['summary'] ?? ''));
 
-        foreach (['strengths', 'concerns', 'evidence_highlights', 'suggested_interview_questions'] as $key) {
+        foreach (['strengths', 'concerns', 'evidence_highlights', 'suggested_interview_questions', 'requirement_notes'] as $key) {
             $card[$key] = employer_ai_review_normalize_list($card[$key] ?? []);
         }
 

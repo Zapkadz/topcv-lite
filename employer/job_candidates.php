@@ -436,6 +436,30 @@ include '../includes/header.php';
         }).join('') + '</ul>';
     }
 
+    function aiReviewScreeningConfidenceHtml(confidence) {
+        if (!confidence || typeof confidence !== 'object') {
+            return '';
+        }
+        var html = '';
+        if (confidence.level) {
+            html += '<div><strong>Screening confidence level:</strong> ' + aiReviewEscape(confidence.level) + '</div>';
+        }
+        if (confidence.known_requirement_count != null) {
+            html += '<div><strong>Known requirements:</strong> ' + aiReviewEscape(confidence.known_requirement_count) + '</div>';
+        }
+        if (confidence.open_set_requirement_count != null) {
+            html += '<div><strong>Open-set requirements:</strong> ' + aiReviewEscape(confidence.open_set_requirement_count) + '</div>';
+        }
+        if (confidence.embedding_enabled != null) {
+            html += '<div><strong>Embedding enabled:</strong> ' + (confidence.embedding_enabled ? 'yes' : 'no') + '</div>';
+        }
+        if (Array.isArray(confidence.warnings) && confidence.warnings.length > 0) {
+            html += '<div class="mt-1"><strong>Warnings:</strong></div>';
+            html += aiReviewListHtml(confidence.warnings, '');
+        }
+        return html;
+    }
+
     function openAiReviewModal(payload) {
         var card = payload.card || {};
         var diagnostics = payload.diagnostics || {};
@@ -460,15 +484,22 @@ include '../includes/header.php';
         html += aiReviewListHtml(card.strengths, 'Chưa ghi nhận điểm mạnh.') + '</section>';
         html += '<section class="mb-4"><h6 class="fw-bold text-warning">Lưu ý / thiếu sót</h6>';
         html += aiReviewListHtml(card.concerns, 'Chưa ghi nhận lưu ý.') + '</section>';
+        if (Array.isArray(card.requirement_notes) && card.requirement_notes.length > 0) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Requirement notes</h6>';
+            html += aiReviewListHtml(card.requirement_notes, '') + '</section>';
+        }
         html += '<section class="mb-4"><h6 class="fw-bold text-primary">Bằng chứng nổi bật</h6>';
         html += aiReviewListHtml(card.evidence_highlights, 'Chưa có bằng chứng nổi bật.') + '</section>';
         html += '<section class="mb-0"><h6 class="fw-bold text-info">Gợi ý câu hỏi phỏng vấn</h6>';
         html += aiReviewListHtml(card.suggested_interview_questions, 'Chưa có gợi ý câu hỏi.') + '</section>';
 
+        var screeningConfidence = diagnostics.screening_confidence || {};
         var hasDiag = diagnostics && (
             diagnostics.trace_id ||
             (Array.isArray(diagnostics.job_flags) && diagnostics.job_flags.length > 0) ||
-            diagnostics.candidate_flagged_count > 0
+            diagnostics.candidate_flagged_count > 0 ||
+            screeningConfidence.level ||
+            (Array.isArray(screeningConfidence.warnings) && screeningConfidence.warnings.length > 0)
         );
         if (hasDiag) {
             html += '<hr class="my-4">';
@@ -490,9 +521,7 @@ include '../includes/header.php';
                 html += '<div class="mt-1"><strong>Job quality reasons:</strong></div>';
                 html += aiReviewListHtml(diagnostics.job_quality.reasons, '');
             }
-            if (diagnostics.screening_confidence && diagnostics.screening_confidence.overall_confidence != null) {
-                html += '<div class="mt-1"><strong>Screening confidence:</strong> ' + aiReviewEscape(diagnostics.screening_confidence.overall_confidence) + '</div>';
-            }
+            html += aiReviewScreeningConfidenceHtml(screeningConfidence);
             html += '</div></details>';
         }
 

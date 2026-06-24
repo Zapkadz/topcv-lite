@@ -97,16 +97,6 @@ if (!function_exists('ai_screening_build_job_text')) {
             $requirementLines[] = $experience;
         }
 
-        $jobLevel = trim((string) ($job['job_level'] ?? ''));
-        if ($jobLevel !== '' && $jobLevel !== 'Nhân viên') {
-            $requirementLines[] = 'Cấp bậc: ' . $jobLevel;
-        }
-
-        $jobType = trim((string) ($job['job_type'] ?? ''));
-        if ($jobType !== '' && $jobType !== 'Toàn thời gian') {
-            $requirementLines[] = 'Hình thức: ' . $jobType;
-        }
-
         $requirementLines = array_values(array_unique($requirementLines));
 
         if ($requirementLines !== []) {
@@ -114,15 +104,6 @@ if (!function_exists('ai_screening_build_job_text')) {
             $lines[] = 'Requirements:';
             foreach ($requirementLines as $req) {
                 $lines[] = '- ' . $req;
-            }
-        }
-
-        $niceToHave = ai_screening_split_text_lines($job['benefits'] ?? null);
-        if ($niceToHave !== []) {
-            $lines[] = '';
-            $lines[] = 'Nice to have:';
-            foreach ($niceToHave as $item) {
-                $lines[] = '- ' . $item;
             }
         }
 

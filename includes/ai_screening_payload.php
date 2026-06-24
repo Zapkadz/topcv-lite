@@ -17,21 +17,11 @@ if (!function_exists('ai_screening_build_job_payload')) {
             $requirements[] = $experience;
         }
 
-        $jobLevel = trim((string) ($job['job_level'] ?? ''));
-        if ($jobLevel !== '' && $jobLevel !== 'Nhân viên') {
-            $requirements[] = 'Cấp bậc: ' . $jobLevel;
-        }
-
-        $jobType = trim((string) ($job['job_type'] ?? ''));
-        if ($jobType !== '' && $jobType !== 'Toàn thời gian') {
-            $requirements[] = 'Hình thức: ' . $jobType;
-        }
-
         return [
             'job_id' => (int) ($job['id'] ?? 0),
             'job_title' => trim((string) ($job['title'] ?? '')),
             'requirements' => array_values(array_unique($requirements)),
-            'nice_to_have' => ai_screening_split_text_lines($job['benefits'] ?? null),
+            'nice_to_have' => [],
             'responsibilities' => ai_screening_split_text_lines($job['description'] ?? null),
             'minimum_experience_years' => null,
             'description' => ai_screening_html_to_plain_text($job['description'] ?? null),
