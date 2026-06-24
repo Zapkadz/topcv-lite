@@ -63,7 +63,23 @@ echo "--- After normalize (API payload) ---\n";
 echo 'requirements count: ' . count($reqLines) . "\n";
 echo 'responsibilities count: ' . count($respLines) . "\n";
 echo 'payload still has HTML tags: ' . ($anyHtmlInPayload ? 'YES (BUG)' : 'no (OK)') . "\n";
-echo 'job_text_valid: ' . (ai_screening_job_text_is_valid($jobText) ? 'true' : 'false') . "\n\n";
+echo 'job_text_valid: ' . (ai_screening_job_text_is_valid($jobText) ? 'true' : 'false') . "\n";
+
+$polluted = [];
+foreach ($reqLines as $line) {
+    $line = (string) $line;
+    if (str_starts_with($line, 'Cấp bậc:') || str_starts_with($line, 'Hình thức:')) {
+        $polluted[] = $line;
+    }
+}
+$niceToHave = $payload['nice_to_have'] ?? [];
+if ($niceToHave !== []) {
+    $polluted[] = 'nice_to_have not empty (' . count($niceToHave) . ' items)';
+}
+if (str_contains($jobText, 'Nice to have:')) {
+    $polluted[] = 'JD text still has Nice to have section';
+}
+echo 'payload metadata pollution: ' . ($polluted === [] ? 'none (OK)' : implode('; ', $polluted)) . "\n\n";
 
 echo "First 8 requirements lines:\n";
 foreach (array_slice($reqLines, 0, 8) as $i => $line) {

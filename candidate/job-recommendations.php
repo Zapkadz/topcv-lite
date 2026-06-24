@@ -321,6 +321,15 @@ document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
         html += '<h6 class="fw-bold small mt-3">Evidence highlights</h6>' + recListHtml(evidence, 'Chưa có highlight.');
         html += '</div></div></div>';
 
+        var requirementNotes = reviewCard.requirement_notes || [];
+        if (Array.isArray(requirementNotes) && requirementNotes.length > 0) {
+            html += '<div class="accordion-item"><h2 class="accordion-header">';
+            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recReqNotes">Requirement notes</button></h2>';
+            html += '<div id="recReqNotes" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
+            html += recListHtml(requirementNotes, '');
+            html += '</div></div></div>';
+        }
+
         var jq = job.job_quality || {};
         if (jq.quality_label) {
             html += '<div class="accordion-item"><h2 class="accordion-header">';
