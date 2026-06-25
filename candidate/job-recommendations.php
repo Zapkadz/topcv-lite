@@ -258,6 +258,61 @@ function recGapListHtml(gaps, key) {
     }).join('') + '</ul>';
 }
 
+function recFormatRatio(value) {
+    if (value == null || value === '') {
+        return null;
+    }
+    var num = Number(value);
+    if (Number.isNaN(num)) {
+        return String(value);
+    }
+    if (num >= 0 && num <= 1) {
+        return Math.round(num * 100) + '%';
+    }
+    return String(num);
+}
+
+function recCoreRequirementFitHtml(summary) {
+    var core = summary && summary.core;
+    if (!core || typeof core !== 'object') {
+        return '';
+    }
+    var html = '<div class="border rounded-3 bg-light p-3 mb-3 small">';
+    html += '<div class="fw-bold mb-2">Core requirement fit</div>';
+    if (core.total != null) {
+        html += '<div><strong>Core requirements counted:</strong> ' + recEscape(core.total) + '</div>';
+    }
+    var confirmed = recFormatRatio(core.confirmed_coverage);
+    if (confirmed != null) {
+        html += '<div><strong>Confirmed coverage:</strong> ' + recEscape(confirmed) + '</div>';
+    }
+    var semanticOnly = recFormatRatio(core.semantic_only_ratio);
+    if (semanticOnly != null) {
+        html += '<div><strong>Semantic-only ratio:</strong> ' + recEscape(semanticOnly) + '</div>';
+    }
+    html += '</div>';
+    return html;
+}
+
+function recRoleAdjustmentAlertHtml(job) {
+    var adjustment = job.role_score_adjustment;
+    var impact = job.role_alignment_impact || {};
+    var reason = impact.reason || '';
+    var hasAdjustment = adjustment != null && Number(adjustment) !== 0;
+    if (!hasAdjustment && !reason) {
+        return '';
+    }
+    var html = '<div class="alert alert-info border-0 small py-2 px-3 mb-3">';
+    html += '<div class="fw-bold mb-1">AI có điều chỉnh điểm theo role-family/core evidence</div>';
+    if (reason) {
+        html += '<div>' + recEscape(reason) + '</div>';
+    } else if (hasAdjustment) {
+        html += '<div>Role score adjustment: ' + recEscape(adjustment) + '</div>';
+    }
+    html += '</div>';
+    return html;
+}
+
 document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
     btn.addEventListener('click', function () {
         var raw = btn.getAttribute('data-job');
@@ -290,12 +345,14 @@ document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
         html += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#recWhyFit">Vì sao phù hợp</button></h2>';
         html += '<div id="recWhyFit" class="accordion-collapse collapse show" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
         html += '<p>' + recEscape(job.fit_summary || '') + '</p>';
+        html += recRoleAdjustmentAlertHtml(job);
         html += recListHtml(job.why_fit, 'Chưa có lý do cụ thể.');
         html += '</div></div></div>';
 
         html += '<div class="accordion-item"><h2 class="accordion-header">';
         html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recGaps">Điểm còn thiếu / yếu</button></h2>';
         html += '<div id="recGaps" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
+        html += recCoreRequirementFitHtml(job.core_requirement_fit_summary || {});
         var s = job.skill_gap_summary || {};
         var gapLine = [];
         if (s.missing_must_have_count > 0) gapLine.push('Thiếu bắt buộc: ' + s.missing_must_have_count);

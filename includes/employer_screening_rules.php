@@ -308,6 +308,12 @@ if (!function_exists('employer_ai_review_card_for_ui')) {
             $card[$key] = employer_ai_review_normalize_list($card[$key] ?? []);
         }
 
+        $impact = $card['role_alignment_impact'] ?? null;
+        if (is_array($impact) && isset($impact['reason']) && is_string($impact['reason'])) {
+            $impact['reason'] = employer_ai_review_plain_text($impact['reason']);
+            $card['role_alignment_impact'] = $impact;
+        }
+
         return $card;
     }
 }

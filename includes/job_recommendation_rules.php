@@ -102,7 +102,7 @@ if (!function_exists('job_recommendation_session_schema_version')) {
      */
     function job_recommendation_session_schema_version(): int
     {
-        return 3;
+        return 4;
     }
 }
 
