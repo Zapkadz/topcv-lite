@@ -460,6 +460,77 @@ include '../includes/header.php';
         return html;
     }
 
+    function aiReviewFormatRatio(value) {
+        if (value == null || value === '') {
+            return null;
+        }
+        var num = Number(value);
+        if (Number.isNaN(num)) {
+            return String(value);
+        }
+        if (num >= 0 && num <= 1) {
+            return Math.round(num * 100) + '%';
+        }
+        return String(num);
+    }
+
+    function aiReviewScoreFlowHtml(card, finalScore) {
+        var rawBase = card.raw_base_score;
+        var roleCalibrated = card.role_calibrated_score;
+        var adjustment = card.role_score_adjustment;
+        var resolvedFinal = finalScore != null ? finalScore : card.final_score;
+        var impact = card.role_alignment_impact || {};
+        var hasScoreFlow = rawBase != null || roleCalibrated != null || resolvedFinal != null || adjustment != null;
+        if (!hasScoreFlow) {
+            return '';
+        }
+        var html = '<section class="mb-4"><h6 class="fw-bold text-dark">Score flow</h6><div class="small">';
+        if (rawBase != null) {
+            html += '<div><strong>Weighted score:</strong> ' + aiReviewEscape(rawBase) + '</div>';
+        }
+        if (roleCalibrated != null) {
+            html += '<div><strong>Role-calibrated score:</strong> ' + aiReviewEscape(roleCalibrated) + '</div>';
+        }
+        if (resolvedFinal != null) {
+            html += '<div><strong>Final score:</strong> ' + aiReviewEscape(resolvedFinal) + '</div>';
+        }
+        if (adjustment != null) {
+            var adjText = Number(adjustment) > 0 ? '+' + adjustment : String(adjustment);
+            html += '<div><strong>Role score adjustment:</strong> ' + aiReviewEscape(adjText) + '</div>';
+        }
+        if (impact.applied === true && impact.reason) {
+            html += '<div class="mt-2 text-muted"><strong>Role-aware adjustment reason:</strong> ' + aiReviewEscape(impact.reason) + '</div>';
+        }
+        html += '</div></section>';
+        return html;
+    }
+
+    function aiReviewCoreRequirementFitHtml(card) {
+        var summary = card.core_requirement_fit_summary || {};
+        var core = summary.core;
+        if (!core || typeof core !== 'object') {
+            return '';
+        }
+        var html = '<section class="mb-4"><h6 class="fw-bold text-secondary">Core requirement fit</h6><div class="small">';
+        if (core.total != null) {
+            html += '<div><strong>Core requirements counted:</strong> ' + aiReviewEscape(core.total) + '</div>';
+        }
+        var positive = aiReviewFormatRatio(core.positive_coverage);
+        if (positive != null) {
+            html += '<div><strong>Positive coverage:</strong> ' + aiReviewEscape(positive) + '</div>';
+        }
+        var confirmed = aiReviewFormatRatio(core.confirmed_coverage);
+        if (confirmed != null) {
+            html += '<div><strong>Confirmed coverage:</strong> ' + aiReviewEscape(confirmed) + '</div>';
+        }
+        var semanticOnly = aiReviewFormatRatio(core.semantic_only_ratio);
+        if (semanticOnly != null) {
+            html += '<div><strong>Semantic-only ratio:</strong> ' + aiReviewEscape(semanticOnly) + '</div>';
+        }
+        html += '</div></section>';
+        return html;
+    }
+
     function openAiReviewModal(payload) {
         var card = payload.card || {};
         var diagnostics = payload.diagnostics || {};
@@ -490,8 +561,10 @@ include '../includes/header.php';
         }
         html += '<section class="mb-4"><h6 class="fw-bold text-primary">Bằng chứng nổi bật</h6>';
         html += aiReviewListHtml(card.evidence_highlights, 'Chưa có bằng chứng nổi bật.') + '</section>';
-        html += '<section class="mb-0"><h6 class="fw-bold text-info">Gợi ý câu hỏi phỏng vấn</h6>';
+        html += '<section class="mb-4"><h6 class="fw-bold text-info">Gợi ý câu hỏi phỏng vấn</h6>';
         html += aiReviewListHtml(card.suggested_interview_questions, 'Chưa có gợi ý câu hỏi.') + '</section>';
+        html += aiReviewScoreFlowHtml(card, payload.score);
+        html += aiReviewCoreRequirementFitHtml(card);
 
         var screeningConfidence = diagnostics.screening_confidence || {};
         var hasDiag = diagnostics && (
