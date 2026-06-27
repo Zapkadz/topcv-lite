@@ -2,28 +2,37 @@
 /** @var array<string, mixed> $sessionResult */
 /** @var list<int> $appliedJobIds */
 
+require_once __DIR__ . '/../ai_diagnostics_presenter.php';
+
 $topJobs = is_array($sessionResult['top_jobs'] ?? null) ? $sessionResult['top_jobs'] : [];
 $excludedJobs = is_array($sessionResult['excluded_jobs'] ?? null) ? $sessionResult['excluded_jobs'] : [];
 $qualityStats = is_array($sessionResult['job_quality_stats'] ?? null) ? $sessionResult['job_quality_stats'] : [];
-$warnings = is_array($sessionResult['warnings'] ?? null) ? $sessionResult['warnings'] : [];
 $diagnostics = is_array($sessionResult['diagnostics'] ?? null) ? $sessionResult['diagnostics'] : [];
-$diagPayload = is_array($diagnostics['payload'] ?? null) ? $diagnostics['payload'] : [];
 $diagRuntime = is_array($diagnostics['runtime'] ?? null) ? $diagnostics['runtime'] : [];
-$diagCandidate = is_array($diagPayload['candidate'] ?? null) ? $diagPayload['candidate'] : [];
-$diagJobs = is_array($diagPayload['jobs'] ?? null) ? $diagPayload['jobs'] : [];
-$candidateFlags = is_array($diagCandidate['flags'] ?? null) ? $diagCandidate['flags'] : [];
-$jobsWarnings = is_array($diagJobs['warnings'] ?? null) ? $diagJobs['warnings'] : [];
-$flaggedJobsCount = (int) ($diagJobs['flagged_count'] ?? 0);
 $traceId = trim((string) ($sessionResult['trace_id'] ?? ''));
 $appliedSet = array_flip($appliedJobIds);
+$candidateNotice = ai_diag_candidate_notice($sessionResult);
 
 $jobsAnalyzed = (int) ($qualityStats['jobs_received'] ?? $sessionResult['jobs_received'] ?? count($topJobs) + count($excludedJobs));
 $eligibleCount = (int) ($qualityStats['eligible_jobs'] ?? count($topJobs));
 $excludedCount = (int) ($qualityStats['excluded_jobs'] ?? count($excludedJobs));
-$cvWeak = array_intersect(
-    array_map('strval', $candidateFlags),
-    ['cv_text_too_short', 'candidate_profile_sparse', 'html_cleaning_changed_text_heavily']
-) !== [];
+
+$candidateDebugData = [
+    'trace_id' => $traceId,
+    'excluded_job_ids' => array_values(array_filter(array_map(
+        static function ($row): string {
+            return is_array($row) ? (string) ((int) ($row['job_id'] ?? 0)) : '0';
+        },
+        $excludedJobs
+    ), static fn(string $id): bool => $id !== '0')),
+    'top_job_ids' => array_values(array_filter(array_map(
+        static function ($row): string {
+            return is_array($row) ? (string) ((int) ($row['job_id'] ?? 0)) : '0';
+        },
+        $topJobs
+    ), static fn(string $id): bool => $id !== '0')),
+    'runtime_json' => $diagRuntime !== [] ? json_encode($diagRuntime, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : '',
+];
 ?>
 
 <div class="alert alert-info border-0 small mb-4">
@@ -33,100 +42,47 @@ $cvWeak = array_intersect(
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="border rounded-3 p-3 bg-white h-100">
+    <div class="col-4">
+        <div class="border rounded-3 p-3 bg-white h-100 text-center text-md-start">
             <div class="small text-muted">Tin đã phân tích</div>
             <div class="fs-4 fw-bold text-success"><?= $jobsAnalyzed ?></div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="border rounded-3 p-3 bg-white h-100">
-            <div class="small text-muted">Đủ dữ liệu JD</div>
+    <div class="col-4">
+        <div class="border rounded-3 p-3 bg-white h-100 text-center text-md-start">
+            <div class="small text-muted">Đủ dữ liệu</div>
             <div class="fs-4 fw-bold text-primary"><?= $eligibleCount ?></div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="border rounded-3 p-3 bg-white h-100">
+    <div class="col-4">
+        <div class="border rounded-3 p-3 bg-white h-100 text-center text-md-start">
             <div class="small text-muted">Bị loại</div>
             <div class="fs-4 fw-bold text-secondary"><?= $excludedCount ?></div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="border rounded-3 p-3 bg-white h-100">
-            <div class="small text-muted">JD bị gắn cờ</div>
-            <div class="fs-4 fw-bold text-warning"><?= $flaggedJobsCount ?></div>
-        </div>
-    </div>
 </div>
 
-<?php if ($cvWeak): ?>
-    <div class="alert alert-warning border-0 small mb-3">
-        <i class="fas fa-triangle-exclamation me-1"></i>
-        CV hiện tại có thể chưa đủ thông tin để AI đánh giá tối ưu.
-    </div>
+<?php if (!empty($candidateNotice['show'])): ?>
+    <?php if (($candidateNotice['main'] ?? '') !== ''): ?>
+        <div class="alert alert-warning border-0 small mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            <?= htmlspecialchars((string) $candidateNotice['main']) ?>
+        </div>
+    <?php endif; ?>
+    <?php if (($candidateNotice['note'] ?? '') !== ''): ?>
+        <div class="alert alert-light border small mb-3">
+            <?= htmlspecialchars((string) $candidateNotice['note']) ?>
+        </div>
+    <?php endif; ?>
+    <?php if (($candidateNotice['cv_note'] ?? '') !== ''): ?>
+        <div class="alert alert-warning border-0 small mb-3">
+            <i class="fas fa-user-edit me-1"></i>
+            <?= htmlspecialchars((string) $candidateNotice['cv_note']) ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
 
-<?php if ($warnings !== []): ?>
-    <div class="alert alert-warning border-0 small mb-3">
-        <div class="fw-bold mb-1"><i class="fas fa-triangle-exclamation me-1"></i> Cảnh báo AI</div>
-        <ul class="mb-0 ps-3">
-            <?php foreach ($warnings as $warning): ?>
-                <?php if (is_string($warning) && trim($warning) !== ''): ?>
-                    <li><?= htmlspecialchars(trim($warning)) ?></li>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
-
-<?php if ($jobsWarnings !== []): ?>
-    <div class="alert alert-warning border-0 small mb-3">
-        <i class="fas fa-info-circle me-1"></i>
-        <?= htmlspecialchars((string) $jobsWarnings[0]) ?>
-    </div>
-<?php endif; ?>
-
-<?php if ($topJobs !== [] && $excludedCount > 0): ?>
-    <div class="alert alert-warning border-0 small mb-4">
-        <i class="fas fa-exclamation-triangle me-1"></i>
-        Một số tin đã bị loại khỏi AI recommendation vì dữ liệu JD chưa đủ mạnh.
-    </div>
-<?php endif; ?>
-
-<?php if ($traceId !== '' || $diagnostics !== []): ?>
-<details class="mb-4">
-    <summary class="small fw-bold text-muted">AI diagnostics</summary>
-    <div class="small text-muted mt-2 border rounded-3 p-3 bg-light">
-        <?php if ($traceId !== ''): ?>
-            <div><strong>Trace ID:</strong> <code><?= htmlspecialchars($traceId) ?></code></div>
-        <?php endif; ?>
-        <?php if ($candidateFlags !== []): ?>
-            <div><strong>Candidate payload flags:</strong> <?= htmlspecialchars(implode(', ', array_map('strval', $candidateFlags))) ?></div>
-        <?php endif; ?>
-        <div><strong>Job payload flagged count:</strong> <?= $flaggedJobsCount ?></div>
-        <div><strong>Eligible / Excluded:</strong> <?= $eligibleCount ?> / <?= $excludedCount ?></div>
-        <?php
-        $topIds = [];
-        foreach ($topJobs as $r) {
-            if (is_array($r)) {
-                $topIds[] = (string) ($r['job_id'] ?? '?');
-            }
-        }
-        $excludedIds = [];
-        foreach ($excludedJobs as $r) {
-            if (is_array($r)) {
-                $excludedIds[] = (string) ($r['job_id'] ?? '?');
-            }
-        }
-        ?>
-        <div><strong>Top job IDs:</strong> <?= htmlspecialchars($topIds !== [] ? implode(', ', $topIds) : 'none') ?></div>
-        <div><strong>Excluded job IDs:</strong> <?= htmlspecialchars($excludedIds !== [] ? implode(', ', $excludedIds) : 'none') ?></div>
-        <?php if (is_array($diagRuntime) && $diagRuntime !== []): ?>
-            <div><strong>Runtime:</strong> <?= htmlspecialchars(json_encode($diagRuntime, JSON_UNESCAPED_UNICODE)) ?></div>
-        <?php endif; ?>
-    </div>
-</details>
-<?php endif; ?>
+<?= ai_diag_render_debug_block($candidateDebugData) ?>
 
 <?php if ($topJobs === []): ?>
     <div class="alert alert-warning border-0 mb-4">
@@ -259,7 +215,7 @@ $cvWeak = array_intersect(
     <div class="accordion-item border shadow-sm">
         <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recExcludedPanel" aria-expanded="false">
-                Tin không đủ dữ liệu để AI đánh giá (<?= count($excludedJobs) ?>)
+                Việc làm không đưa vào gợi ý AI (<?= count($excludedJobs) ?>)
             </button>
         </h2>
         <div id="recExcludedPanel" class="accordion-collapse collapse" data-bs-parent="#recExcludedAccordion">
@@ -269,7 +225,6 @@ $cvWeak = array_intersect(
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4">Việc làm</th>
-                                <th style="width: 10rem;">Trạng thái JD</th>
                                 <th>Lý do</th>
                                 <th class="text-end pe-4" style="width: 7rem;">Thao tác</th>
                             </tr>
@@ -281,7 +236,6 @@ $cvWeak = array_intersect(
                                     continue;
                                 }
                                 $jobId = (int) ($row['job_id'] ?? 0);
-                                $quality = is_array($row['job_quality'] ?? null) ? $row['job_quality'] : [];
                                 ?>
                                 <tr>
                                     <td class="ps-4">
@@ -293,12 +247,7 @@ $cvWeak = array_intersect(
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark border">
-                                            <?= htmlspecialchars(job_recommendation_quality_label_vi((string) ($quality['quality_label'] ?? ''))) ?>
-                                        </span>
-                                    </td>
-                                    <td class="small text-muted"><?= htmlspecialchars(job_recommendation_excluded_reasons_line($row)) ?></td>
+                                    <td class="small text-muted"><?= htmlspecialchars(ai_diag_excluded_job_reason($row)) ?></td>
                                     <td class="text-end pe-4">
                                         <a href="../job-detail.php?id=<?= $jobId ?>" class="btn btn-sm btn-outline-secondary">Xem tin</a>
                                     </td>
@@ -314,7 +263,6 @@ $cvWeak = array_intersect(
                             continue;
                         }
                         $jobId = (int) ($row['job_id'] ?? 0);
-                        $quality = is_array($row['job_quality'] ?? null) ? $row['job_quality'] : [];
                         ?>
                         <div class="border rounded-3 p-3 mb-2 bg-light">
                             <div class="fw-bold mb-1"><?= htmlspecialchars((string) ($row['job_title'] ?? '')) ?></div>
@@ -324,10 +272,7 @@ $cvWeak = array_intersect(
                                     · <?= htmlspecialchars((string) $row['city']) ?>
                                 <?php endif; ?>
                             </div>
-                            <span class="badge bg-light text-dark border mb-2">
-                                <?= htmlspecialchars(job_recommendation_quality_label_vi((string) ($quality['quality_label'] ?? ''))) ?>
-                            </span>
-                            <p class="small text-muted mb-2"><?= htmlspecialchars(job_recommendation_excluded_reasons_line($row)) ?></p>
+                            <p class="small text-muted mb-2"><?= htmlspecialchars(ai_diag_excluded_job_reason($row)) ?></p>
                             <a href="../job-detail.php?id=<?= $jobId ?>" class="btn btn-sm btn-outline-secondary">Xem tin</a>
                         </div>
                     <?php endforeach; ?>

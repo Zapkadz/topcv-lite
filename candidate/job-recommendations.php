@@ -9,6 +9,7 @@ require_once __DIR__ . '/../includes/schema_cvs.php';
 require_once __DIR__ . '/../includes/cv_rules.php';
 require_once __DIR__ . '/../includes/ai_screening_config.php';
 require_once __DIR__ . '/../includes/job_recommendation_rules.php';
+require_once __DIR__ . '/../includes/ai_i18n.php';
 require_once __DIR__ . '/../includes/services/CvService.php';
 require_once __DIR__ . '/../includes/services/JobRecommendationService.php';
 require_once __DIR__ . '/../includes/repositories/JobRepository.php';
@@ -146,11 +147,6 @@ include '../includes/header.php';
                                 <span class="badge bg-light text-dark border">
                                     <i class="fas fa-clock"></i> Lần chạy: <?= date('d/m/Y H:i', (int) $sessionResult['ran_at']) ?>
                                 </span>
-                                <?php if (!empty($sessionResult['trace_id'])): ?>
-                                    <span class="badge bg-light text-dark border">
-                                        Trace: <?= htmlspecialchars((string) $sessionResult['trace_id']) ?>
-                                    </span>
-                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                         <?php if ($panelHint !== ''): ?>
@@ -173,12 +169,18 @@ include '../includes/header.php';
 <div class="modal fade" id="recDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title fw-bold mb-1" id="recDetailTitle">Chi tiết gợi ý</h5>
+            <div class="modal-header align-items-start">
+                <div class="me-auto pe-3">
+                    <h5 class="modal-title fw-bold mb-1" id="recDetailTitle">Recommendation detail</h5>
                     <div class="small text-muted" id="recDetailMeta"></div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <div class="btn-group btn-group-sm ai-lang-toggle" role="group" id="recDetailLangToggle">
+                        <button type="button" class="btn btn-outline-secondary active" data-lang="en">English</button>
+                        <button type="button" class="btn btn-outline-secondary" data-lang="vi">Tiếng Việt</button>
+                    </div>
+                    <button type="button" class="btn-close mt-1" data-bs-dismiss="modal"></button>
+                </div>
             </div>
             <div class="modal-body" id="recDetailBody"></div>
             <div class="modal-footer bg-light">
@@ -204,6 +206,8 @@ include '../includes/header.php';
 }
 </style>
 
+<?= ai_i18n_script_tags() ?>
+
 <script>
 document.getElementById('recRunForm')?.addEventListener('submit', function () {
     var overlay = document.getElementById('recLoadingOverlay');
@@ -215,143 +219,6 @@ document.getElementById('recRunForm')?.addEventListener('submit', function () {
         btn.disabled = true;
     }
 });
-
-function recEscape(text) {
-    if (text == null) {
-        return '';
-    }
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function recListHtml(items, emptyText) {
-    if (!Array.isArray(items) || items.length === 0) {
-        return '<p class="text-muted small mb-0">' + recEscape(emptyText) + '</p>';
-    }
-    return '<ul class="mb-0 ps-3">' + items.map(function (item) {
-        if (typeof item === 'object' && item !== null) {
-            return '<li>' + recEscape(item.skill || item.name || item.label || JSON.stringify(item)) + '</li>';
-        }
-        return '<li>' + recEscape(item) + '</li>';
-    }).join('') + '</ul>';
-}
-
-function recGapListHtml(gaps, key) {
-    var items = gaps && gaps[key] ? gaps[key] : [];
-    if (!Array.isArray(items) || items.length === 0) {
-        return '<p class="text-muted small mb-0">Không có mục nào.</p>';
-    }
-    return '<ul class="mb-0 ps-3">' + items.map(function (item) {
-        if (typeof item === 'string') {
-            return '<li>' + recEscape(item) + '</li>';
-        }
-        var label = item.skill || item.requirement || item.name || item.label || '';
-        var detail = item.reason || item.detail || item.note || '';
-        var line = recEscape(label);
-        if (detail) {
-            line += ' — <span class="text-muted">' + recEscape(detail) + '</span>';
-        }
-        return '<li>' + line + '</li>';
-    }).join('') + '</ul>';
-}
-
-function recFormatRatio(value) {
-    if (value == null || value === '') {
-        return null;
-    }
-    var num = Number(value);
-    if (Number.isNaN(num)) {
-        return String(value);
-    }
-    if (num >= 0 && num <= 1) {
-        return Math.round(num * 100) + '%';
-    }
-    return String(num);
-}
-
-function recCoreRequirementFitHtml(summary) {
-    var core = summary && summary.core;
-    if (!core || typeof core !== 'object') {
-        return '';
-    }
-    var html = '<div class="border rounded-3 bg-light p-3 mb-3 small">';
-    html += '<div class="fw-bold mb-2">Core requirement fit</div>';
-    if (core.total != null) {
-        html += '<div><strong>Core requirements counted:</strong> ' + recEscape(core.total) + '</div>';
-    }
-    var confirmed = recFormatRatio(core.confirmed_coverage);
-    if (confirmed != null) {
-        html += '<div><strong>Confirmed coverage:</strong> ' + recEscape(confirmed) + '</div>';
-    }
-    var semanticOnly = recFormatRatio(core.semantic_only_ratio);
-    if (semanticOnly != null) {
-        html += '<div><strong>Semantic-only ratio:</strong> ' + recEscape(semanticOnly) + '</div>';
-    }
-    html += '</div>';
-    return html;
-}
-
-function recRoleAdjustmentAlertHtml(job) {
-    var adjustment = job.role_score_adjustment;
-    var impact = job.role_alignment_impact || {};
-    var reason = impact.reason || '';
-    var hasAdjustment = adjustment != null && Number(adjustment) !== 0;
-    if (!hasAdjustment && !reason) {
-        return '';
-    }
-    var html = '<div class="alert alert-info border-0 small py-2 px-3 mb-3">';
-    html += '<div class="fw-bold mb-1">AI có điều chỉnh điểm theo role-family/core evidence</div>';
-    if (reason) {
-        html += '<div>' + recEscape(reason) + '</div>';
-    } else if (hasAdjustment) {
-        html += '<div>Role score adjustment: ' + recEscape(adjustment) + '</div>';
-    }
-    html += '</div>';
-    return html;
-}
-
-function recDecisionConfidenceHtml(confidence) {
-    if (!confidence || typeof confidence !== 'object') {
-        return '';
-    }
-    var html = '<div class="alert alert-light border small mb-3">';
-    html += '<div class="fw-bold mb-1">Decision confidence</div>';
-    if (confidence.level) {
-        html += '<div><strong>Level:</strong> ' + recEscape(confidence.level) + '</div>';
-    }
-    if (confidence.review_required != null) {
-        html += '<div><strong>Review required:</strong> ' + (confidence.review_required ? 'yes' : 'no') + '</div>';
-    }
-    if (Array.isArray(confidence.reason_codes) && confidence.reason_codes.length > 0) {
-        html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
-        html += recListHtml(confidence.reason_codes, '');
-    }
-    html += '</div>';
-    return html;
-}
-
-function recJobGuardrailsHtml(guardrails) {
-    if (!guardrails || typeof guardrails !== 'object' || Object.keys(guardrails).length === 0) {
-        return '';
-    }
-    var html = '<div class="alert alert-light border small mb-3">';
-    html += '<div class="fw-bold mb-1">Job confidence guardrails</div>';
-    if (guardrails.level) {
-        html += '<div><strong>Level:</strong> ' + recEscape(guardrails.level) + '</div>';
-    }
-    if (guardrails.review_required != null) {
-        html += '<div><strong>Review required:</strong> ' + (guardrails.review_required ? 'yes' : 'no') + '</div>';
-    }
-    if (Array.isArray(guardrails.reason_codes) && guardrails.reason_codes.length > 0) {
-        html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
-        html += recListHtml(guardrails.reason_codes, '');
-    }
-    html += '</div>';
-    return html;
-}
 
 document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -365,95 +232,9 @@ document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
         } catch (e) {
             return;
         }
-
-        document.getElementById('recDetailTitle').textContent = job.job_title || 'Chi tiết gợi ý';
-        var meta = [];
-        if (job.fit_label) {
-            meta.push(job.fit_label);
+        if (window.TopCvAiUiI18n) {
+            TopCvAiUiI18n.openCandidateModal(job);
         }
-        if (job.fit_score != null) {
-            meta.push(job.fit_score + ' điểm');
-        }
-        document.getElementById('recDetailMeta').textContent = meta.join(' · ');
-
-        var gaps = job.skill_gaps || {};
-        var reviewCard = job.review_card || {};
-        var evidence = reviewCard.evidence_highlights || job.matched_must_have_skills || [];
-
-        var html = '<div class="accordion" id="recDetailAccordion">';
-        html += recDecisionConfidenceHtml(job.decision_confidence || null);
-        html += recJobGuardrailsHtml(job.job_confidence_guardrails || null);
-        html += '<div class="accordion-item"><h2 class="accordion-header">';
-        html += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#recWhyFit">Vì sao phù hợp</button></h2>';
-        html += '<div id="recWhyFit" class="accordion-collapse collapse show" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-        html += '<p>' + recEscape(job.fit_summary || '') + '</p>';
-        html += recRoleAdjustmentAlertHtml(job);
-        html += recListHtml(job.why_fit, 'Chưa có lý do cụ thể.');
-        html += '</div></div></div>';
-
-        html += '<div class="accordion-item"><h2 class="accordion-header">';
-        html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recGaps">Điểm còn thiếu / yếu</button></h2>';
-        html += '<div id="recGaps" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-        html += recCoreRequirementFitHtml(job.core_requirement_fit_summary || {});
-        var s = job.skill_gap_summary || {};
-        var gapLine = [];
-        if (s.missing_must_have_count > 0) gapLine.push('Thiếu bắt buộc: ' + s.missing_must_have_count);
-        if (s.weak_evidence_count > 0) gapLine.push('Bằng chứng yếu: ' + s.weak_evidence_count);
-        if (s.optional_growth_count > 0) gapLine.push('Phát triển thêm: ' + s.optional_growth_count);
-        html += '<p class="small text-muted">' + recEscape(gapLine.join(' · ') || 'Không có thiếu hụt lớn.') + '</p>';
-        html += '<h6 class="fw-bold small">Thiếu bắt buộc</h6>' + recGapListHtml(gaps, 'missing_must_have');
-        html += '<h6 class="fw-bold small mt-3">Bằng chứng yếu</h6>' + recGapListHtml(gaps, 'weak_evidence');
-        html += '<h6 class="fw-bold small mt-3">Phát triển thêm</h6>' + recGapListHtml(gaps, 'optional_growth');
-        html += '</div></div></div>';
-
-        html += '<div class="accordion-item"><h2 class="accordion-header">';
-        html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recImprove">Cách cải thiện CV</button></h2>';
-        html += '<div id="recImprove" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-        html += '<h6 class="fw-bold small">Việc nên làm tiếp</h6>' + recListHtml(job.next_best_actions, 'Chưa có gợi ý.');
-        html += '<h6 class="fw-bold small mt-3">Gợi ý chi tiết</h6>' + recListHtml(job.cv_improvement_suggestions, 'Chưa có gợi ý chi tiết.');
-        html += '</div></div></div>';
-
-        html += '<div class="accordion-item"><h2 class="accordion-header">';
-        html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recEvidence">Bằng chứng kỹ năng</button></h2>';
-        html += '<div id="recEvidence" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-        html += recListHtml(job.matched_must_have_skills, 'Chưa có kỹ năng khớp rõ.');
-        html += '<h6 class="fw-bold small mt-3">Evidence highlights</h6>' + recListHtml(evidence, 'Chưa có highlight.');
-        html += '</div></div></div>';
-
-        var requirementNotes = reviewCard.requirement_notes || [];
-        if (Array.isArray(requirementNotes) && requirementNotes.length > 0) {
-            html += '<div class="accordion-item"><h2 class="accordion-header">';
-            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recReqNotes">Requirement notes</button></h2>';
-            html += '<div id="recReqNotes" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-            html += recListHtml(requirementNotes, '');
-            html += '</div></div></div>';
-        }
-
-        var jq = job.job_quality || {};
-        if (jq.quality_label) {
-            html += '<div class="accordion-item"><h2 class="accordion-header">';
-            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recJdQuality">Chất lượng JD</button></h2>';
-            html += '<div id="recJdQuality" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-            html += '<p class="small mb-2"><strong>Điểm chất lượng:</strong> ' + recEscape(jq.quality_score != null ? jq.quality_score : '—') + '</p>';
-            html += '<p class="small mb-2"><strong>Nhãn:</strong> ' + recEscape(jq.quality_label || '—') + '</p>';
-            if (Array.isArray(jq.reasons) && jq.reasons.length > 0) {
-                html += '<h6 class="fw-bold small">Lý do</h6>' + recListHtml(jq.reasons, '');
-            }
-            html += '</div></div></div>';
-        }
-
-        if (Array.isArray(job.open_set_requirements) && job.open_set_requirements.length > 0) {
-            html += '<div class="accordion-item"><h2 class="accordion-header">';
-            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recOpenSet">Open-set requirements</button></h2>';
-            html += '<div id="recOpenSet" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
-            html += recListHtml(job.open_set_requirements, '');
-            html += '</div></div></div>';
-        }
-        html += '</div>';
-
-        document.getElementById('recDetailBody').innerHTML = html;
-        var modal = new bootstrap.Modal(document.getElementById('recDetailModal'));
-        modal.show();
     });
 });
 </script>

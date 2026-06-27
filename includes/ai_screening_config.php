@@ -38,6 +38,7 @@ if (!function_exists('ai_screening_config')) {
             'embedding_model' => 'BAAI/bge-m3',
             'embedding_local_only' => true,
             'debug_api_payload' => false,
+            'debug_ui_diagnostics' => false,
             'debug_api_dir' => 'C:\\topcv_ai_runtime\\api-debug',
             'recommend_jobs_api_url' => 'http://127.0.0.1:8000/recommend-jobs',
             'recommend_top_k' => 10,
@@ -107,6 +108,7 @@ if (!function_exists('ai_screening_config')) {
         $defaults['hf_hub_offline'] = !empty($defaults['hf_hub_offline']);
         $defaults['embedding_model'] = trim((string) ($defaults['embedding_model'] ?? 'BAAI/bge-m3'));
         $defaults['debug_api_payload'] = !empty($defaults['debug_api_payload']);
+        $defaults['debug_ui_diagnostics'] = !empty($defaults['debug_ui_diagnostics']);
         $defaults['debug_api_dir'] = rtrim(trim((string) ($defaults['debug_api_dir'] ?? '')), '\\/');
         if ($defaults['debug_api_dir'] === '') {
             $defaults['debug_api_dir'] = rtrim((string) ($defaults['runtime_dir'] ?? ''), '\\/') . '\\api-debug';
