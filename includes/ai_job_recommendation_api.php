@@ -110,24 +110,28 @@ if (!function_exists('ai_recommendation_log_response_metadata')) {
             if (!is_array($job)) {
                 continue;
             }
+            $decisionConfidence = is_array($job['decision_confidence'] ?? null)
+                ? ai_screening_format_confidence_summary($job['decision_confidence'])
+                : 'none';
             $lines[] = sprintf(
-                'job_id=%s fit=%s score=%s',
+                'job_id=%s fit=%s score=%s confidence=%s',
                 (string) ($job['job_id'] ?? '?'),
                 (string) ($job['fit_label'] ?? '?'),
-                (string) ($job['fit_score'] ?? '?')
+                (string) ($job['fit_score'] ?? '?'),
+                $decisionConfidence
             );
         }
 
         $health = ai_recommendation_fetch_api_health_meta();
         $phaseNote = $health['phase'] !== '' ? $health['phase'] : 'unknown';
-        if ($health['ok'] && !str_contains($phaseNote, 'Phase 25')) {
-            $phaseNote .= ' [WARN: not Phase 25]';
+        if ($health['ok'] && !preg_match('/Phase 3[3-9]/', $phaseNote)) {
+            $phaseNote .= ' [WARN: not Phase 33-39]';
         }
-        if ($health['ok'] && str_contains($phaseNote, 'Phase 25') && $traceId === '') {
-            ai_screening_log('Recommend API WARN: missing trace_id in response while health phase is Phase 25');
+        if ($health['ok'] && preg_match('/Phase 3[3-9]/', $phaseNote) && $traceId === '') {
+            ai_screening_log('Recommend API WARN: missing trace_id in response while health phase is ' . $phaseNote);
         }
-        if ($health['ok'] && str_contains($phaseNote, 'Phase 25') && $diagnostics === []) {
-            ai_screening_log('Recommend API WARN: missing diagnostics in response while health phase is Phase 25');
+        if ($health['ok'] && preg_match('/Phase 3[3-9]/', $phaseNote) && $diagnostics === []) {
+            ai_screening_log('Recommend API WARN: missing diagnostics in response while health phase is ' . $phaseNote);
         }
 
         ai_screening_log(
@@ -187,8 +191,8 @@ if (!function_exists('ai_recommendation_call_api')) {
         $jobsCount = is_array($payload['jobs'] ?? null) ? count($payload['jobs']) : 0;
         $health = ai_recommendation_fetch_api_health_meta();
         $phaseLog = $health['phase'] !== '' ? $health['phase'] : 'unknown';
-        if ($health['ok'] && !str_contains($phaseLog, 'Phase 25')) {
-            ai_screening_log('Recommend API WARN: health phase is not Phase 25: ' . $phaseLog);
+        if ($health['ok'] && !preg_match('/Phase 3[3-9]/', $phaseLog)) {
+            ai_screening_log('Recommend API WARN: health phase is not Phase 33-39: ' . $phaseLog);
         }
         ai_screening_log(
             "API POST {$apiUrl} candidate_id={$candidateId} jobs={$jobsCount}"
@@ -314,6 +318,24 @@ if (!function_exists('ai_recommendation_call_api')) {
         }
 
         ai_recommendation_log_response_metadata($result);
+
+        $traceId = trim((string) ($result['trace_id'] ?? ''));
+        $traceFiles = ai_screening_trace_api_files('recommend-jobs', $candidateId, $traceId, $json, $body);
+        $topJob = is_array($result['top_jobs'][0] ?? null) ? $result['top_jobs'][0] : null;
+        $topScore = is_array($topJob) ? (string) ($topJob['fit_score'] ?? '?') : '?';
+        $topConfidence = is_array($topJob) && is_array($topJob['decision_confidence'] ?? null)
+            ? ai_screening_format_confidence_summary($topJob['decision_confidence'])
+            : 'none';
+        ai_screening_log(
+            'API trace files'
+            . ' endpoint=recommend-jobs'
+            . ' trace_id=' . ($traceId !== '' ? $traceId : 'none')
+            . ' candidate_id=' . $candidateId
+            . ' request_file=' . ($traceFiles['request'] ?? 'none')
+            . ' response_file=' . ($traceFiles['response'] ?? 'none')
+            . ' top_score=' . $topScore
+            . ' top_confidence=' . $topConfidence
+        );
 
         return [
             'ok' => true,

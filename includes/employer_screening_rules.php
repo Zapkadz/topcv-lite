@@ -348,3 +348,51 @@ if (!function_exists('employer_screening_take_diag_flash')) {
         return is_array($value) ? $value : null;
     }
 }
+
+if (!function_exists('employer_screening_get_diag')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function employer_screening_get_diag(int $jobId): ?array
+    {
+        $value = $_SESSION[employer_screening_diag_session_key($jobId)] ?? null;
+
+        return is_array($value) ? $value : null;
+    }
+}
+
+if (!function_exists('employer_screening_raw_candidate_field')) {
+    /**
+     * @return mixed
+     */
+    function employer_screening_raw_candidate_field(?string $rawJson, string $field)
+    {
+        if ($rawJson === null || trim($rawJson) === '') {
+            return null;
+        }
+
+        $data = json_decode($rawJson, true);
+        if (!is_array($data)) {
+            return null;
+        }
+
+        return $data[$field] ?? null;
+    }
+}
+
+if (!function_exists('employer_screening_job_api_from_diag')) {
+    /**
+     * @param array<string, mixed>|null $diag
+     * @return array<string, mixed>
+     */
+    function employer_screening_job_api_from_diag(?array $diag): array
+    {
+        if ($diag === null) {
+            return [];
+        }
+
+        $job = $diag['job'] ?? null;
+
+        return is_array($job) ? $job : [];
+    }
+}

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/job_rules.php';
 require_once __DIR__ . '/../includes/employer_screening_rules.php';
+require_once __DIR__ . '/../includes/job_recommendation_rules.php';
 require_once __DIR__ . '/../includes/schema_applications_cv.php';
 require_once __DIR__ . '/../includes/schema_ai_screening.php';
 require_once __DIR__ . '/../includes/ai_screening_config.php';
@@ -82,10 +83,12 @@ $aiSchemaReady = ai_screening_results_ready($conn);
 $aiConfigReady = ai_screening_config_ready();
 $cvTextReady = applications_cv_snapshot_text_ready($conn);
 $appsWithCvText = 0;
-$screeningDiagFlash = employer_screening_take_diag_flash($jobId);
-$diagTraceId = is_array($screeningDiagFlash) ? trim((string) ($screeningDiagFlash['trace_id'] ?? '')) : '';
-$diagRoot = (is_array($screeningDiagFlash) && is_array($screeningDiagFlash['diagnostics'] ?? null))
-    ? $screeningDiagFlash['diagnostics']
+$screeningDiag = employer_screening_get_diag($jobId);
+$diagTraceId = is_array($screeningDiag) ? trim((string) ($screeningDiag['trace_id'] ?? '')) : '';
+$diagRunId = is_array($screeningDiag) ? trim((string) ($screeningDiag['run_id'] ?? '')) : '';
+$screeningJobApi = employer_screening_job_api_from_diag($screeningDiag);
+$diagRoot = (is_array($screeningDiag) && is_array($screeningDiag['diagnostics'] ?? null))
+    ? $screeningDiag['diagnostics']
     : [];
 $diagPayload = is_array($diagRoot['payload'] ?? null) ? $diagRoot['payload'] : [];
 $diagRuntime = is_array($diagRoot['runtime'] ?? null) ? $diagRoot['runtime'] : [];
@@ -177,6 +180,9 @@ include '../includes/header.php';
                         <?php if ($aiLatestRunId !== null): ?>
                             <span class="badge bg-light text-dark border ms-1">Lần chạy: <?= htmlspecialchars($aiLatestRunId) ?></span>
                         <?php endif; ?>
+                        <?php if ($diagTraceId !== ''): ?>
+                            <span class="badge bg-light text-dark border ms-1" title="Trace ID lần chạy gần nhất">Trace: <?= htmlspecialchars($diagTraceId) ?></span>
+                        <?php endif; ?>
                     </p>
                     <?php if ($aiPanelHint !== ''): ?>
                         <p class="small text-warning mb-0 mt-2"><i class="fas fa-info-circle"></i> <?= htmlspecialchars($aiPanelHint) ?></p>
@@ -193,7 +199,7 @@ include '../includes/header.php';
         </div>
     </div>
 
-    <?php if ($diagTraceId !== '' || $diagJobFlags !== [] || $diagCandidateFlaggedCount > 0): ?>
+    <?php if ($diagTraceId !== '' || $diagJobFlags !== [] || $diagCandidateFlaggedCount > 0 || $screeningJobApi !== []): ?>
         <div class="alert alert-warning border-0 shadow-sm small mb-4">
             <div class="fw-bold mb-1"><i class="fas fa-triangle-exclamation me-1"></i> AI payload diagnostics</div>
             <?php if ($diagJobFlags !== []): ?>
@@ -202,8 +208,22 @@ include '../includes/header.php';
             <?php if ($diagCandidateFlaggedCount > 0): ?>
                 <div>Một số CV đầu vào quá ngắn hoặc quá sparse, recruiter nên review kỹ hơn.</div>
             <?php endif; ?>
+            <?php
+            $jobGuardrails = is_array($screeningJobApi['confidence_guardrails'] ?? null)
+                ? $screeningJobApi['confidence_guardrails']
+                : [];
+            $guardrailLine = job_recommendation_confidence_guardrails_line($jobGuardrails);
+            ?>
+            <?php if ($guardrailLine !== ''): ?>
+                <div>Confidence guardrails: <?= htmlspecialchars($guardrailLine) ?></div>
+            <?php endif; ?>
             <?php if ($diagTraceId !== ''): ?>
-                <div class="text-muted mt-1">Trace ID: <code><?= htmlspecialchars($diagTraceId) ?></code></div>
+                <div class="text-muted mt-1">
+                    Trace ID: <code><?= htmlspecialchars($diagTraceId) ?></code>
+                    <?php if ($diagRunId !== ''): ?>
+                        · Run: <code><?= htmlspecialchars($diagRunId) ?></code>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
         </div>
     <?php endif; ?>
@@ -294,6 +314,9 @@ include '../includes/header.php';
                                         $reviewCard = $aiRow !== null
                                             ? employer_ai_review_card_parse((string) ($aiRow['review_card_json'] ?? ''))
                                             : null;
+                                        $decisionConfidence = $aiRow !== null
+                                            ? employer_screening_raw_candidate_field((string) ($aiRow['raw_result_json'] ?? ''), 'decision_confidence')
+                                            : null;
                                         ?>
                                         <div class="d-flex flex-wrap gap-1 justify-content-end">
                                             <?php if ($reviewCard !== null && employer_ai_review_card_has_content($reviewCard)): ?>
@@ -304,8 +327,17 @@ include '../includes/header.php';
                                                         'score' => $aiRow['final_score'] ?? null,
                                                         'recommendation' => $aiRow['recommendation'] ?? null,
                                                         'card' => employer_ai_review_card_for_ui($reviewCard),
+                                                        'decision_confidence' => is_array($decisionConfidence) ? $decisionConfidence : null,
+                                                        'job_api' => [
+                                                            'confidence_guardrails' => $screeningJobApi['confidence_guardrails'] ?? null,
+                                                            'explicit_technical_recovery_summary' => $screeningJobApi['explicit_technical_recovery_summary'] ?? null,
+                                                            'promoted_requirements' => $screeningJobApi['promoted_requirements'] ?? null,
+                                                            'technical_responsibility_candidates' => $screeningJobApi['technical_responsibility_candidates'] ?? null,
+                                                            'open_set_requirements' => $screeningJobApi['open_set_requirements'] ?? null,
+                                                        ],
                                                         'diagnostics' => [
                                                             'trace_id' => $diagTraceId,
+                                                            'run_id' => $diagRunId,
                                                             'job_flags' => $diagJobFlags,
                                                             'job_warnings' => $diagJobReasons,
                                                             'candidate_flagged_count' => $diagCandidateFlaggedCount,
@@ -531,6 +563,64 @@ include '../includes/header.php';
         return html;
     }
 
+    function aiReviewDecisionConfidenceHtml(confidence) {
+        if (!confidence || typeof confidence !== 'object') {
+            return '';
+        }
+        var html = '<section class="mb-4"><h6 class="fw-bold text-secondary">Decision confidence</h6><div class="small">';
+        if (confidence.level) {
+            html += '<div><strong>Level:</strong> ' + aiReviewEscape(confidence.level) + '</div>';
+        }
+        if (confidence.review_required != null) {
+            html += '<div><strong>Review required:</strong> ' + (confidence.review_required ? 'yes' : 'no') + '</div>';
+        }
+        if (Array.isArray(confidence.reason_codes) && confidence.reason_codes.length > 0) {
+            html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
+            html += aiReviewListHtml(confidence.reason_codes, '');
+        }
+        html += '</div></section>';
+        return html;
+    }
+
+    function aiReviewJobApiPhase33Html(jobApi) {
+        if (!jobApi || typeof jobApi !== 'object') {
+            return '';
+        }
+        var html = '';
+        var guardrails = jobApi.confidence_guardrails || {};
+        if (guardrails && typeof guardrails === 'object' && Object.keys(guardrails).length > 0) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Job confidence guardrails</h6><div class="small">';
+            if (guardrails.level) {
+                html += '<div><strong>Level:</strong> ' + aiReviewEscape(guardrails.level) + '</div>';
+            }
+            if (guardrails.review_required != null) {
+                html += '<div><strong>Review required:</strong> ' + (guardrails.review_required ? 'yes' : 'no') + '</div>';
+            }
+            if (Array.isArray(guardrails.reason_codes) && guardrails.reason_codes.length > 0) {
+                html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
+                html += aiReviewListHtml(guardrails.reason_codes, '');
+            }
+            html += '</div></section>';
+        }
+        if (jobApi.explicit_technical_recovery_summary) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Technical recovery summary</h6>';
+            html += '<p class="small mb-0">' + aiReviewEscape(jobApi.explicit_technical_recovery_summary) + '</p></section>';
+        }
+        if (Array.isArray(jobApi.promoted_requirements) && jobApi.promoted_requirements.length > 0) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Promoted requirements</h6>';
+            html += aiReviewListHtml(jobApi.promoted_requirements, '') + '</section>';
+        }
+        if (Array.isArray(jobApi.technical_responsibility_candidates) && jobApi.technical_responsibility_candidates.length > 0) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Technical responsibility candidates</h6>';
+            html += aiReviewListHtml(jobApi.technical_responsibility_candidates, '') + '</section>';
+        }
+        if (Array.isArray(jobApi.open_set_requirements) && jobApi.open_set_requirements.length > 0) {
+            html += '<section class="mb-4"><h6 class="fw-bold text-secondary">Open-set requirements</h6>';
+            html += aiReviewListHtml(jobApi.open_set_requirements, '') + '</section>';
+        }
+        return html;
+    }
+
     function openAiReviewModal(payload) {
         var card = payload.card || {};
         var diagnostics = payload.diagnostics || {};
@@ -565,10 +655,13 @@ include '../includes/header.php';
         html += aiReviewListHtml(card.suggested_interview_questions, 'Chưa có gợi ý câu hỏi.') + '</section>';
         html += aiReviewScoreFlowHtml(card, payload.score);
         html += aiReviewCoreRequirementFitHtml(card);
+        html += aiReviewDecisionConfidenceHtml(payload.decision_confidence);
+        html += aiReviewJobApiPhase33Html(payload.job_api || {});
 
         var screeningConfidence = diagnostics.screening_confidence || {};
         var hasDiag = diagnostics && (
             diagnostics.trace_id ||
+            diagnostics.run_id ||
             (Array.isArray(diagnostics.job_flags) && diagnostics.job_flags.length > 0) ||
             diagnostics.candidate_flagged_count > 0 ||
             screeningConfidence.level ||
@@ -580,6 +673,9 @@ include '../includes/header.php';
             html += '<div class="small text-muted mt-2">';
             if (diagnostics.trace_id) {
                 html += '<div><strong>Trace ID:</strong> ' + aiReviewEscape(diagnostics.trace_id) + '</div>';
+            }
+            if (diagnostics.run_id) {
+                html += '<div><strong>Run ID:</strong> ' + aiReviewEscape(diagnostics.run_id) + '</div>';
             }
             if (Array.isArray(diagnostics.job_flags) && diagnostics.job_flags.length > 0) {
                 html += '<div><strong>Job payload flags:</strong> ' + aiReviewEscape(diagnostics.job_flags.join(', ')) + '</div>';
