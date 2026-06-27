@@ -1,0 +1,16 @@
+.git
+.github
+vendor/
+uploads/
+storage/
+docs/
+hf-space/
+_git_staging_backup/
+
+Bao_Cao_Phan_Tich_TopCV_Lite.html
+Bao_Cao_Phan_Tich_TopCV_Lite_files/
+composer.phar
+
+*.log
+*.tmp
+*.bak
