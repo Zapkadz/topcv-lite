@@ -313,6 +313,46 @@ function recRoleAdjustmentAlertHtml(job) {
     return html;
 }
 
+function recDecisionConfidenceHtml(confidence) {
+    if (!confidence || typeof confidence !== 'object') {
+        return '';
+    }
+    var html = '<div class="alert alert-light border small mb-3">';
+    html += '<div class="fw-bold mb-1">Decision confidence</div>';
+    if (confidence.level) {
+        html += '<div><strong>Level:</strong> ' + recEscape(confidence.level) + '</div>';
+    }
+    if (confidence.review_required != null) {
+        html += '<div><strong>Review required:</strong> ' + (confidence.review_required ? 'yes' : 'no') + '</div>';
+    }
+    if (Array.isArray(confidence.reason_codes) && confidence.reason_codes.length > 0) {
+        html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
+        html += recListHtml(confidence.reason_codes, '');
+    }
+    html += '</div>';
+    return html;
+}
+
+function recJobGuardrailsHtml(guardrails) {
+    if (!guardrails || typeof guardrails !== 'object' || Object.keys(guardrails).length === 0) {
+        return '';
+    }
+    var html = '<div class="alert alert-light border small mb-3">';
+    html += '<div class="fw-bold mb-1">Job confidence guardrails</div>';
+    if (guardrails.level) {
+        html += '<div><strong>Level:</strong> ' + recEscape(guardrails.level) + '</div>';
+    }
+    if (guardrails.review_required != null) {
+        html += '<div><strong>Review required:</strong> ' + (guardrails.review_required ? 'yes' : 'no') + '</div>';
+    }
+    if (Array.isArray(guardrails.reason_codes) && guardrails.reason_codes.length > 0) {
+        html += '<div class="mt-1"><strong>Reason codes:</strong></div>';
+        html += recListHtml(guardrails.reason_codes, '');
+    }
+    html += '</div>';
+    return html;
+}
+
 document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
     btn.addEventListener('click', function () {
         var raw = btn.getAttribute('data-job');
@@ -341,6 +381,8 @@ document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
         var evidence = reviewCard.evidence_highlights || job.matched_must_have_skills || [];
 
         var html = '<div class="accordion" id="recDetailAccordion">';
+        html += recDecisionConfidenceHtml(job.decision_confidence || null);
+        html += recJobGuardrailsHtml(job.job_confidence_guardrails || null);
         html += '<div class="accordion-item"><h2 class="accordion-header">';
         html += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#recWhyFit">Vì sao phù hợp</button></h2>';
         html += '<div id="recWhyFit" class="accordion-collapse collapse show" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
@@ -397,6 +439,14 @@ document.querySelectorAll('.js-rec-detail').forEach(function (btn) {
             if (Array.isArray(jq.reasons) && jq.reasons.length > 0) {
                 html += '<h6 class="fw-bold small">Lý do</h6>' + recListHtml(jq.reasons, '');
             }
+            html += '</div></div></div>';
+        }
+
+        if (Array.isArray(job.open_set_requirements) && job.open_set_requirements.length > 0) {
+            html += '<div class="accordion-item"><h2 class="accordion-header">';
+            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#recOpenSet">Open-set requirements</button></h2>';
+            html += '<div id="recOpenSet" class="accordion-collapse collapse" data-bs-parent="#recDetailAccordion"><div class="accordion-body">';
+            html += recListHtml(job.open_set_requirements, '');
             html += '</div></div></div>';
         }
         html += '</div>';

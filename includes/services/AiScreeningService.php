@@ -123,8 +123,9 @@ class AiScreeningService
             ];
         }
 
-        $runId = 'api-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+        $runId = 'api-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
         $traceId = trim((string) ($api['data']['trace_id'] ?? ''));
+        $jobOutput = is_array($api['data']['job'] ?? null) ? $api['data']['job'] : [];
         $diagnostics = is_array($api['data']['diagnostics'] ?? null) ? $api['data']['diagnostics'] : [];
         $diagPayload = is_array($diagnostics['payload'] ?? null) ? $diagnostics['payload'] : [];
         $diagJob = is_array($diagPayload['job'] ?? null) ? $diagPayload['job'] : [];
@@ -173,6 +174,7 @@ class AiScreeningService
             'message' => $msg,
             'run_id' => $runId,
             'trace_id' => $traceId,
+            'job' => $jobOutput,
             'diagnostics' => $diagnostics,
             'ranked_count' => $saved,
             'skipped_count' => $skipped,
@@ -287,6 +289,9 @@ class AiScreeningService
             throw new RuntimeException('API response thiếu mảng candidates.');
         }
 
+        AiScreeningRepository::deleteByJobId($conn, $jobId);
+        ai_screening_log('Screening save fresh run job_id=' . $jobId . ' run_id=' . $runId . ' candidates=' . count($candidates));
+
         $saved = 0;
 
         foreach ($candidates as $candidate) {
@@ -399,6 +404,9 @@ class AiScreeningService
         array $appMap
     ): int {
         $candidates = ai_screening_parse_ranking_json($jsonPath);
+        AiScreeningRepository::deleteByJobId($conn, $jobId);
+        ai_screening_log('Screening CLI save fresh run job_id=' . $jobId . ' run_id=' . $runId);
+
         $saved = 0;
 
         foreach ($candidates as $candidate) {

@@ -109,14 +109,14 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
         $candidateFlaggedCount = (int) ($diagCandidates['flagged_count'] ?? 0);
         $rankedCandidateCount = (int) ($diagRuntime['ranked_candidate_count'] ?? 0);
 
-        if ($health['ok'] && !str_contains($phase, 'Phase 25')) {
-            ai_screening_log('Screening API WARN: health phase is not Phase 25: ' . $phase);
+        if ($health['ok'] && !preg_match('/Phase 3[3-9]/', $phase)) {
+            ai_screening_log('Screening API WARN: health phase is not Phase 33-39: ' . $phase);
         }
-        if ($health['ok'] && str_contains($phase, 'Phase 25') && $traceId === '') {
-            ai_screening_log('Screening API WARN: missing trace_id in response while health phase is Phase 25');
+        if ($health['ok'] && preg_match('/Phase 3[3-9]/', $phase) && $traceId === '') {
+            ai_screening_log('Screening API WARN: missing trace_id in response while health phase is ' . $phase);
         }
-        if ($health['ok'] && str_contains($phase, 'Phase 25') && $diagnostics === []) {
-            ai_screening_log('Screening API WARN: missing diagnostics in response while health phase is Phase 25');
+        if ($health['ok'] && preg_match('/Phase 3[3-9]/', $phase) && $diagnostics === []) {
+            ai_screening_log('Screening API WARN: missing diagnostics in response while health phase is ' . $phase);
         }
 
         $jobId = (int) ($payload['job']['job_id'] ?? ($result['job']['job_id'] ?? 0));
@@ -127,6 +127,13 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
 
         $openSet = $respJob['open_set_requirements'] ?? [];
         $openSetCount = is_array($openSet) ? count($openSet) : 0;
+
+        $confidenceGuardrails = is_array($respJob['confidence_guardrails'] ?? null)
+            ? $respJob['confidence_guardrails']
+            : [];
+        $promotedRequirements = is_array($respJob['promoted_requirements'] ?? null)
+            ? $respJob['promoted_requirements']
+            : [];
 
         $screeningConfidence = is_array($respJob['screening_confidence'] ?? null)
             ? $respJob['screening_confidence']
@@ -154,7 +161,11 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
         }
 
         $topLine = 'top_candidate=none';
+        $topConfidenceLine = 'top_confidence=none';
         if (is_array($top)) {
+            $topDecisionConfidence = is_array($top['decision_confidence'] ?? null)
+                ? $top['decision_confidence']
+                : null;
             $topLine = sprintf(
                 'top_candidate app_id=%s name=%s final_score=%s recommendation=%s',
                 (string) ($top['application_id'] ?? '?'),
@@ -162,6 +173,7 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
                 (string) ($top['final_score'] ?? '?'),
                 (string) ($top['recommendation'] ?? '?')
             );
+            $topConfidenceLine = 'top_confidence=' . ai_screening_format_confidence_summary($topDecisionConfidence);
         }
 
         ai_screening_log(
@@ -176,8 +188,11 @@ if (!function_exists('ai_screening_log_api_response_metadata')) {
             . ' ranked_candidate_count=' . $rankedCandidateCount
             . ' response_job_title=' . $responseJobTitle
             . ' response_open_set_count=' . $openSetCount
+            . ' response_promoted_requirements_count=' . count($promotedRequirements)
+            . ' response_confidence_guardrails=' . ($confidenceGuardrails !== [] ? 'yes' : 'no')
             . ' response_embedding_enabled=' . $embeddingLabel
             . ' ' . $topLine
+            . ' ' . $topConfidenceLine
         );
     }
 }
@@ -307,8 +322,8 @@ if (!function_exists('ai_screening_call_api')) {
         $jobId = (int) ($payload['job']['job_id'] ?? 0);
         $health = ai_screening_fetch_api_health_meta();
         $phase = $health['phase'] !== '' ? $health['phase'] : 'unknown';
-        if ($health['ok'] && !str_contains($phase, 'Phase 25')) {
-            ai_screening_log('Screening API WARN: health phase is not Phase 25: ' . $phase);
+        if ($health['ok'] && !preg_match('/Phase 3[3-9]/', $phase)) {
+            ai_screening_log('Screening API WARN: health phase is not Phase 33-39: ' . $phase);
         }
         ai_screening_log(
             "API POST {$apiUrl} job_id={$jobId} candidates={$candidateCount}"
@@ -423,6 +438,38 @@ if (!function_exists('ai_screening_call_api')) {
 
         ai_screening_log_api_response_metadata($payload, $result);
 
+        $traceId = trim((string) ($result['trace_id'] ?? ''));
+        $traceFiles = ai_screening_trace_api_files('screening', $jobId, $traceId, $json, $body);
+        $topCandidate = null;
+        foreach (is_array($result['candidates'] ?? null) ? $result['candidates'] : [] as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+            if ($topCandidate === null) {
+                $topCandidate = $candidate;
+                continue;
+            }
+            $rank = (int) ($candidate['rank'] ?? PHP_INT_MAX);
+            $topRank = (int) ($topCandidate['rank'] ?? PHP_INT_MAX);
+            if ($rank < $topRank) {
+                $topCandidate = $candidate;
+            }
+        }
+        $topScore = is_array($topCandidate) ? (string) ($topCandidate['final_score'] ?? '?') : '?';
+        $topConfidence = is_array($topCandidate) && is_array($topCandidate['decision_confidence'] ?? null)
+            ? ai_screening_format_confidence_summary($topCandidate['decision_confidence'])
+            : 'none';
+        ai_screening_log(
+            'API trace files'
+            . ' endpoint=screening'
+            . ' trace_id=' . ($traceId !== '' ? $traceId : 'none')
+            . ' job_id=' . $jobId
+            . ' request_file=' . ($traceFiles['request'] ?? 'none')
+            . ' response_file=' . ($traceFiles['response'] ?? 'none')
+            . ' top_score=' . $topScore
+            . ' top_confidence=' . $topConfidence
+        );
+
         return [
             'ok' => true,
             'data' => $result,
@@ -430,5 +477,84 @@ if (!function_exists('ai_screening_call_api')) {
             'error' => '',
             'response_body' => $body,
         ];
+    }
+}
+
+if (!function_exists('ai_screening_trace_api_dir')) {
+    function ai_screening_trace_api_dir(): string
+    {
+        $cfg = ai_screening_config();
+        $root = rtrim(trim((string) ($cfg['runtime_dir'] ?? '')), '\\/');
+        if ($root === '') {
+            $root = rtrim(str_replace('\\', '/', dirname(__DIR__) . '/storage/ai_runtime'), '/');
+        }
+
+        return $root . DIRECTORY_SEPARATOR . 'api-traces';
+    }
+}
+
+if (!function_exists('ai_screening_trace_api_files')) {
+    /**
+     * Always write request/response JSON for local rerun verification.
+     *
+     * @return array{request: ?string, response: ?string, prefix: string}
+     */
+    function ai_screening_trace_api_files(
+        string $endpoint,
+        int $entityId,
+        string $traceId,
+        string $requestBody,
+        string $responseBody
+    ): array {
+        $slug = $traceId !== '' ? preg_replace('/[^a-zA-Z0-9_-]+/', '_', $traceId) : bin2hex(random_bytes(3));
+        $prefix = date('Ymd-His') . '-' . $slug . '-' . $endpoint . '-entity-' . max(0, $entityId);
+        $dir = ai_screening_trace_api_dir();
+
+        $prettyRequest = $requestBody;
+        $decodedReq = json_decode($requestBody, true);
+        if (is_array($decodedReq)) {
+            $encoded = json_encode($decodedReq, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            if (is_string($encoded)) {
+                $prettyRequest = $encoded;
+            }
+        }
+
+        $prettyResponse = $responseBody;
+        $decodedRes = json_decode($responseBody, true);
+        if (is_array($decodedRes)) {
+            $encoded = json_encode($decodedRes, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            if (is_string($encoded)) {
+                $prettyResponse = $encoded;
+            }
+        }
+
+        $requestPath = ai_screening_debug_api_write_file($dir, $prefix . '-request.json', $prettyRequest . PHP_EOL);
+        $responsePath = ai_screening_debug_api_write_file($dir, $prefix . '-response.json', $prettyResponse . PHP_EOL);
+
+        return [
+            'request' => $requestPath,
+            'response' => $responsePath,
+            'prefix' => $prefix,
+        ];
+    }
+}
+
+if (!function_exists('ai_screening_format_confidence_summary')) {
+    /**
+     * @param array<string, mixed>|null $confidence
+     */
+    function ai_screening_format_confidence_summary(?array $confidence): string
+    {
+        if ($confidence === null || $confidence === []) {
+            return 'none';
+        }
+
+        $level = trim((string) ($confidence['level'] ?? ''));
+        $review = !empty($confidence['review_required']) ? 'review_required' : 'ok';
+        $reasons = is_array($confidence['reason_codes'] ?? null) ? count($confidence['reason_codes']) : 0;
+
+        return 'level=' . ($level !== '' ? $level : '?')
+            . ' review=' . $review
+            . ' reason_codes=' . $reasons;
     }
 }

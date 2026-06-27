@@ -102,7 +102,7 @@ if (!function_exists('job_recommendation_session_schema_version')) {
      */
     function job_recommendation_session_schema_version(): int
     {
-        return 4;
+        return 5;
     }
 }
 
@@ -219,5 +219,61 @@ if (!function_exists('job_recommendation_excluded_reasons_line')) {
         }
 
         return $parts !== [] ? implode(' · ', $parts) : 'Mô tả tuyển dụng chưa đủ để AI đánh giá.';
+    }
+}
+
+if (!function_exists('job_recommendation_decision_confidence_badge_html')) {
+    /**
+     * @param array<string, mixed>|null $confidence
+     */
+    function job_recommendation_decision_confidence_badge_html(?array $confidence): string
+    {
+        if ($confidence === null || $confidence === []) {
+            return '';
+        }
+
+        $level = strtolower(trim((string) ($confidence['level'] ?? '')));
+        $reviewRequired = !empty($confidence['review_required']);
+        $class = match ($level) {
+            'high' => 'bg-success-subtle text-success border-success-subtle',
+            'medium' => 'bg-warning-subtle text-warning border-warning-subtle',
+            'low' => 'bg-danger-subtle text-danger border-danger-subtle',
+            default => 'bg-light text-dark border',
+        };
+        $label = $level !== '' ? ucfirst($level) : 'Confidence';
+        if ($reviewRequired) {
+            $label .= ' · review';
+        }
+
+        return '<span class="badge ' . $class . ' border mt-1" title="Decision confidence">'
+            . htmlspecialchars($label)
+            . '</span>';
+    }
+}
+
+if (!function_exists('job_recommendation_confidence_guardrails_line')) {
+    /**
+     * @param array<string, mixed>|null $guardrails
+     */
+    function job_recommendation_confidence_guardrails_line(?array $guardrails): string
+    {
+        if ($guardrails === null || $guardrails === []) {
+            return '';
+        }
+
+        $parts = [];
+        $level = trim((string) ($guardrails['level'] ?? ''));
+        if ($level !== '') {
+            $parts[] = 'Level: ' . $level;
+        }
+        if (!empty($guardrails['review_required'])) {
+            $parts[] = 'Cần review';
+        }
+        $reasonCodes = is_array($guardrails['reason_codes'] ?? null) ? $guardrails['reason_codes'] : [];
+        if ($reasonCodes !== []) {
+            $parts[] = 'Reason codes: ' . implode(', ', array_map('strval', array_slice($reasonCodes, 0, 4)));
+        }
+
+        return $parts !== [] ? implode(' · ', $parts) : '';
     }
 }

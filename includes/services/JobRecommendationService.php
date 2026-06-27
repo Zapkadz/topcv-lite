@@ -136,6 +136,7 @@ class JobRecommendationService
 
         $topJobs = is_array($api['data']['top_jobs'] ?? null) ? $api['data']['top_jobs'] : [];
         $excludedJobs = is_array($api['data']['excluded_jobs'] ?? null) ? $api['data']['excluded_jobs'] : [];
+        $topJobs = self::filterEligibleTopJobs($topJobs, $excludedJobs);
         $jobQualityStats = is_array($api['data']['job_quality_stats'] ?? null) ? $api['data']['job_quality_stats'] : [];
         $warnings = is_array($api['data']['warnings'] ?? null) ? $api['data']['warnings'] : [];
         $traceId = trim((string) ($api['data']['trace_id'] ?? ''));
@@ -269,6 +270,55 @@ class JobRecommendationService
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : [];
+    }
+
+    /**
+     * Remove placeholder/insufficient jobs from the main recommendation list.
+     *
+     * @param list<array<string, mixed>> $topJobs
+     * @param list<array<string, mixed>> $excludedJobs
+     * @return list<array<string, mixed>>
+     */
+    private static function filterEligibleTopJobs(array $topJobs, array $excludedJobs): array
+    {
+        $excludedIds = [];
+        foreach ($excludedJobs as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $jobId = (int) ($row['job_id'] ?? 0);
+            if ($jobId > 0) {
+                $excludedIds[$jobId] = true;
+            }
+        }
+
+        $out = [];
+        foreach ($topJobs as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $jobId = (int) ($row['job_id'] ?? 0);
+            if ($jobId <= 0 || isset($excludedIds[$jobId])) {
+                continue;
+            }
+
+            $quality = is_array($row['job_quality'] ?? null) ? $row['job_quality'] : [];
+            $label = strtolower(trim((string) ($quality['quality_label'] ?? '')));
+            if ($label === 'insufficient_jd_data') {
+                continue;
+            }
+
+            $flags = is_array($quality['flags'] ?? null) ? array_map('strval', $quality['flags']) : [];
+            $placeholderFlags = ['placeholder_title', 'placeholder_jd', 'placeholder_content', 'placeholder_like_jd'];
+            if (array_intersect($flags, $placeholderFlags) !== []) {
+                continue;
+            }
+
+            $out[] = $row;
+        }
+
+        return $out;
     }
 
     /**

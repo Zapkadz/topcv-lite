@@ -56,10 +56,12 @@ if (!$result['ok']) {
     $_SESSION['swal_text'] = (string) $result['skipped_count'] . ' UV bỏ qua vì thiếu CV text.';
 }
 
-if (!empty($result['trace_id']) || is_array($result['diagnostics'] ?? null)) {
+if (!empty($result['trace_id']) || is_array($result['diagnostics'] ?? null) || is_array($result['job'] ?? null)) {
     employer_screening_save_diag_flash($jobId, [
         'trace_id' => (string) ($result['trace_id'] ?? ''),
+        'run_id' => (string) ($result['run_id'] ?? ''),
         'diagnostics' => is_array($result['diagnostics'] ?? null) ? $result['diagnostics'] : [],
+        'job' => is_array($result['job'] ?? null) ? $result['job'] : [],
         'ran_at' => time(),
     ]);
 }

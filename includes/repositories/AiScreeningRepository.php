@@ -59,7 +59,7 @@ class AiScreeningRepository
     {
         $stmt = $conn->prepare(
             'SELECT run_id FROM ai_screening_results
-             WHERE job_id = ? AND run_id IS NOT NULL
+             WHERE job_id = ? AND run_id IS NOT NULL AND run_id != \'\'
              ORDER BY updated_at DESC
              LIMIT 1'
         );
@@ -69,12 +69,47 @@ class AiScreeningRepository
         return is_string($runId) && $runId !== '' ? $runId : null;
     }
 
+    public static function deleteByJobId(PDO $conn, int $jobId): int
+    {
+        if ($jobId <= 0) {
+            return 0;
+        }
+
+        $stmt = $conn->prepare('DELETE FROM ai_screening_results WHERE job_id = ?');
+        $stmt->execute([$jobId]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function listByJobForRun(PDO $conn, int $jobId, string $runId): array
+    {
+        if ($jobId <= 0 || trim($runId) === '') {
+            return [];
+        }
+
+        $stmt = $conn->prepare(
+            'SELECT * FROM ai_screening_results
+             WHERE job_id = ? AND run_id = ?
+             ORDER BY ai_rank ASC, final_score DESC'
+        );
+        $stmt->execute([$jobId, $runId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
     /**
      * @return array<int, array<string, mixed>> keyed by application_id
      */
     public static function mapByApplicationForJob(PDO $conn, int $jobId): array
     {
-        $rows = self::listByJob($conn, $jobId);
+        $latestRunId = self::latestRunIdForJob($conn, $jobId);
+        $rows = $latestRunId !== null
+            ? self::listByJobForRun($conn, $jobId, $latestRunId)
+            : self::listByJob($conn, $jobId);
         $map = [];
         foreach ($rows as $row) {
             $appId = (int) ($row['application_id'] ?? 0);

@@ -66,6 +66,19 @@ $cvWeak = array_intersect(
     </div>
 <?php endif; ?>
 
+<?php if ($warnings !== []): ?>
+    <div class="alert alert-warning border-0 small mb-3">
+        <div class="fw-bold mb-1"><i class="fas fa-triangle-exclamation me-1"></i> Cảnh báo AI</div>
+        <ul class="mb-0 ps-3">
+            <?php foreach ($warnings as $warning): ?>
+                <?php if (is_string($warning) && trim($warning) !== ''): ?>
+                    <li><?= htmlspecialchars(trim($warning)) ?></li>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
 <?php if ($jobsWarnings !== []): ?>
     <div class="alert alert-warning border-0 small mb-3">
         <i class="fas fa-info-circle me-1"></i>
@@ -169,6 +182,10 @@ $cvWeak = array_intersect(
                             <?php if (isset($row['fit_score'])): ?>
                                 <div class="small fw-bold text-primary mt-1"><?= (int) $row['fit_score'] ?> điểm</div>
                             <?php endif; ?>
+                            <?php
+                            $decisionConfidence = is_array($row['decision_confidence'] ?? null) ? $row['decision_confidence'] : null;
+                            echo job_recommendation_decision_confidence_badge_html($decisionConfidence);
+                            ?>
                             <?= job_recommendation_jd_quality_warning_badge_html($jobQuality) ?>
                         </td>
                         <td class="small text-muted"><?= htmlspecialchars(job_recommendation_gap_counts_line($row)) ?></td>
@@ -216,6 +233,10 @@ $cvWeak = array_intersect(
                 <?php if (isset($row['fit_score'])): ?>
                     <div class="small fw-bold text-primary mb-2"><?= (int) $row['fit_score'] ?> điểm phù hợp</div>
                 <?php endif; ?>
+                <?php
+                $decisionConfidence = is_array($row['decision_confidence'] ?? null) ? $row['decision_confidence'] : null;
+                echo job_recommendation_decision_confidence_badge_html($decisionConfidence);
+                ?>
                 <p class="small text-muted mb-3"><?= htmlspecialchars(job_recommendation_gap_counts_line($row)) ?></p>
                 <?php if ($hasApplied): ?>
                     <span class="badge bg-success-subtle text-success border border-success-subtle mb-2">Đã ứng tuyển</span>
