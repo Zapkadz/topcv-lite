@@ -125,7 +125,7 @@ if (!function_exists('cv_parse_build_extraction_rules')) {
             . "- Mỗi phần tử = MỘT mục hoàn chỉnh; thời gian phải kèm trường/công ty/dự án/tổ chức." . "\n"
             . "- KHÔNG tạo mục chỉ có ngày mà thiếu tên trường/công ty/dự án/tổ chức." . "\n"
             . "- description chỉ thuộc đúng mục; không copy sang mục khác." . "\n\n"
-            . 'Quy tắc skills: mỗi kỹ năng một phần tử; skill_name bắt buộc có chữ.' . "\n\n"
+            . 'Quy tắc skills: trích xuất TẤT CẢ kỹ năng trong section KỸ NĂNG / SKILLS (không giới hạn số lượng); mỗi kỹ năng một phần tử; skill_name bắt buộc có chữ.' . "\n\n"
             . 'Trả về JSON object hợp lệ, KHÔNG markdown.';
     }
 }
