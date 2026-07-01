@@ -41,6 +41,14 @@ if (!function_exists('cv_import_max_rows_per_section')) {
     }
 }
 
+if (!function_exists('cv_import_max_skill_rows')) {
+    /** Skills thường nhiều hơn các section khác — không dùng chung cap 5 dòng. */
+    function cv_import_max_skill_rows(): int
+    {
+        return 50;
+    }
+}
+
 if (!function_exists('cv_import_normalize_ai_date')) {
     function cv_import_normalize_ai_date(mixed $value): ?string
     {
@@ -166,7 +174,7 @@ if (!function_exists('cv_normalize_import_draft')) {
             'children' => [
                 'educations' => cv_import_limit_rows($filtered['educations']),
                 'experiences' => cv_import_limit_rows($filtered['experiences']),
-                'skills' => cv_import_limit_rows($filtered['skills']),
+                'skills' => cv_import_limit_rows($filtered['skills'], 'skills'),
                 'projects' => cv_import_limit_rows($filtered['projects']),
                 'activities' => cv_import_limit_rows($filtered['activities']),
                 'certificates' => cv_import_limit_rows($filtered['certificates']),
@@ -548,9 +556,13 @@ if (!function_exists('cv_import_limit_rows')) {
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
      */
-    function cv_import_limit_rows(array $rows): array
+    function cv_import_limit_rows(array $rows, ?string $section = null): array
     {
-        return array_slice($rows, 0, cv_import_max_rows_per_section());
+        $max = ($section === 'skills')
+            ? cv_import_max_skill_rows()
+            : cv_import_max_rows_per_section();
+
+        return array_slice($rows, 0, $max);
     }
 }
 
